@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards – SigMath</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+
+  <!-- MathJax -->
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+
+  <style>
+    .back-btn {
+      display: inline-block; background: white; border: 1px solid #B5D4F4;
+      padding: 8px 18px; border-radius: 10px; color: #185FA5; font-weight: 600;
+      text-decoration: none; font-size: 13px; margin-bottom: 1rem; cursor: pointer;
+    }
+    .back-btn:hover { background: #F0F5FC; }
+    .grade-selector, .topic-list {
+      display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 2rem;
+    }
+    .grade-card, .topic-card {
+      flex: 1; min-width: 200px; background: white; border-radius: 20px;
+      padding: 2rem; text-align: center; cursor: pointer; border: 1px solid #E6F1FB;
+      box-shadow: 0 4px 12px rgba(24,95,165,0.06); transition: all 0.2s;
+    }
+    .grade-card:hover, .topic-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(24,95,165,0.10);
+    }
+    .grade-card .icon, .topic-card .icon { font-size: 40px; margin-bottom: 1rem; }
+    .grade-card h3, .topic-card h3 { color: #042C53; font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .grade-card p, .topic-card p { color: #64748b; font-size: 0.9rem; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .flashcard-container {
+      perspective: 1000px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .flashcard {
+      width: 100%;
+      height: 260px;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      margin-bottom: 1.5rem;
+    }
+    .flashcard.flipped {
+      transform: rotateY(180deg);
+    }
+    .flashcard-front, .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(24,95,165,0.10);
+      border: 1px solid #E6F1FB;
+    }
+    .flashcard-front {
+      background: linear-gradient(135deg, #E8F0FE, #D4E2FC);
+      color: #042C53;
+    }
+    .flashcard-back {
+      background: white;
+      color: #185FA5;
+      transform: rotateY(180deg);
+      font-size: 1.1rem;
+      line-height: 1.5;
+      flex-direction: column;
+    }
+    .flashcard-controls {
+      display: flex; justify-content: center; align-items: center;
+      gap: 16px; margin-top: 0.5rem;
+    }
+    .flashcard-controls button {
+      background: #F0F5FC; border: none; padding: 8px 20px;
+      border-radius: 12px; color: #185FA5; font-weight: 600; cursor: pointer;
+    }
+    .flashcard-controls button:disabled { opacity: 0.4; cursor: default; }
+    .card-counter { font-weight: 600; color: #378ADD; }
+
+    /* AI chat panel */
+    .ai-chat-panel {
+      position: fixed; right: 0; top: 0; width: 360px; height: 100vh;
+      background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+      z-index: 1000; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.3s;
+      border-radius: 20px 0 0 20px; overflow: hidden;
+    }
+    .ai-chat-panel.open { transform: translateX(0); }
+    .ai-chat-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.2rem; border-bottom: 1px solid #E6F1FB;
+    }
+    .ai-chat-header h3 { margin: 0; color: #042C53; }
+    .ai-chat-messages {
+      flex: 1; overflow-y: auto; padding: 1rem; display: flex;
+      flex-direction: column; gap: 12px;
+    }
+    .ai-message {
+      max-width: 85%; padding: 12px 16px; border-radius: 16px;
+      font-size: 14px; line-height: 1.5;
+    }
+    .ai-message.user { align-self: flex-end; background: #185FA5; color: white; }
+    .ai-message.bot { align-self: flex-start; background: #F0F5FC; color: #042C53; }
+    .ai-chat-input {
+      display: flex; padding: 0.8rem; border-top: 1px solid #E6F1FB;
+    }
+    .ai-chat-input input {
+      flex: 1; padding: 10px 14px; border: 1.5px solid #B5D4F4;
+      border-radius: 12px; outline: none;
+    }
+    .ai-chat-input button {
+      margin-left: 8px; background: #185FA5; color: white;
+      border: none; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: pointer;
+    }
+    .open-ai-btn {
+      position: fixed; bottom: 30px; right: 30px; background: #185FA5;
+      color: white; border: none; border-radius: 50px; padding: 12px 24px;
+      font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(24,95,165,0.25);
+      z-index: 999;
+    }
+    .ai-message ul { margin-top: 6px; margin-bottom: 6px; }
+    .ai-message li { margin-bottom: 4px; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+    }
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #185FA5;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-8px); }
+    }
+    .ai-msg-avatar { display: none; }
+
+    @media (max-width: 768px) {
+      .ai-chat-panel { width: 100%; border-radius: 0; }
+      .flashcard { height: 200px; }
+      .open-ai-btn { display: none; }
+    }
+  </style>
+</head>
+<body class="dashboard-page">
+<div class="sidebar" id="sidebar"><div id="sidebarContent"></div></div>
+
+<!-- Bottom nav is injected here -->
+<div id="bottomNavContainer"></div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <h1>🃏 Flashcards</h1>
+      <p>Pick a grade → pick a topic → flip through the cards</p>
+    </div>
+  </div>
+
+  <!-- GRADE SELECTOR -->
+  <div id="gradeSelector" class="grade-selector active">
+    <div class="grade-card" onclick="showTopics('foundation')">
+      <div class="icon">🧮</div>
+      <h3>Foundation</h3>
+      <p>11 topics</p>
+    </div>
+    <div class="grade-card" onclick="showTopics('grade8')">
+      <div class="icon">8️⃣</div>
+      <h3>Grade 8</h3>
+      <p>2 topics</p>
+    </div>
+  </div>
+
+  <!-- TOPIC SELECTOR (hidden initially) -->
+  <div id="topicSelector" class="section">
+    <button class="back-btn" onclick="goBackToGrades()">← Choose another grade</button>
+    <div class="topic-list" id="topicList"></div>
+  </div>
+
+  <!-- FLASHCARD VIEWER (hidden initially) -->
+  <div id="flashcardViewer" class="section">
+    <button class="back-btn" onclick="goBackToTopics()">← Back to topics</button>
+    <div class="flashcard-container">
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <div class="flashcard-front" id="flashcardFront">Click to flip</div>
+        <div class="flashcard-back" id="flashcardBack"></div>
+      </div>
+      <div class="flashcard-controls">
+        <button onclick="prevCard()">← Prev</button>
+        <span class="card-counter" id="cardCounter">1 / 1</span>
+        <button onclick="nextCard()">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating AI chat button -->
+<button class="open-ai-btn" onclick="toggleAIChat()"><i class="ti ti-robot"></i> Ask AI</button>
+
+<!-- AI Chat Panel -->
+<div class="ai-chat-panel" id="aiChatPanel">
+  <div class="ai-chat-header">
+    <h3><i class="ti ti-robot"></i> AI Tutor</h3>
+    <button onclick="toggleAIChat()" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+  </div>
+  <div class="ai-chat-messages" id="aiChatMessages"></div>
+  <div class="ai-chat-input">
+    <input type="text" id="aiInput" placeholder="Ask about this card..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+    <button onclick="sendAIMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || user.role !== 'student') window.location.href = '/'
+
+  // ---------- FLASHCARD DATA (per topic, with icons) ----------
+  const flashcardData = {
+    foundation: {
+      'whole-numbers': {
+        title: 'Whole Numbers', icon: '🔢',
+        cards: [
+          { front: 'What are whole numbers?', back: 'Numbers {0, 1, 2, 3, …} without fractions or decimals.' },
+          { front: 'Place value', back: 'The value of a digit based on its position. In 5,728: 5 thousands, 7 hundreds, 2 tens, 8 ones.' },
+          { front: 'Rounding rule', back: 'If the next digit is 5 or more → round up. Less than 5 → round down. 4,567 → 4,600.' },
+          { front: '23 × 15 = ?', back: '345' },
+          { front: 'Smallest number among 2,345; 2,354; 2,435; 2,543?', back: '2,345 (compare thousands, then hundreds, etc.)' }
+        ]
+      },
+      'integers': {
+        title: 'Integers', icon: '➕',
+        cards: [
+          { front: 'What are integers?', back: 'Positive numbers, zero, and negative numbers. Example: -3, 0, 7.' },
+          { front: 'Absolute value', back: 'Distance from zero. | -9 | = 9, | 5 | = 5.' },
+          { front: '-5 + 8 = ?', back: '3. Different signs: subtract and keep sign of larger absolute value.' },
+          { front: '-3 × -4 = ?', back: '12. Negative × negative = positive.' },
+          { front: 'Which is greater, -6 or -4?', back: '-4 is greater because it is to the right on the number line.' }
+        ]
+      },
+      'mdas': {
+        title: 'MDAS', icon: '📐',
+        cards: [
+          { front: 'What does MDAS stand for?', back: 'Multiplication, Division, Addition, Subtraction (order of operations).' },
+          { front: '8 + 6 × 2 = ?', back: '20. Do multiplication first: 6×2=12, then 8+12=20.' },
+          { front: '24 ÷ 3 + 2 = ?', back: '10. Division first: 24÷3=8, then 8+2=10.' },
+          { front: '(6 + 2) × 3 = ?', back: '24. Parentheses first: 6+2=8, then 8×3=24.' },
+          { front: '12 + 8 ÷ 4 = ?', back: '14. Division first: 8÷4=2, then 12+2=14.' }
+        ]
+      },
+      'fractions': {
+        title: 'Fractions', icon: '➗',
+        cards: [
+          { front: 'Numerator / Denominator', back: 'Top number (parts we have) / Bottom number (total equal parts).' },
+          { front: '1/2 + 1/4 = ?', back: '3/4. Convert 1/2 to 2/4, then add.' },
+          { front: '3/4 × 2/3 = ?', back: '1/2. Multiply numerators and denominators: 6/12 = 1/2.' },
+          { front: '4/5 ÷ 2/5 = ?', back: '2. Keep-Change-Flip: 4/5 × 5/2 = 20/10 = 2.' },
+          { front: 'Simplify 6/8', back: '3/4. Divide numerator and denominator by 2.' }
+        ]
+      },
+      'decimals': {
+        title: 'Decimals', icon: '🔟',
+        cards: [
+          { front: '0.5 + 0.75 = ?', back: '1.25. Line up decimal points and add.' },
+          { front: '3.6 - 1.8 = ?', back: '1.8.' },
+          { front: '2.5 × 4 = ?', back: '10.0. Multiply as whole numbers, then place decimal point.' },
+          { front: '7.5 ÷ 5 = ?', back: '1.5.' },
+          { front: 'Round 3.276 to the nearest tenth', back: '3.3. The hundredths digit (7) is ≥5, so round up.' }
+        ]
+      },
+      'percentages': {
+        title: 'Percentages', icon: '💯',
+        cards: [
+          { front: 'What does percent mean?', back: 'Out of 100. 25% = 25/100 = 0.25.' },
+          { front: '50% of 200 = ?', back: '100. (50/100) × 200 = 100.' },
+          { front: '25% as a fraction', back: '1/4.' },
+          { front: '15 out of 60 = what percentage?', back: '25%. 15/60 = 0.25 = 25%.' },
+          { front: '75% as a decimal', back: '0.75. Divide by 100.' }
+        ]
+      },
+      'ratios': {
+        title: 'Ratios & Proportions', icon: '📊',
+        cards: [
+          { front: 'Simplify 4:6', back: '2:3. Divide both numbers by 2.' },
+          { front: 'Solve: 2/5 = 6/x', back: 'x = 15. Cross multiply: 2x = 30.' },
+          { front: '3:4 = ?:12', back: '9:12. Multiply both terms of 3:4 by 3.' },
+          { front: 'If 5 apples cost $2, how much for 15?', back: '$6. 15 is 3 times 5, so 3 × $2 = $6.' },
+          { front: 'x/8 = 3/4 → x = ?', back: '6. Multiply both sides by 8: x = 8 × 3/4 = 6.' }
+        ]
+      },
+      'basic-algebra': {
+        title: 'Basic Algebra', icon: '✏️',
+        cards: [
+          { front: '2x + 3 = 11 → x = ?', back: '4. Subtract 3: 2x = 8, then divide by 2.' },
+          { front: 'Simplify: 3x + 2x', back: '5x. Combine like terms.' },
+          { front: 'Expand: 2(x + 3)', back: '2x + 6. Distribute the 2.' },
+          { front: 'If x = 5, evaluate 3x - 4', back: '11. 3(5) - 4 = 15 - 4 = 11.' },
+          { front: 'x + 7 = 15 → x = ?', back: '8. Subtract 7 from both sides.' }
+        ]
+      },
+      'factoring': {
+        title: 'Factoring Polynomials', icon: '📝',
+        cards: [
+          { front: 'Factor: x² + 5x + 6', back: '(x + 2)(x + 3). Two numbers that multiply to 6 and add to 5 are 2 and 3.' },
+          { front: 'Factor: x² - 9', back: '(x - 3)(x + 3). Difference of squares.' },
+          { front: 'Factor: 2x + 4', back: '2(x + 2). Factor out the GCF, 2.' },
+          { front: 'Factor: x² - 16', back: '(x - 4)(x + 4).' },
+          { front: 'Factor: x² + 7x + 12', back: '(x + 3)(x + 4).' }
+        ]
+      },
+      'geometry-basics': {
+        title: 'Geometry Basics', icon: '📐',
+        cards: [
+          { front: 'Area of rectangle 5 × 3', back: '15 square units. A = l × w.' },
+          { front: 'Perimeter of square with side 4', back: '16 units. P = 4s.' },
+          { front: 'Sum of angles in a triangle', back: '180°.' },
+          { front: 'Area of circle with radius 3 (π ≈ 3.14)', back: '28.26. A = πr².' },
+          { front: 'Volume of cube with side 2', back: '8 cubic units. V = s³.' }
+        ]
+      },
+      'data-graphs': {
+        title: 'Data & Graphs', icon: '📈',
+        cards: [
+          { front: 'Mean of 2, 4, 6, 8, 10', back: '6. Sum = 30, divide by 5.' },
+          { front: 'Median of 3, 7, 9, 12, 15', back: '9. Middle value.' },
+          { front: 'Mode of 2, 3, 3, 5, 7, 7, 7', back: '7. It appears most often.' },
+          { front: 'Range of 10, 15, 20, 25, 30', back: '20. Max - Min = 30 - 10.' },
+          { front: 'Bar graph vs. Histogram', back: 'Bar graph: categories with gaps. Histogram: continuous data, bars touch.' }
+        ]
+      }
+    },
+    grade8: {
+      'algebraic-expressions': {
+        title: 'Algebraic Expressions', icon: '📐',
+        cards: [
+          { front: 'What is an algebraic expression?', back: 'A math phrase with numbers, variables, and operations (no equals sign). Example: 3x + 5.' },
+          { front: 'Variable', back: 'A letter that stands for an unknown number. In 4y, y is the variable.' },
+          { front: 'Coefficient', back: 'The number multiplied by a variable. In 3x, 3 is the coefficient.' },
+          { front: 'Constant', back: 'A fixed number. In 2a + 7, 7 is the constant.' },
+          { front: 'Translate: "5 less than a number n"', back: 'n - 5. "Less than" reverses the order.' },
+          { front: 'Evaluate 15 + 2k when k = 3', back: '21. 15 + 2(3) = 15 + 6 = 21.' }
+        ]
+      },
+      'polynomials': {
+        title: 'Polynomials', icon: '🧮',
+        cards: [
+          { front: 'What is a polynomial?', back: 'An expression with variables, constants, and whole‑number exponents. No division by a variable.' },
+          { front: 'Monomial', back: 'A polynomial with one term. Example: 5x³, -7, 3ab.' },
+          { front: 'Binomial', back: 'A polynomial with two terms. Example: x² - 4, 3x + 2.' },
+          { front: 'Trinomial', back: 'A polynomial with three terms. Example: x² + 5x + 6.' },
+          { front: 'Degree of 2x³ + 5x² - 3x + 7', back: '3. The highest exponent.' },
+          { front: 'Is 2/x a polynomial?', back: 'No. Polynomials cannot have variables in the denominator.' }
+        ]
+      },
+      'central-tendency-intro': {
+        title: 'Introduction to Central Tendency', icon: '📊',
+        cards: [
+          { front: 'What is the mean?', back: 'The average of all values (sum divided by count). Represented by x̄.' },
+          { front: 'What is the median?', back: 'The middle value when data is arranged in numerical order. Represented by x̃.' },
+          { front: 'What is the mode?', back: 'The value that appears most frequently in a data set.' },
+          { front: 'What does unimodal mean?', back: 'A data set with one mode.' },
+          { front: 'What does bimodal mean?', back: 'A data set with two modes.' },
+          { front: 'What does multimodal mean?', back: 'A data set with three or more modes.' },
+          { front: 'How do you find the mean?', back: 'Add all values together and divide by the total count.' },
+          { front: 'How do you find the median for an odd number of values?', back: 'Arrange the data and pick the middle value.' },
+          { front: 'How do you find the median for an even number of values?', back: 'Arrange the data and average the two middle values.' },
+          { front: 'What is another name for the mean?', back: 'The arithmetic average.' },
+          { front: 'What symbol represents the mean?', back: 'x̄ (x-bar).' },
+          { front: 'What symbol represents the median?', back: 'x̃ (x-tilde).' }
+        ]
+      },
+      'central-tendency-apply': {
+        title: 'Applying Central Tendency', icon: '📈',
+        cards: [
+          { front: 'When is the mean most useful?', back: 'When data is symmetric and has no outliers.' },
+          { front: 'When is the median most useful?', back: 'When data is skewed or has outliers.' },
+          { front: 'When is the mode most useful?', back: 'For categorical data to find the most common category.' },
+          { front: 'If mean < median, the data is:', back: 'Skewed left (negative skew).' },
+          { front: 'If mean > median, the data is:', back: 'Skewed right (positive skew).' },
+          { front: 'If mean = median, the data is:', back: 'Symmetric (no skew).' },
+          { front: 'Why is the mode useful in business?', back: 'It shows the most popular product or size.' },
+          { front: 'Why is the median useful for salaries?', back: 'It\'s not affected by extreme high or low values.' },
+          { front: 'What is the most popular shoe size in the store example?', back: 'Size 37 (the mode).' },
+          { front: 'What is the average shoe size in the store example?', back: '38.86 (the mean).' }
+        ]
+      }
+    }
+  };
+
+  // ---------- STATE ----------
+  let currentGrade = null;
+  let currentTopic = null;
+  let currentCardIndex = 0;
+
+  // ---------- SHOW/HIDE SECTIONS ----------
+  function showSection(sectionId) {
+    document.getElementById('gradeSelector').classList.toggle('active', sectionId === 'gradeSelector');
+    document.getElementById('topicSelector').classList.toggle('active', sectionId === 'topicSelector');
+    document.getElementById('flashcardViewer').classList.toggle('active', sectionId === 'flashcardViewer');
+  }
+
+  function showTopics(grade) {
+    currentGrade = grade;
+    const topicList = document.getElementById('topicList');
+    topicList.innerHTML = '';
+    const topics = flashcardData[grade];
+    for (const [id, topic] of Object.entries(topics)) {
+      const card = document.createElement('button');
+      card.className = 'topic-card';
+      card.style.outline = 'none';
+      card.innerHTML = `<div class="icon">${topic.icon || '📘'}</div><h3>${topic.title}</h3><p>${topic.cards.length} cards</p>`;
+      card.addEventListener('click', () => startFlashcards(id));
+      topicList.appendChild(card);
+    }
+    showSection('topicSelector');
+  }
+
+  function goBackToGrades() {
+    currentGrade = null;
+    showSection('gradeSelector');
+  }
+
+  function startFlashcards(topicId) {
+    currentTopic = topicId;
+    currentCardIndex = 0;
+    updateCard();
+    showSection('flashcardViewer');
+  }
+
+  function goBackToTopics() {
+    currentTopic = null;
+    if (currentGrade) {
+      showSection('topicSelector');
+    } else {
+      showSection('gradeSelector');
+    }
+  }
+
+  // ---------- FLASHCARD LOGIC ----------
+  function getCurrentCards() {
+    if (!currentGrade || !currentTopic) return [];
+    return flashcardData[currentGrade][currentTopic].cards;
+  }
+
+  function updateCard() {
+    const cards = getCurrentCards();
+    if (cards.length === 0) return;
+    const card = cards[currentCardIndex];
+    document.getElementById('flashcardFront').textContent = card.front;
+    document.getElementById('flashcardBack').textContent = card.back;
+    document.getElementById('cardCounter').textContent = `${currentCardIndex + 1} / ${cards.length}`;
+    document.getElementById('flashcard').classList.remove('flipped');
+  }
+
+  function flipCard() {
+    document.getElementById('flashcard').classList.toggle('flipped');
+  }
+
+  function prevCard() {
+    const cards = getCurrentCards();
+    if (cards.length === 0) return;
+    currentCardIndex = (currentCardIndex - 1 + cards.length) % cards.length;
+    updateCard();
+  }
+
+  function nextCard() {
+    const cards = getCurrentCards();
+    if (cards.length === 0) return;
+    currentCardIndex = (currentCardIndex + 1) % cards.length;
+    updateCard();
+  }
+
+  // ---------- AI Chat (copied from aitutor.html) ----------
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatText(text) {
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function appendMsg(text, sender) {
+    const box = document.getElementById('aiChatMessages');
+    const msg = document.createElement('div');
+    msg.className = `ai-message ${sender}`;
+    msg.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ${sender === 'bot' ? 'ti-robot' : 'ti-user'}"></i></div>
+      <div class="ai-bubble">${sender === 'bot' ? formatText(text) : escapeHtml(text)}</div>
+    `;
+    box.appendChild(msg);
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise();
+    } else if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+      MathJax.startup.promise.then(() => MathJax.typesetPromise());
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function showTyping() {
+    const box = document.getElementById('aiChatMessages');
+    const typing = document.createElement('div');
+    typing.className = 'ai-message bot';
+    typing.id = 'typingIndicator';
+    typing.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ti-robot"></i></div>
+      <div class="ai-bubble" style="padding:0;">
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+    box.appendChild(typing);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function removeTyping() {
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
+  }
+
+  let aiOpen = false;
+  function toggleAIChat() {
+    aiOpen = !aiOpen;
+    document.getElementById('aiChatPanel').classList.toggle('open', aiOpen);
+  }
+
+  async function sendAIMessage() {
+    const input = document.getElementById('aiInput');
+    const btn = document.querySelector('.ai-chat-input button');
+    const msg = input.value.trim();
+    if (!msg || btn.disabled) return;
+
+    appendMsg(msg, 'user');
+    input.value = '';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i>';
+    showTyping();
+
+    let context = 'The student is using math flashcards.';
+    if (currentGrade && currentTopic) {
+      const topicData = flashcardData[currentGrade][currentTopic];
+      const card = topicData.cards[currentCardIndex];
+      context = `The student is studying "${topicData.title}" and is viewing a flashcard: "${card.front}". The answer is: "${card.back}". Help them understand this concept in simple terms.`;
+    }
+
+    try {
+      const res = await fetch('/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: context },
+            { role: 'user', content: msg }
+          ]
+        })
+      });
+      const data = await res.json();
+      removeTyping();
+      if (data.success) {
+        appendMsg(data.answer, 'bot');
+      } else {
+        appendMsg(data.answer || 'Something went wrong. Please try again.', 'bot');
+      }
+    } catch {
+      removeTyping();
+      appendMsg('Something went wrong. Please check your connection and try again.', 'bot');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Send';
+    input.focus();
+  }
+
+  // ---------- LOAD SIDEBAR & BOTTOM NAV (exact match) ----------
+  fetch('/sidebar')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebarContent').innerHTML = html;
+      document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('flashcards')) btn.classList.add('active');
+      });
+    });
+
+  fetch('/bottomnav')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('bottomNavContainer').innerHTML = html;
+      const path = location.pathname.replace(/\/$/, '');
+      const map = {
+        'dashboard': 0, 'lessons': 1, 'quizzes': 2,
+        'games': 3, 'flashcards': 4, 'aitutor': 5,
+        'chat': 6, 'private-chat': 7, 'leaderboard': 8, 'profile': 9
+      };
+      const btns = document.querySelectorAll('.bottom-nav-btn');
+      // Exact match, not substring match: "private-chat.html" also matched
+      // the "chat" key under the old logic since it ends with "chat.html" too.
+      const segments = path.split('/').filter(Boolean);
+      const currentFile = segments[segments.length - 1] || '';
+      Object.entries(map).forEach(([key, i]) => {
+        const isActive = (key === 'lessons' || key === 'quizzes')
+          ? segments[0] === key
+          : currentFile === key + '.html';
+        if (isActive) btns[i]?.classList.add('active');
+      });
+    });
+</script>
+<script>
+  // Focus ring killer (kept)
+  (function() {
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const el = mutation.target;
+          if (el.classList.contains('topic-card') || el.closest('.topic-card')) {
+            const card = el.classList.contains('topic-card') ? el : el.closest('.topic-card');
+            card.style.outline = 'none';
+            card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+          }
+        }
+      });
+    });
+    document.addEventListener('focusin', function(e) {
+      const card = e.target.closest('.topic-card');
+      if (card) {
+        card.style.outline = 'none';
+        card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+      }
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+      subtree: true
+    });
+  })();
+</script>
+</body>
+</html>

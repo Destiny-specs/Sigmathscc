@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Leaderboard</title>
+  <link rel="stylesheet" href="/css/leaderboard.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+</head>
+<body class="dashboard-page">
+
+<div class="sidebar" id="sidebar">
+  <div id="sidebarContent"></div>
+</div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <h1>🏆 Leaderboard</h1>
+      <p id="lbSubtitle">Top students in your class</p>
+    </div>
+  </div>
+
+  <div id="loadingState" style="text-align:center; padding:3rem; color:#378ADD;">Loading rankings...</div>
+
+  <div id="lbContent" style="display:none;">
+    <!-- My rank card -->
+    <div class="lb-my-rank" id="myRankCard">
+      <div class="lb-rank" id="myRank">#-</div>
+      <div class="lb-row-avatar" id="myAvatar" style="background:rgba(255,255,255,0.2); color:white;"></div>
+      <div class="lb-info">
+        <div class="lb-name" id="myName">You</div>
+        <div class="lb-sub" id="myStreak"></div>
+      </div>
+      <div class="lb-xp" id="myXP">0 XP</div>
+    </div>
+
+    <!-- Podium (top 3) -->
+    <div class="lb-podium" id="podium"></div>
+
+    <!-- Full list (rank 4+) -->
+    <div class="lb-list" id="lbList"></div>
+
+    <div class="lb-empty" id="lbEmpty" style="display:none;">
+      <div class="icon" style="font-size:42px; margin-bottom:0.6rem; display:inline-block; animation: emptyBounce 2.4s ease-in-out infinite;">🏆</div><br>
+      No other students in your class yet.<br>Share your class code to invite them!
+    </div>
+  </div>
+</div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || user.role !== 'student') window.location.href = '/'
+
+  function logout() {
+    localStorage.removeItem('SigMath_user')
+    window.location.href = '/'
+  }
+
+  function getLevel(xp) { return Math.floor(xp / 100) + 1 }
+
+  const RANKS = [
+    { min: 1,  name: 'Novice',      icon: '🌱', color: '#4ade80' },
+    { min: 5,  name: 'Apprentice',  icon: '📖', color: '#3b82f6' },
+    { min: 10, name: 'Adept',       icon: '🔮', color: '#a78bfa' },
+    { min: 15, name: 'Sorcerer',    icon: '⚡', color: '#f59e0b' },
+    { min: 20, name: 'Archmage',    icon: '🧙', color: '#8b5cf6' },
+    { min: 30, name: 'Math Sage',   icon: '🐉', color: '#ef4444' },
+  ]
+  function getRank(level) {
+    let rank = RANKS[0]
+    for (const r of RANKS) { if (level >= r.min) rank = r }
+    return rank
+  }
+
+  function initials(name) {
+    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+  }
+
+  function avatarColor(index) {
+    const colors = ['#185FA5','#378ADD','#6C5CE7','#00B894','#E17055','#FDCB6E','#0984E3','#D63031']
+    return colors[index % colors.length]
+  }
+
+  async function loadLeaderboard() {
+    try {
+      const res = await fetch('/leaderboard?user_id=' + user.id)
+      const data = await res.json()
+
+      document.getElementById('loadingState').style.display = 'none'
+      document.getElementById('lbContent').style.display = 'block'
+
+      if (!data.length) {
+        document.getElementById('lbEmpty').style.display = 'block'
+        return
+      }
+
+      // Find my rank
+      const myIndex = data.findIndex(s => s.id === user.id)
+      const myRank = myIndex + 1
+      const me = data[myIndex] || { full_name: user.full_name, xp: 0, streak: 0 }
+
+      // My rank card
+      document.getElementById('myRank').textContent = '#' + myRank
+      document.getElementById('myAvatar').textContent = initials(me.full_name)
+      document.getElementById('myName').textContent = me.full_name + ' (You)'
+      document.getElementById('myStreak').textContent = '🔥 ' + (me.streak || 0) + ' day streak · Level ' + getLevel(me.xp || 0) + ' · ' + getRank(getLevel(me.xp || 0)).icon + ' ' + getRank(getLevel(me.xp || 0)).name
+      document.getElementById('myXP').textContent = (me.xp || 0) + ' XP'
+
+      // Podium (top 3)
+      const podiumOrder = [data[1], data[0], data[2]].filter(Boolean)
+      const podiumClasses = ['second', 'first', 'third']
+      const podiumNumbers = ['2', '1', '3']
+      const podiumMedals = ['🥈', '🥇', '🥉']
+      const podiumEl = document.getElementById('podium')
+      podiumEl.innerHTML = ''
+
+      podiumOrder.forEach((student, i) => {
+        const isMe = student.id === user.id
+        const div = document.createElement('div')
+        div.className = 'lb-podium-item ' + podiumClasses[i]
+        div.innerHTML = `
+          <div class="lb-avatar-wrap">
+            <div class="lb-avatar">${initials(student.full_name)}</div>
+            <div class="lb-medal">${podiumMedals[i]}</div>
+          </div>
+          <div class="lb-podium-name">${isMe ? '⭐ You' : student.full_name.split(' ')[0]}</div>
+          <div class="lb-podium-xp">${student.xp || 0} XP</div>
+          <div class="lb-podium-block">${podiumNumbers[i]}</div>
+        `
+        podiumEl.appendChild(div)
+      })
+
+      // List (rank 4+)
+      const listEl = document.getElementById('lbList')
+      listEl.innerHTML = ''
+      const rest = data.slice(3)
+
+      if (rest.length === 0 && data.length <= 3) {
+        // do nothing, podium shows all
+      } else {
+        rest.forEach((student, i) => {
+          const rank = i + 4
+          const isMe = student.id === user.id
+          const row = document.createElement('div')
+          row.className = 'lb-row' + (isMe ? ' me' : '')
+          row.innerHTML = `
+            <div class="lb-rank">#${rank}</div>
+            <div class="lb-row-avatar" style="background:${avatarColor(rank)};color:white;">${initials(student.full_name)}</div>
+            <div class="lb-info">
+              <div class="lb-name">${student.full_name}${isMe ? ' (You)' : ''}</div>
+              <div class="lb-sub">🔥 ${student.streak || 0} streak · Level ${getLevel(student.xp || 0)} · ${getRank(getLevel(student.xp || 0)).icon} ${getRank(getLevel(student.xp || 0)).name}</div>
+            </div>
+            <div class="lb-xp">${student.xp || 0} XP</div>
+          `
+          listEl.appendChild(row)
+        })
+      }
+
+      if (data.length === 1) {
+        document.getElementById('lbEmpty').style.display = 'block'
+      }
+
+    } catch (err) {
+      document.getElementById('loadingState').textContent = 'Failed to load leaderboard. Try again later.'
+    }
+  }
+
+  loadLeaderboard()
+</script>
+
+<script>
+  fetch('/sidebar')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebarContent').innerHTML = html
+      document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        if (btn.getAttribute('onclick')?.includes('leaderboard')) btn.classList.add('active')
+      })
+    })
+</script>
+<div id="bottomNavContainer"></div>
+<script>
+  fetch('/bottomnav')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('bottomNavContainer').innerHTML = html
+      const btns = document.querySelectorAll('.bottom-nav-btn')
+      const map = {
+        'dashboard': 0, 'lessons': 1, 'quizzes': 2,
+        'games': 3, 'flashcards': 4, 'aitutor': 5,
+        'chat': 6, 'private-chat': 7, 'leaderboard': 8, 'profile': 9
+      }
+      const path = location.pathname.replace(/\/$/, '')
+      const segments = path.split('/').filter(Boolean)
+      const currentFile = segments[segments.length - 1] || ''
+      Object.entries(map).forEach(([key, i]) => {
+        const isActive = (key === 'lessons' || key === 'quizzes')
+          ? segments[0] === key
+          : currentFile === key + '.html'
+        if (isActive) btns[i]?.classList.add('active')
+      })
+    })
+</script>
+</body>
+</html>

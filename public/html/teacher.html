@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Teacher Dashboard</title>
+  <link rel="stylesheet" href="/css/teacher.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+</head>
+<body class="dashboard-page">
+
+  <div class="sidebar" id="sidebar">
+  <div id="sidebarContent"></div>
+</div>
+
+  <div class="main-content">
+    <div class="dashboard-header">
+      <h1>Welcome, <span id="teacherName">Teacher</span>! 👋</h1>
+      <p>Here's an overview of your class performance.</p>
+    </div>
+
+    <div class="cards-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value" id="totalStudents">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Class Code</div>
+        <div class="stat-value" style="font-size:18px" id="classCode">—</div>
+        <button id="regenBtn" onclick="regenerateCode()" style="margin-top:8px; font-size:11px; color:#185FA5; background:#F0F5FC; border:none; border-radius:8px; padding:4px 10px; cursor:pointer; font-weight:bold;">↻ Generate New Code</button>
+        <div style="margin-top:8px; display:flex; gap:6px;">
+          <input id="customCodeInput" maxlength="10" placeholder="Custom code" style="font-size:11px; padding:4px 8px; border:1px solid #E6F1FB; border-radius:8px; width:90px; text-transform:uppercase;">
+          <button id="setCustomBtn" onclick="setCustomCode()" style="font-size:11px; color:white; background:#185FA5; border:none; border-radius:8px; padding:4px 10px; cursor:pointer; font-weight:bold;">Set</button>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Quiz Score</div>
+        <div class="stat-value" id="avgScore">—</div>
+      </div>
+    </div>
+
+    <div class="section-title">📣 Class Announcements</div>
+    <div style="background:white; border-radius:14px; padding:1rem 1.2rem; margin-bottom:1.5rem;">
+      <input id="announceTopic" placeholder="Topic focus (optional) — e.g. Polynomials" style="width:100%; border:1px solid #E6F1FB; border-radius:10px; padding:9px 12px; font-family:inherit; font-size:13px; color:#042C53; margin-bottom:8px;">
+      <textarea id="announceInput" placeholder="Write an announcement for your class..." style="width:100%; min-height:70px; border:1px solid #E6F1FB; border-radius:10px; padding:10px 12px; font-family:inherit; font-size:14px; color:#042C53; resize:vertical; margin-bottom:8px;"></textarea>
+      <button id="postAnnounceBtn" onclick="postAnnouncement()" style="background:#185FA5; color:white; border:none; border-radius:10px; padding:9px 18px; font-size:13px; font-weight:bold; cursor:pointer;">Post Announcement</button>
+      <div id="announceList" style="display:flex; flex-direction:column; gap:8px; margin-top:1rem;"></div>
+    </div>
+
+    <div class="section-title">📊 Topic Performance</div>
+    <div id="topicBreakdown" style="display:flex; flex-direction:column; gap:8px; margin-bottom:1.5rem;">
+      <div style="background:white; border-radius:12px; padding:1rem; color:#378ADD; font-size:14px;">
+        No quiz data yet.
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="section-title">👥 Student List</div>
+      <a href="/teacher-students.html" style="font-size:13px; color:#185FA5; font-weight:bold; text-decoration:none;">View All →</a>
+    </div>
+    <div id="studentList" style="display:flex; flex-direction:column; gap:10px;">
+      <div style="background:white; border-radius:12px; padding:1rem; color:#378ADD; font-size:14px;">
+        No students yet. Share your class code so students can join!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('SigMath_user'))
+    if (!user || user.role !== 'teacher') window.location.href = '/'
+    document.getElementById('teacherName').textContent = user.full_name
+
+    // Show class code if teacher has one
+    fetch('/teacher-data?email=' + user.email)
+      .then(r => r.json())
+      .then(data => {
+        if (data.class_code) {
+          document.getElementById('classCode').textContent = data.class_code
+        }
+        if (data.avgScore !== null && data.avgScore !== undefined) {
+          document.getElementById('avgScore').textContent = data.avgScore + '%'
+        } else {
+          document.getElementById('avgScore').textContent = 'No data yet'
+          document.getElementById('avgScore').style.fontSize = '14px'
+        }
+        if (data.students && data.students.length > 0) {
+          document.getElementById('totalStudents').textContent = data.students.length
+          const list = document.getElementById('studentList')
+          list.innerHTML = data.students.map(s => `
+            <div style="background:white; border-radius:12px; padding:1rem 1.2rem; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:bold; color:#042C53; font-size:14px;">${s.full_name}</div>
+                <div style="font-size:12px; color:#378ADD;">${s.email}</div>
+              </div>
+              <div style="font-size:12px; color:#185FA5; background:#F0F5FC; padding:4px 12px; border-radius:99px;">Student</div>
+            </div>
+          `).join('')
+        }
+      })
+
+    function logout() {
+      localStorage.removeItem('SigMath_user')
+      window.location.href = '/'
+    }
+
+    function scoreColor(pct) {
+      if (pct >= 80) return '#38a169'
+      if (pct >= 60) return '#e5a500'
+      return '#e53e3e'
+    }
+
+    async function loadTopicBreakdown() {
+      try {
+        const res = await fetch('/teacher-topic-breakdown?teacher_id=' + user.id)
+        const data = await res.json()
+        const wrap = document.getElementById('topicBreakdown')
+
+        if (!data || data.length === 0) {
+          wrap.innerHTML = '<div class="empty-illustration"><div class="icon">📊</div><p>No quiz data yet.</p></div>'
+          return
+        }
+
+        wrap.innerHTML = data.map(t => `
+          <div style="background:white; border-radius:12px; padding:12px 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:13px; font-weight:bold; color:#042C53;">${t.topic}</span>
+              <span style="font-size:13px; font-weight:bold; color:${scoreColor(t.avgScore)};">${t.avgScore}%</span>
+            </div>
+            <div style="background:#F0F5FC; border-radius:99px; height:8px; overflow:hidden;">
+              <div style="background:${scoreColor(t.avgScore)}; height:100%; width:${t.avgScore}%; border-radius:99px;"></div>
+            </div>
+            <div style="font-size:11px; color:#378ADD; margin-top:4px;">${t.attempts} attempt${t.attempts === 1 ? '' : 's'}</div>
+          </div>
+        `).join('')
+      } catch {
+        document.getElementById('topicBreakdown').innerHTML = '<div style="color:#e53e3e; font-size:13px;">Failed to load topic data.</div>'
+      }
+    }
+
+    async function postAnnouncement() {
+      const input = document.getElementById('announceInput')
+      const topicInput = document.getElementById('announceTopic')
+      const btn = document.getElementById('postAnnounceBtn')
+      const message = input.value.trim()
+      const topic = topicInput.value.trim()
+      if (!message) return
+
+      btn.disabled = true
+      btn.textContent = 'Posting...'
+      try {
+        const res = await fetch('/announcements', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teacher_id: user.id, message, topic })
+        })
+        const data = await res.json()
+        if (data.success) {
+          input.value = ''
+          topicInput.value = ''
+          loadAnnouncements()
+        } else {
+          showToast(data.message || 'Failed to post announcement.')
+        }
+      } catch {
+        showToast('Something went wrong. Please try again.')
+      }
+      btn.disabled = false
+      btn.textContent = 'Post Announcement'
+    }
+
+    function timeAgo(dateStr) {
+      const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000)
+      if (diff < 60) return 'just now'
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago'
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago'
+      return Math.floor(diff / 86400) + 'd ago'
+    }
+
+    async function loadAnnouncements() {
+      try {
+        const res = await fetch('/announcements/teacher?teacher_id=' + user.id)
+        const data = await res.json()
+        const wrap = document.getElementById('announceList')
+
+        if (!data || data.length === 0) {
+          wrap.innerHTML = '<div class="empty-illustration"><div class="icon">📣</div><p>No announcements posted yet.</p></div>'
+          return
+        }
+
+        wrap.innerHTML = data.map(a => `
+          <div style="background:#F0F5FC; border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div style="flex:1;">
+              ${a.topic ? `<div style="display:inline-block; font-size:11px; font-weight:bold; color:white; background:#185FA5; padding:2px 9px; border-radius:99px; margin-bottom:5px;">📌 ${a.topic}</div>` : ''}
+              <div style="font-size:13px; color:#042C53;">${a.message}</div>
+              <div style="font-size:11px; color:#378ADD; margin-top:4px;">${timeAgo(a.created_at)}</div>
+            </div>
+            <button onclick="deleteAnnouncement('${a.id}')" style="background:none; border:none; color:#e53e3e; cursor:pointer; font-size:12px; flex-shrink:0;">✕</button>
+          </div>
+        `).join('')
+      } catch {
+        document.getElementById('announceList').innerHTML = '<div style="font-size:12px; color:#e53e3e;">Failed to load announcements.</div>'
+      }
+    }
+
+    async function deleteAnnouncement(id) {
+      if (!confirm('Delete this announcement?')) return
+      try {
+        await fetch('/announcements/' + id, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teacher_id: user.id })
+        })
+        loadAnnouncements()
+      } catch {
+        showToast('Failed to delete. Please try again.')
+      }
+    }
+
+    loadAnnouncements()
+    loadTopicBreakdown()
+
+    async function regenerateCode() {
+      if (!confirm('Generate a new class code? Students using the old code will no longer be able to join with it (but already-joined students stay in your class).')) return
+      const btn = document.getElementById('regenBtn')
+      btn.disabled = true
+      btn.textContent = 'Generating...'
+      try {
+        const res = await fetch('/regenerate-class-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teacher_id: user.id })
+        })
+        const data = await res.json()
+        if (data.success) {
+          document.getElementById('classCode').textContent = data.class_code
+        } else {
+          showToast(data.message || 'Failed to generate new code.')
+        }
+      } catch {
+        showToast('Something went wrong. Please try again.')
+      }
+      btn.disabled = false
+      btn.textContent = '↻ Generate New Code'
+    }
+
+    async function setCustomCode() {
+      const input = document.getElementById('customCodeInput')
+      const code = input.value.trim().toUpperCase()
+      if (!code) return showToast('Enter a class code first.')
+      if (!/^[A-Z0-9]{4,10}$/.test(code)) return showToast('Class code must be 4-10 letters/numbers only.')
+      if (!confirm(`Set your class code to "${code}"? Students using the old code will no longer be able to join with it (but already-joined students stay in your class).`)) return
+
+      const btn = document.getElementById('setCustomBtn')
+      btn.disabled = true
+      btn.textContent = '...'
+      try {
+        const res = await fetch('/regenerate-class-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teacher_id: user.id, custom_code: code })
+        })
+        const data = await res.json()
+        if (data.success) {
+          document.getElementById('classCode').textContent = data.class_code
+          input.value = ''
+          showToast('Class code updated!', 'success')
+        } else {
+          showToast(data.message || 'Failed to set class code.')
+        }
+      } catch {
+        showToast('Something went wrong. Please try again.')
+      }
+      btn.disabled = false
+      btn.textContent = 'Set'
+    }
+  </script>
+<script>
+fetch('/sidebar?role=teacher')
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('sidebarContent').innerHTML = html
+    const path = location.pathname.replace(/\/$/, '')
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+      const onclick = btn.getAttribute('onclick') || ''
+      const match = onclick.match(/location\.href=['"]([^'"]+)['"]/)
+      if (match) {
+        const btnUrl = match[1]
+        if (path.endsWith(btnUrl)) {
+          btn.classList.add('active')
+        }
+      }
+    })
+  })
+</script>
+<div id="bottomNavContainer"></div>
+<script>
+  fetch('/bottomnav?role=teacher')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('bottomNavContainer').innerHTML = html
+      const btns = document.querySelectorAll('.bottom-nav-btn')
+      btns[0]?.classList.add('active')
+    })
+</script>
+
+<script>
+  function showToast(msg, type = 'error') {
+    const existing = document.getElementById('toastMsg')
+    if (existing) existing.remove()
+    const toast = document.createElement('div')
+    toast.id = 'toastMsg'
+    toast.textContent = msg
+    toast.style.cssText = `position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:${type === 'error' ? '#e53e3e' : '#38a169'}; color:white; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:bold; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); max-width:90vw; text-align:center;`
+    document.body.appendChild(toast)
+    setTimeout(() => toast.remove(), 4000)
+  }
+</script>
+</body>
+</html>

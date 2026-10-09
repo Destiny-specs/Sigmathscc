@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath - AI Tutor</title>
+  <link rel="stylesheet" href="/css/aitutor.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+</head>
+<body class="dashboard-page">
+
+<div class="sidebar" id="sidebar">
+  <div id="sidebarContent"></div>
+</div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <h1><i class="ti ti-robot"></i> AI Math Tutor</h1>
+      <p>Step-by-step help for junior high school math</p> <!-- ✅ Changed here -->
+    </div>
+  </div>
+
+  <section class="ai-chat-wrap" aria-label="AI Tutor chat">
+    <div class="ai-chat-header">
+      <div class="ai-avatar"><i class="ti ti-robot"></i></div>
+      <div class="ai-header-info">
+        <h3>SigMath Tutor</h3>
+        <p>Guides you one step at a time</p>
+      </div>
+      <div class="ai-status-wrap" aria-label="Online">
+        <span class="ai-status-dot"></span>
+        <span>Online</span>
+      </div>
+    </div>
+
+    <div class="ai-chat-box" id="chatBox" aria-live="polite"></div>
+
+    <form class="ai-input-row" id="chatForm">
+      <input
+        type="text"
+        id="userInput"
+        class="ai-input"
+        placeholder="Type your math question..."
+        autocomplete="off"
+      >
+      <button class="ai-send-btn" id="sendBtn" type="submit" aria-label="Send message">
+        <i class="ti ti-send"></i>
+      </button>
+    </form>
+  </section>
+</div>
+
+<div id="bottomNavContainer"></div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || user.role !== 'student') window.location.href = '/'
+
+  function logout() {
+    localStorage.removeItem('SigMath_user')
+    window.location.href = '/'
+  }
+
+  const chatHistory = []
+  const urlParams = new URLSearchParams(window.location.search)
+  const lessonTopic = urlParams.get('topic')
+
+  function escapeHtml(text) {
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
+  }
+
+  function formatText(text) {
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>')
+  }
+
+  function appendMsg(text, sender) {
+    const box = document.getElementById('chatBox')
+    const msg = document.createElement('div')
+    msg.className = `ai-msg ${sender}`
+    msg.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ${sender === 'bot' ? 'ti-robot' : 'ti-user'}"></i></div>
+      <div class="ai-bubble">${sender === 'bot' ? formatText(text) : escapeHtml(text)}</div>
+    `
+    box.appendChild(msg)
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise();
+    } else if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+      MathJax.startup.promise.then(() => MathJax.typesetPromise());
+    }
+    box.scrollTop = box.scrollHeight
+  }
+
+  function showTyping() {
+    const box = document.getElementById('chatBox')
+    const typing = document.createElement('div')
+    typing.className = 'ai-msg bot'
+    typing.id = 'typingIndicator'
+    typing.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ti-robot"></i></div>
+      <div class="ai-bubble" style="padding:0;">
+        <div class="typing-indicator" aria-label="Tutor is typing">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `
+    box.appendChild(typing)
+    box.scrollTop = box.scrollHeight
+  }
+
+  function removeTyping() {
+    const typing = document.getElementById('typingIndicator')
+    if (typing) typing.remove()
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput')
+    const btn = document.getElementById('sendBtn')
+    const question = input.value.trim()
+    if (!question || btn.disabled) return
+
+    appendMsg(question, 'user')
+    chatHistory.push({ role: 'user', content: question })
+    input.value = ''
+    btn.disabled = true
+    btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i>'
+    showTyping()
+
+    try {
+      const res = await fetch('/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: chatHistory })
+      })
+      const data = await res.json()
+
+      removeTyping()
+      if (data.success) {
+        appendMsg(data.answer, 'bot')
+        chatHistory.push({ role: 'assistant', content: data.answer })
+      } else {
+        appendMsg(data.answer || 'Something went wrong. Please try again.', 'bot')
+      }
+      if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise();
+    } else if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+      MathJax.startup.promise.then(() => MathJax.typesetPromise());
+    };
+    } catch {
+      removeTyping()
+      appendMsg('Something went wrong. Please check your connection and try again.', 'bot')
+    }
+
+    btn.disabled = false
+    btn.innerHTML = '<i class="ti ti-send"></i>'
+    input.focus()
+  }
+
+  if (lessonTopic) {
+    chatHistory.push({
+      role: 'user',
+      content: `I'm currently studying the lesson "${lessonTopic}". Please keep this in mind and help me with questions related to this topic.`
+    })
+    chatHistory.push({
+      role: 'assistant',
+      content: `Got it. I'll help you with ${lessonTopic}. What's confusing you so far?`
+    })
+  }
+
+  document.getElementById('chatForm').addEventListener('submit', (event) => {
+    event.preventDefault()
+    sendMessage()
+  })
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (lessonTopic) {
+      appendMsg(`Hi! I see you're working on ${lessonTopic}. What part is confusing you?`, 'bot')
+    } else {
+      appendMsg("Hi! I'm your AI Math Tutor. Ask me anything about junior high school math.", 'bot') // ✅ Changed here
+    }
+  })
+</script>
+
+<script>
+  fetch('/sidebar')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebarContent').innerHTML = html
+      document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('aitutor')) {
+          btn.classList.add('active')
+        }
+      })
+    })
+</script>
+
+<script>
+fetch('/bottomnav')
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('bottomNavContainer').innerHTML = html
+    const path = location.pathname.replace(/\/$/, '')
+    const map = {
+      'dashboard': 0, 'lessons': 1, 'quizzes': 2,
+      'games': 3, 'flashcards': 4, 'aitutor': 5, 'chat': 6, 'private-chat': 7, 'leaderboard': 8, 'profile': 9
+    }
+    const btns = document.querySelectorAll('.bottom-nav-btn')
+    // Exact match, not substring match: "private-chat.html" was previously
+    // also matching the "chat" key because it ends with "chat.html" too,
+    // lighting up both Class and Private Chat buttons at once.
+    const segments = path.split('/').filter(Boolean)
+    const currentFile = segments[segments.length - 1] || ''
+    Object.entries(map).forEach(([key, i]) => {
+      const isActive = (key === 'lessons' || key === 'quizzes')
+        ? segments[0] === key
+        : currentFile === key + '.html'
+      if (isActive) btns[i]?.classList.add('active')
+    })
+  })
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Login</title>
+  <link rel="stylesheet" href="/css/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="logo-icon">∑</span>
+      SigMath
+    </div>
+    <p class="auth-subtitle">Math made easier for Grade 8 students</p>
+
+    <div class="role-toggle">
+      <button class="role-btn active" id="studentBtn" onclick="setRole('student')">Student</button>
+      <button class="role-btn" id="teacherBtn" onclick="setRole('teacher')">Teacher</button>
+      <button class="role-btn" id="adminBtn" onclick="setRole('admin')" style="display:none">Admin</button>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="tab-btn active" id="loginTab" onclick="setTab('login')">Log In</button>
+      <button class="tab-btn" id="signupTab" onclick="setTab('signup')">Sign Up</button>
+    </div>
+
+    <div id="loginForm">
+      <input type="email" class="auth-input" id="loginEmail" placeholder="Email" />
+      <input type="password" class="auth-input" id="loginPassword" placeholder="Password" />
+      <div id="loginError" class="error-msg"></div>
+      <button class="auth-submit" onclick="handleLogin()">Log In</button>
+    </div>
+
+    <div id="signupForm" style="display:none">
+      <input type="text" class="auth-input" id="signupName" placeholder="Full Name" />
+      <input type="email" class="auth-input" id="signupEmail" placeholder="Email" />
+      <input type="password" class="auth-input" id="signupPassword" placeholder="Password" />
+      <input type="text" class="auth-input" id="classCodeInput" placeholder="Class Code (given by your teacher)" />
+      <input type="text" class="auth-input" id="teacherCodeInput" placeholder="Teacher Access Code" style="display:none" />
+      <div id="signupError" class="error-msg"></div>
+      <button class="auth-submit" onclick="handleSignup()">Sign Up</button>
+    </div>
+  </div>
+
+  <script>
+    let currentRole = 'student'
+
+    if (new URLSearchParams(location.search).has('admin')) {
+      document.getElementById('adminBtn').style.display = 'inline-block'
+    }
+
+    function setRole(role) {
+      currentRole = role
+      document.getElementById('studentBtn').classList.toggle('active', role === 'student')
+      document.getElementById('teacherBtn').classList.toggle('active', role === 'teacher')
+      document.getElementById('adminBtn').classList.toggle('active', role === 'admin')
+      const cc = document.getElementById('classCodeInput')
+      const tc = document.getElementById('teacherCodeInput')
+      if (cc) cc.style.display = (role === 'teacher' || role === 'admin') ? 'none' : 'block'
+      if (tc) {
+        tc.style.display = (role === 'teacher' || role === 'admin') ? 'block' : 'none'
+        tc.placeholder = role === 'admin' ? 'Admin Access Code' : 'Teacher Access Code'
+      }
+    }
+
+    function setTab(tab) {
+      document.getElementById('loginTab').classList.toggle('active', tab === 'login')
+      document.getElementById('signupTab').classList.toggle('active', tab === 'signup')
+      document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none'
+      document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none'
+    }
+
+    function setButtonLoading(btn, loading, originalText) {
+      btn.disabled = loading
+      btn.textContent = loading ? 'Please wait...' : originalText
+      btn.style.opacity = loading ? '0.7' : '1'
+    }
+
+    async function handleLogin() {
+      const email = document.getElementById('loginEmail').value
+      const password = document.getElementById('loginPassword').value
+      const errorDiv = document.getElementById('loginError')
+      const btn = document.querySelector('#loginForm .auth-submit')
+
+      if (!email || !password) {
+        errorDiv.textContent = 'Please fill in all fields.'
+        return
+      }
+
+      setButtonLoading(btn, true, 'Log In')
+      errorDiv.textContent = ''
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, role: currentRole })
+        })
+        const data = await res.json()
+
+        if (!data.success) {
+          errorDiv.textContent = data.message
+          setButtonLoading(btn, false, 'Log In')
+          return
+        }
+
+        localStorage.setItem('SigMath_user', JSON.stringify(data.user))
+        btn.textContent = 'Redirecting...'
+        if (data.user.role === 'student') {
+          window.location.href = '/dashboard.html'
+        } else if (data.user.role === 'admin') {
+          window.location.href = '/admin.html'
+        } else {
+          window.location.href = '/teacher.html'
+        }
+      } catch {
+        errorDiv.textContent = 'Something went wrong. Please try again.'
+        setButtonLoading(btn, false, 'Log In')
+      }
+    }
+
+    async function handleSignup() {
+      const full_name = document.getElementById('signupName').value
+      const email = document.getElementById('signupEmail').value
+      const password = document.getElementById('signupPassword').value
+      const class_code = document.getElementById('classCodeInput')?.value
+      const teacher_code = document.getElementById('teacherCodeInput')?.value
+      const errorDiv = document.getElementById('signupError')
+      const btn = document.querySelector('#signupForm .auth-submit')
+
+      if (!full_name || !email || !password) {
+        errorDiv.textContent = 'Please fill in all fields.'
+        return
+      }
+
+      if ((currentRole === 'teacher' || currentRole === 'admin') && !teacher_code) {
+        errorDiv.textContent = (currentRole === 'admin' ? 'Admin' : 'Teacher') + ' access code is required.'
+        return
+      }
+
+      setButtonLoading(btn, true, 'Sign Up')
+      errorDiv.textContent = ''
+
+      try {
+        const res = await fetch('/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name, email, password, role: currentRole, class_code, teacher_code })
+        })
+        const data = await res.json()
+
+        if (!data.success) {
+          errorDiv.textContent = data.message
+          setButtonLoading(btn, false, 'Sign Up')
+          return
+        }
+
+        showToast('Account created! You can now log in.', 'success')
+        setButtonLoading(btn, false, 'Sign Up')
+        setTab('login')
+      } catch {
+        errorDiv.textContent = 'Something went wrong. Please try again.'
+        setButtonLoading(btn, false, 'Sign Up')
+      }
+    }
+
+    function showToast(msg, type = 'error') {
+      const existing = document.getElementById('toastMsg')
+      if (existing) existing.remove()
+      const toast = document.createElement('div')
+      toast.id = 'toastMsg'
+      toast.textContent = msg
+      toast.style.cssText = `position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:${type === 'error' ? '#e53e3e' : '#38a169'}; color:white; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:bold; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); max-width:90vw; text-align:center;`
+      document.body.appendChild(toast)
+      setTimeout(() => toast.remove(), 4000)
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SigMath – Quizzes</title>
+  <link rel="stylesheet" href="/css/quizzes.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+  <style>
+    .lesson-item {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 12px rgba(24,95,165,0.08);
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex: 1;
+      min-width: 220px;
+    }
+    .lesson-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(24,95,165,0.12);
+    }
+    .lesson-item-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .lesson-item-info { flex: 1; }
+    .lesson-item-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #042C53;
+    }
+    .lesson-item-desc {
+      font-size: 13px;
+      color: #85B7EB;
+      margin-top: 2px;
+    }
+    .lesson-item-arrow {
+      font-size: 24px;
+      color: #185FA5;
+    }
+    @media (max-width: 768px) {
+      .lesson-item { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body class="dashboard-page">
+
+<div class="sidebar" id="sidebar">
+  <div id="sidebarContent"></div>
+</div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <h1><i class="ti ti-pencil"></i> Quizzes</h1>
+      <p>Choose your grade level</p>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:1rem;">
+    <!-- Foundation Card -->
+    <div class="lesson-item" onclick="location.href='/quizzes/foundation.html'">
+      <div class="lesson-item-icon" style="background:#E6F1FB;">🧮</div>
+      <div class="lesson-item-info">
+        <div class="lesson-item-title">Foundation</div>
+        <div class="lesson-item-desc">Basic math skills</div>
+      </div>
+      <div class="lesson-item-arrow">›</div>
+    </div>
+
+    <!-- Grade 8 -->
+    <div class="lesson-item" onclick="location.href='/quizzes/grade8.html'">
+      <div class="lesson-item-icon" style="background:#D1FAE5;">8️⃣</div>
+      <div class="lesson-item-info">
+        <div class="lesson-item-title">Grade 8</div>
+        <div class="lesson-item-desc">Number & Algebra, Geometry, Statistics</div>
+      </div>
+      <div class="lesson-item-arrow" style="color:#10B981;">›</div>
+    </div>
+
+
+<div id="bottomNavContainer"></div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || user.role !== 'student') window.location.href = '/'
+
+  fetch('/sidebar')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebarContent').innerHTML = html
+      document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('quizzes')) {
+          btn.classList.add('active')
+        }
+      })
+    })
+
+  fetch('/bottomnav')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('bottomNavContainer').innerHTML = html
+      const btns = document.querySelectorAll('.bottom-nav-btn')
+      btns.forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('quizzes')) {
+          btn.classList.add('active')
+        }
+      })
+    })
+</script>
+</body>
+</html>

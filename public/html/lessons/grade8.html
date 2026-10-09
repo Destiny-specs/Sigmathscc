@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade 8 Lessons – SigMath</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+  <script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+  <style>
+    .back-btn {
+      display: inline-block; background: white; border: 1px solid #B5D4F4;
+      padding: 8px 18px; border-radius: 10px; color: #185FA5; font-weight: 600;
+      text-decoration: none; font-size: 13px; margin-bottom: 1rem;
+    }
+    .back-btn:hover { background: #F0F5FC; }
+    .topic-tabs {
+      display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+    .topic-tab {
+      padding: 10px 20px; background: white; border: 1px solid #B5D4F4;
+      border-radius: 14px; color: #185FA5; font-weight: 700; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .topic-tab.active { background: #185FA5; color: white; border-color: #185FA5; }
+    .slide-viewer {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 0.5rem;
+    }
+    .slide-image {
+      background: white; border-radius: 20px; padding: 1rem;
+      box-shadow: 0 4px 16px rgba(24,95,165,0.06); border: 1px solid #E6F1FB;
+      display: flex; flex-direction: column; align-items: center;
+      position: relative;
+    }
+    .slide-image img {
+      max-width: 100%; max-height: 60vh; border-radius: 14px; object-fit: contain;
+      cursor: zoom-in;
+    }
+    .fullscreen-btn {
+      position: absolute; top: 1rem; right: 1rem; z-index: 2;
+      background: rgba(24,95,165,0.9); color: white; border: none;
+      width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: background 0.2s;
+    }
+    .fullscreen-btn:hover { background: #185FA5; }
+
+    /* Fullscreen lightbox for slide images */
+    .lightbox-overlay {
+      position: fixed; inset: 0; background: #000;
+      z-index: 3000; display: none; align-items: center; justify-content: center;
+    }
+    .lightbox-overlay.open { display: flex; }
+    /* When the browser puts this element into REAL fullscreen (edge-to-edge,
+       no address bar), some browsers reset background/sizing to their own
+       defaults - force it to stay full-size and keep our dark backdrop. */
+    .lightbox-overlay:fullscreen,
+    .lightbox-overlay:-webkit-full-screen,
+    .lightbox-overlay:-ms-fullscreen {
+      width: 100vw; height: 100vh;
+      background: #000;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lightbox-overlay img {
+      max-width: 100vw; max-height: 100vh; object-fit: contain;
+      user-select: none; -webkit-user-drag: none;
+    }
+    .lightbox-close {
+      position: absolute; top: 18px; right: 18px; background: rgba(255,255,255,0.12);
+      border: none; color: white; width: 38px; height: 38px; border-radius: 50%;
+      font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      z-index: 3020; transition: background 0.15s ease;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.25); }
+    .lightbox-num {
+      position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600;
+      background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 99px;
+      z-index: 3020; pointer-events: none;
+    }
+    /* Left/right halves of the screen - tap to go prev/next, like a slideshow */
+    .lightbox-zone {
+      position: absolute; top: 0; bottom: 0; width: 50%;
+      display: flex; align-items: center; z-index: 3010;
+      cursor: pointer; opacity: 0; transition: opacity 0.15s ease;
+      font-size: 32px; color: rgba(255,255,255,0.85);
+    }
+    .lightbox-zone:hover { opacity: 1; }
+    .lightbox-zone-left { left: 0; justify-content: flex-start; padding-left: 18px; background: linear-gradient(90deg, rgba(0,0,0,0.35), transparent); }
+    .lightbox-zone-right { right: 0; justify-content: flex-end; padding-right: 18px; background: linear-gradient(270deg, rgba(0,0,0,0.35), transparent); }
+    .lightbox-zone.disabled { cursor: default; opacity: 0 !important; pointer-events: none; }
+    .slide-controls {
+      display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 1rem;
+    }
+    .slide-controls button {
+      background: #F0F5FC; border: none; padding: 8px 20px; border-radius: 12px;
+      color: #185FA5; font-weight: 600; cursor: pointer; font-size: 14px;
+    }
+    .slide-controls button:disabled { opacity: 0.4; cursor: default; }
+    .slide-num {
+      font-size: 14px; font-weight: 600; color: #378ADD;
+    }
+    .custom-explanation {
+      background: #FFF9E6; border-left: 4px solid #FFA726;
+      border-radius: 0 14px 14px 0; padding: 1.2rem 1.5rem; height: fit-content;
+    }
+    .custom-explanation h4 { color: #E65100; margin-bottom: 0.8rem; }
+    /* Slide transition - replayed via JS by toggling this class */
+    .slide-anim {
+      animation: slideFadeIn 0.35s ease forwards;
+    }
+    @keyframes slideFadeIn {
+      from { opacity: 0; transform: translateX(14px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    /* AI chat panel */
+    .ai-chat-panel {
+      position: fixed; right: 0; top: 0; width: 360px; height: 100vh;
+      background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+      z-index: 1000; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.3s;
+      border-radius: 20px 0 0 20px; overflow: hidden;
+    }
+    .ai-chat-panel.open { transform: translateX(0); }
+    .ai-chat-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.2rem; border-bottom: 1px solid #E6F1FB;
+    }
+    .ai-chat-header h3 { margin: 0; color: #042C53; }
+    .ai-chat-messages {
+      flex: 1; overflow-y: auto; padding: 1rem; display: flex;
+      flex-direction: column; gap: 12px;
+    }
+    .ai-message {
+      max-width: 85%; padding: 12px 16px; border-radius: 16px;
+      font-size: 14px; line-height: 1.5;
+    }
+    .ai-message.user { align-self: flex-end; background: #185FA5; color: white; }
+    .ai-message.bot { align-self: flex-start; background: #F0F5FC; color: #042C53; }
+    .ai-chat-input {
+      display: flex; padding: 0.8rem; border-top: 1px solid #E6F1FB;
+    }
+    .ai-chat-input input {
+      flex: 1; padding: 10px 14px; border: 1.5px solid #B5D4F4;
+      border-radius: 12px; outline: none;
+    }
+    .ai-chat-input button {
+      margin-left: 8px; background: #185FA5; color: white;
+      border: none; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: pointer;
+    }
+    .open-ai-btn {
+      position: fixed; bottom: 30px; right: 30px; background: #185FA5;
+      color: white; border: none; border-radius: 50px; padding: 12px 24px;
+      font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(24,95,165,0.25);
+      z-index: 999;
+    }
+    /* AI message formatting */
+    .ai-message ul { margin-top: 6px; margin-bottom: 6px; }
+    .ai-message li { margin-bottom: 4px; }
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+    }
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #185FA5;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-8px); }
+    }
+    .ai-msg-avatar {
+      display: none; /* optional, we keep it clean */
+    }
+    @media (max-width: 768px) {
+      .slide-viewer { grid-template-columns: 1fr; }
+      .ai-chat-panel { width: 100%; border-radius: 0; }
+    }
+  </style>
+</head>
+<body class="dashboard-page">
+<div class="sidebar" id="sidebar"><div id="sidebarContent"></div></div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <a href="/lessons/" class="back-btn">← Back to Lessons</a>
+      <h1><i class="ti ti-book"></i> Grade 8 – Teacher's Lessons</h1>
+      <p>Flip through the slides + custom explanations + ask AI for help</p>
+    </div>
+  </div>
+
+  <!-- Topic Tabs -->
+  <div class="topic-tabs">
+    <button class="topic-tab active" onclick="switchTopic('alg')">📐 Algebraic Expressions</button>
+    <button class="topic-tab" onclick="switchTopic('poly')">🧮 Polynomials</button>
+    <button class="topic-tab" onclick="switchTopic('cti')">📊 Introduction to Central Tendency</button>
+    <button class="topic-tab" onclick="switchTopic('cta')">📈 Applying Central Tendency</button>
+  </div>
+
+  <!-- ALGEBRAIC EXPRESSIONS -->
+  <div id="algViewer" class="slide-viewer">
+    <div class="slide-image">
+      <button class="fullscreen-btn" onclick="openFullscreen('alg')" title="View fullscreen"><i class="ti ti-maximize"></i></button>
+      <img id="algSlideImg" src="" alt="Slide" onclick="openFullscreen('alg')">
+      <div class="slide-controls">
+        <button onclick="changeSlide('alg', -1)">← Prev</button>
+        <span class="slide-num" id="algSlideNum">1 / 11</span>
+        <button onclick="changeSlide('alg', 1)">Next →</button>
+      </div>
+    </div>
+    <div class="custom-explanation" id="algExplanation"></div>
+  </div>
+
+  <!-- POLYNOMIALS (hidden) -->
+  <div id="polyViewer" class="slide-viewer" style="display:none;">
+    <div class="slide-image">
+      <button class="fullscreen-btn" onclick="openFullscreen('poly')" title="View fullscreen"><i class="ti ti-maximize"></i></button>
+      <img id="polySlideImg" src="" alt="Slide" onclick="openFullscreen('poly')">
+      <div class="slide-controls">
+        <button onclick="changeSlide('poly', -1)">← Prev</button>
+        <span class="slide-num" id="polySlideNum">1 / 11</span>
+        <button onclick="changeSlide('poly', 1)">Next →</button>
+      </div>
+    </div>
+    <div class="custom-explanation" id="polyExplanation"></div>
+  </div>
+
+  <!-- INTRO TO CENTRAL TENDENCY (hidden) -->
+  <div id="ctiViewer" class="slide-viewer" style="display:none;">
+    <div class="slide-image">
+      <button class="fullscreen-btn" onclick="openFullscreen('cti')" title="View fullscreen"><i class="ti ti-maximize"></i></button>
+      <img id="ctiSlideImg" src="" alt="Slide" onclick="openFullscreen('cti')">
+      <div class="slide-controls">
+        <button onclick="changeSlide('cti', -1)">← Prev</button>
+        <span class="slide-num" id="ctiSlideNum">1 / 14</span>
+        <button onclick="changeSlide('cti', 1)">Next →</button>
+      </div>
+    </div>
+    <div class="custom-explanation" id="ctiExplanation"></div>
+  </div>
+
+  <!-- APPLYING CENTRAL TENDENCY (hidden) -->
+  <div id="ctaViewer" class="slide-viewer" style="display:none;">
+    <div class="slide-image">
+      <button class="fullscreen-btn" onclick="openFullscreen('cta')" title="View fullscreen"><i class="ti ti-maximize"></i></button>
+      <img id="ctaSlideImg" src="" alt="Slide" onclick="openFullscreen('cta')">
+      <div class="slide-controls">
+        <button onclick="changeSlide('cta', -1)">← Prev</button>
+        <span class="slide-num" id="ctaSlideNum">1 / 10</span>
+        <button onclick="changeSlide('cta', 1)">Next →</button>
+      </div>
+    </div>
+    <div class="custom-explanation" id="ctaExplanation"></div>
+  </div>
+</div>
+
+<!-- Fullscreen slide lightbox -->
+<div class="lightbox-overlay" id="lightboxOverlay">
+  <button class="lightbox-close" onclick="closeFullscreen()" title="Close (Esc)">✕</button>
+  <span class="lightbox-num" id="lightboxNum">1 / 11</span>
+  <img id="lightboxImg" src="" alt="Slide fullscreen">
+  <div class="lightbox-zone lightbox-zone-left" id="lightboxZoneLeft" title="Previous slide"><i class="ti ti-chevron-left"></i></div>
+  <div class="lightbox-zone lightbox-zone-right" id="lightboxZoneRight" title="Next slide"><i class="ti ti-chevron-right"></i></div>
+</div>
+
+<!-- Floating AI chat button -->
+<button class="open-ai-btn" onclick="toggleAIChat()"><i class="ti ti-robot"></i> Ask AI</button>
+
+<!-- AI Chat Panel -->
+<div class="ai-chat-panel" id="aiChatPanel">
+  <div class="ai-chat-header">
+    <h3><i class="ti ti-robot"></i> AI Tutor</h3>
+    <button onclick="toggleAIChat()" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+  </div>
+  <div class="ai-chat-messages" id="aiChatMessages"></div>
+  <div class="ai-chat-input">
+    <input type="text" id="aiInput" placeholder="Ask about this slide..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+    <button onclick="sendAIMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  console.log('✅ Grade 8 lesson script active (11 slides each)');
+
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || (user.role !== 'student' && user.role !== 'teacher')) window.location.href = '/'
+
+  // ---------- Slide Data (11 slides each) ----------
+  const slides = {
+    alg: [
+      {
+        img: '/img/slides/algebraic-slide1.PNG',
+        explanation: `<h4>Welcome to Algebra!</h4><p>Today, we’re going to learn how to turn real-life situations into math problems. This is super useful because it helps us solve problems about money, travel, and more using simple math rules. Let's get started!</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide2.PNG',
+        explanation: `<h4>Our Goals for Today</h4><p>By the end of this lesson, you will be able to:<ul><li>Define what an algebraic expression is.</li><li>Spot real-life problems that can be written as algebraic expressions.</li><li>Change word phrases into algebraic expressions.</li></ul>This is your roadmap for the lesson!</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide3.PNG',
+        explanation: `<h4>What is an Algebraic Expression?</h4><p>An algebraic expression is like a math sentence that uses numbers, letters (called variables), and operation signs like +, -, ×, and ÷. It doesn't have an equals sign (that would be an equation). For example, <strong>3x + 5</strong> is an expression.</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide4.PNG',
+        explanation: `<h4>The Parts of an Expression</h4><p>An algebraic expression has different parts. For example, in <strong>3x + 5</strong>:<ul><li><strong>3x</strong> and <strong>5</strong> are called <strong>terms</strong>.</li><li>The number <strong>3</strong> is a <strong>coefficient</strong> (it's a number multiplied by a variable).</li><li>The letter <strong>x</strong> is a <strong>variable</strong> (it stands for an unknown number we can change).</li><li>The number <strong>5</strong> is a <strong>constant</strong> (its value stays the same).</li></ul>Knowing these parts helps you understand how an expression is built.</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide5.PNG',
+        explanation: `<h4>From Words to Math</h4><p>The biggest skill you'll learn today is translating words into math. When you see phrases like "base fare" or "savings," you'll turn them into a math expression. It's like being a translator, but for math!</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide6.PNG',
+        explanation: `<h4>Let's Look at an Example!</h4><p>Imagine you're riding a tricycle. It costs a base fare of ₱15 and then ₱3 for every kilometer you travel. To write this as an expression, let <strong>k</strong> be the number of kilometers.<ul><li>The base fare (₱15) is a constant.</li><li>The cost per kilometer is <strong>3k</strong> (₱3 times the number of kilometers).</li></ul>So, the total cost is <strong>15 + 3k</strong>. See? That's the whole ride in one math sentence!</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide7.PNG',
+        explanation: `<h4>Example: Saving Money</h4><p>Let's say you have ₱150 in savings and you add ₱20 every day.<ul><li>Your starting amount (₱150) is a constant.</li><li>The amount you add after a certain number of days (d) is <strong>20d</strong>.</li></ul>The total amount you have after <strong>d</strong> days is <strong>150 + 20d</strong>. This is a great example of an expression that changes based on the number of days!</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide8.PNG',
+        explanation: `<h4>Example: Saving Money (Review)</h4><p>Let's look at that savings example one more time. The key is to identify the fixed amount (₱150) and the variable part that depends on the number of days (<strong>20d</strong>). Putting them together gives you <strong>150 + 20d</strong>.</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide9.PNG',
+        explanation: `<h4>Your Turn! (Seatwork)</h4><p>Now it's your time to practice! You'll write algebraic expressions for five different real-life situations.<ul><li>Read each problem carefully.</li><li>Identify the constant value and the variable.</li><li>Put them together to form the expression.</li></ul>Use the tips from the examples we just did. You've got this!</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide10.PNG',
+        explanation: `<h4>Let's Check Your Answers!</h4><p>Here are the answers to the seatwork. Check your work to see how you did!<ol><li><strong>12 + 2k</strong> (Jeepney fare)</li><li><strong>20 + 5p</strong> (Printing shop)</li><li><strong>15 + 35b</strong> (Burger delivery)</li><li><strong>100 + 25w</strong> (Savings)</li><li><strong>50 + 3t</strong> (Cellphone promo)</li></ol>Great job! Did you notice the pattern? It’s usually a fixed number plus a variable amount.</p>`
+      },
+      {
+        img: '/img/slides/algebraic-slide11.PNG',
+        explanation: `<h4>Great Work!</h4><p>That's all for today's lesson on algebraic expressions. You learned how to define them and translate real-life situations into math. Keep practicing this skill—it's the foundation for so much more in algebra!</p>`
+      }
+    ],
+    poly: [
+      {
+        img: '/img/slides/polynomials-slide1.PNG',
+        explanation: `<h4>Welcome to Polynomials!</h4><p>Today, we're going to learn about a special group of algebraic expressions called polynomials. They're like the building blocks of algebra, and they come in different shapes and sizes. Let's dive in!</p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide2.PNG',
+        explanation: `<h4>Our Goals for Today</h4><p>Here's what we're going to learn:<ul><li>What makes a math expression a polynomial.</li><li>The difference between a monomial, binomial, and trinomial.</li><li>How to tell if a given expression is a polynomial or not.</li></ul>This will help you identify and name different types of expressions.</p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide3.PNG',
+        explanation: `<h4>What is a Polynomial?</h4><p>A polynomial is an algebraic expression made up of one or more terms. Think of it as a math sentence that can have variables, numbers, and exponents (but not negative exponents or variables in the denominator). For example, <strong>2x² + 3x - 1</strong> is a polynomial.</p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide4.PNG',
+        explanation: `<h4>Monomial: One Term</h4><p>A monomial is a polynomial that has only <strong>one term</strong>. It's the simplest type of polynomial.<ul><li>It can be a single number (like <strong>5</strong>), a variable (like <strong>x</strong>), or a number times a variable (like <strong>3y</strong>).</li><li>It can even have exponents, like <strong>4x³</strong>.</li></ul>The key is that there is no addition or subtraction sign inside it.</p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide5.PNG',
+        explanation: `<h4>Binomial: Two Terms</h4><p>A binomial is a polynomial that has exactly <strong>two terms</strong>, separated by a plus or minus sign. Can you guess what "bi" means? That's right, "two"!<ul><li>Examples include <strong>x + 2</strong> and <strong>3x² - 5</strong>.</li><li>The terms are not combined; they are separate parts of the expression.</li></ul></p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide6.PNG',
+        explanation: `<h4>Trinomial: Three Terms</h4><p>A trinomial is a polynomial that has exactly <strong>three terms</strong>, separated by plus or minus signs. "Tri" stands for "three".<ul><li>A classic example is <strong>x² + 5x + 6</strong> (which has three terms: x², 5x, and 6).</li><li>Another one is <strong>x⁵ - x² + 1</strong>.</li></ul></p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide7.PNG',
+        explanation: `<h4>The Degree of a Polynomial</h4><p>The degree of a polynomial is the highest exponent found on any of its terms. Let's find the degree of these trinomials:<ul><li><strong>x² + 5x + 6</strong> has a highest exponent of 2 → degree <strong>2</strong>.</li><li><strong>4x³ - 2x + 7</strong> has a highest exponent of 3 → degree <strong>3</strong>.</li><li><strong>x⁵ - x² + 1</strong> has degree <strong>5</strong>.</li><li><strong>x²y⁴ + xy + 3</strong>: For terms with multiple variables, add their exponents (2+4=6) → degree <strong>6</strong>.</li></ul>The degree tells you the "power" of the polynomial.</p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide8.PNG',
+        explanation: `<h4>Polynomial vs. Not Polynomial</h4><p>Not every algebraic expression is a polynomial. We need to be careful!<ul><li>A <strong>polynomial</strong> cannot have variables in the denominator (like <strong>2/x</strong>) or negative exponents (like <strong>x⁻¹</strong>).</li><li>An expression like <strong>x² + 2x + 1</strong> is a polynomial, but <strong>x + 1/x</strong> is not because the variable is in the denominator.</li></ul>Learning this helps us identify the true polynomials.</p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide9.PNG',
+        explanation: `<h4>Let's Practice! (Seatwork)</h4><p>Now it's your turn. You'll be given a list of algebraic expressions, and you need to decide if they are polynomials or not. Remember the rules: no variables in the denominator and no negative exponents. Think carefully and classify each one.</p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide10.PNG',
+        explanation: `<h4>A Time to Reflect</h4><p>Just as we learned about the different terms in a polynomial, we are reminded of the importance of taking on challenges step by step. Like Mother Francisca, who was humble and decisive, we should be open to learning new things, even when they seem difficult at first. You are all doing great!</p>`
+      },
+      {
+        img: '/img/slides/polynomials-slide11.PNG',
+        explanation: `<h4>Thank You!</h4><p>That's all for our lesson on polynomials! You learned about monomials, binomials, trinomials, and how to find their degree. Great job today, and keep up the good work in math!</p>`
+      }
+    ],
+    cti: [
+      {
+        img: '/img/slides/central-tendency-intro-slide1.PNG',
+        explanation: `<h4>Welcome!</h4><p>Today we're diving into <strong>Measures of Central Tendency</strong> — mean, median, and mode. These are powerful tools that help us describe and summarize a whole data set using just one number!</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide2.PNG',
+        explanation: `<h4>Our Goals for Today</h4><p>Today's goals: define mean, median, and mode; differentiate them; and calculate them for ungrouped data.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide3.PNG',
+        explanation: `<h4>Class Data Survey</h4><p>We'll start by collecting data from the class! Each group will share their favorite snacks, and we'll use this data to explore mean, median, and mode.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide4.PNG',
+        explanation: `<h4>What is a Measure of Central Tendency?</h4><p>A measure of central tendency is a single number that describes the center of a data set. The three main measures are <strong>mean</strong>, <strong>median</strong>, and <strong>mode</strong>.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide5.PNG',
+        explanation: `<h4>The Mean</h4><p>The mean is the arithmetic average. You find it by adding all values together and dividing by the total count. It's represented by the symbol <strong>x̄</strong>.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide6.PNG',
+        explanation: `<h4>Mean Example</h4><p>The scores of 10 students are 90, 84, 95, 85, 96, 84, 92, 85, 97, 85.<ul><li>Sum = 893</li><li>893 ÷ 10 = <strong>89.3</strong></li></ul>The mean is <strong>89.3</strong>.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide7.PNG',
+        explanation: `<h4>The Median</h4><p>The median is the middle value when data is arranged in numerical order. It's sometimes called the midpoint value, represented by <strong>x̃</strong>.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide8.PNG',
+        explanation: `<h4>Median Example</h4><p>For the same scores, arrange them in order: 84, 84, 85, 85, 85, 90, 92, 95, 96, 97.<ul><li>Since there are 10 values, the median is the average of the 5th and 6th values.</li><li>(85 + 90) ÷ 2 = <strong>87.5</strong></li></ul></p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide9.PNG',
+        explanation: `<h4>The Mode</h4><p>The mode is the most frequent or most common value. A data set can have one mode (<strong>unimodal</strong>), two modes (<strong>bimodal</strong>), multiple modes (<strong>multimodal</strong>), or no mode.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide10.PNG',
+        explanation: `<h4>Mode Example</h4><p>In the scores data, <strong>85</strong> appears three times, which is more than any other value. So the mode is <strong>85</strong>.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide11.PNG',
+        explanation: `<h4>Quick Check!</h4><p>Now it's your turn! Find the mean, median, and mode for each of these data sets. Take your time and apply what we just learned.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide12.PNG',
+        explanation: `<h4>Quick Check (continued)</h4><p>Let's keep going with more practice problems. Don't forget to order the data first before finding the median.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide13.PNG',
+        explanation: `<h4>Key Takeaways</h4><p>Mean is the average, Median is the middle value, Mode is the most frequent. They all help describe a data set in different ways.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-intro-slide14.PNG',
+        explanation: `<h4>Great Job!</h4><p>You now know how to find and interpret the mean, median, and mode of a data set. Keep practicing — these skills come up everywhere in real life!</p>`
+      }
+    ],
+    cta: [
+      {
+        img: '/img/slides/central-tendency-apply-slide1.PNG',
+        explanation: `<h4>Welcome Back!</h4><p>Today we'll apply what we learned about mean, median, and mode to real-life data and situations.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide2.PNG',
+        explanation: `<h4>Our Goals for Today</h4><p>Today we'll learn to interpret statistical data using mean, median, and mode, draw conclusions, and explain their importance in real-life.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide3.PNG',
+        explanation: `<h4>Quick Recap</h4><p>Let's quickly recap! Mean is the average, Median is the middle, Mode is the most frequent. Now apply these to the following data sets.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide4.PNG',
+        explanation: `<h4>Data Sets 1 & 2</h4><p>Find the mean, median, and mode for:<ul><li>(Set 1) 65, 75, 78, 73, 71, 59, 64, 74</li><li>(Set 2) 5.6, 7.4, 6.6, 8.8, 5.8, 6.3, 7.4, 4.2, 5.8</li></ul></p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide5.PNG',
+        explanation: `<h4>Data Sets 3, 4, 5</h4><p>More data to analyze!<ul><li>(Set 3) Basketball players' ages: 20, 15, 20, 22, 18, 17, 19, 19, 20, 21, 20, 20</li><li>(Set 4) Snack costs: 120, 100, 107, 115, 130, 150, 120</li><li>(Set 5) Math exam scores: 82, 82, 75, 78, 96, 92, 91, 96</li></ul></p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide6.PNG',
+        explanation: `<h4>Real-Life Scenario</h4><p>Imagine you manage a shoe store. Yesterday you sold shoe sizes: 36, 37, 37, 38, 39, 40, 45. Let's find the mean, median, and mode to understand what sizes are most popular.</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide7.PNG',
+        explanation: `<h4>The Solution</h4><p><strong>Mean:</strong> 38.86. <strong>Median:</strong> 38. <strong>Mode:</strong> 37. The mode tells us the most popular size, which is important for inventory!</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide8.PNG',
+        explanation: `<h4>Check Your Answers</h4><p>Let's check the recap answers:<ul><li>Set 1: mean=69.9, median=72, mode=no mode</li><li>Set 2: mean=6.57, median=6.3, mode=5.8, 7.4 (bimodal)</li><li>Set 3: mean=19.25, median=19.5, mode=20</li><li>Set 4: mean=120.3, median=120, mode=120</li><li>Set 5: mean=86.5, median=87, mode=82, 96 (bimodal)</li></ul></p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide9.PNG',
+        explanation: `<h4>Which One Should You Use?</h4><p>Each measure is useful in different situations. Mean works best for symmetric data, Median is best for skewed data, and Mode is best for categorical data. Knowing which to use is key!</p>`
+      },
+      {
+        img: '/img/slides/central-tendency-apply-slide10.PNG',
+        explanation: `<h4>Great Work Today!</h4><p>That wraps up our lesson on applying measures of central tendency! You've practiced calculating and interpreting mean, median, and mode using real data.</p>`
+      }
+    ]
+  };
+
+  let currentSlide = { alg: 0, poly: 0, cti: 0, cta: 0 };
+  let currentTopic = 'alg';
+
+  function updateSlide(topic) {
+    const slideData = slides[topic][currentSlide[topic]];
+    const img = document.getElementById(`${topic}SlideImg`);
+    const num = document.getElementById(`${topic}SlideNum`);
+    const expl = document.getElementById(`${topic}Explanation`);
+    if (!img || !num || !expl) return;
+    num.textContent = `${currentSlide[topic] + 1} / ${slides[topic].length}`;
+    expl.innerHTML = slideData.explanation;
+
+    // Explanation text is always local/instant, so animate it right away
+    expl.classList.remove('slide-anim');
+    void expl.offsetWidth;
+    expl.classList.add('slide-anim');
+
+    // The slide image can be 1MB+ and take a while over a real connection.
+    // Hide it, swap the src, and only play the slide-in animation once it has
+    // actually finished loading - otherwise the animation plays over a blank
+    // box and finishes before the image is even visible, looking like nothing happened.
+    img.classList.remove('slide-anim');
+    img.style.opacity = '0';
+    img.onload = () => {
+      img.style.opacity = ''
+      img.classList.remove('slide-anim');
+      void img.offsetWidth;
+      img.classList.add('slide-anim');
+    };
+    img.src = slideData.img;
+  }
+
+  function changeSlide(topic, direction) {
+    const total = slides[topic].length;
+    currentSlide[topic] = Math.min(Math.max(currentSlide[topic] + direction, 0), total - 1);
+    updateSlide(topic);
+    if (fullscreenTopic === topic) updateLightbox();
+  }
+
+  // ---------- Fullscreen slide lightbox ----------
+  let fullscreenTopic = null;
+
+  function updateLightbox() {
+    const topic = fullscreenTopic;
+    if (!topic) return;
+    const slideData = slides[topic][currentSlide[topic]];
+    document.getElementById('lightboxImg').src = slideData.img;
+    document.getElementById('lightboxNum').textContent = `${currentSlide[topic] + 1} / ${slides[topic].length}`;
+    document.getElementById('lightboxZoneLeft').classList.toggle('disabled', currentSlide[topic] === 0);
+    document.getElementById('lightboxZoneRight').classList.toggle('disabled', currentSlide[topic] === slides[topic].length - 1);
+  }
+
+  function openFullscreen(topic) {
+    fullscreenTopic = topic;
+    updateLightbox();
+    const overlay = document.getElementById('lightboxOverlay');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    // Try to go truly fullscreen (hides browser chrome/address bar too),
+    // falling back silently to the fixed overlay if the browser/device
+    // doesn't support or allow it (e.g. some iOS Safari versions).
+    const requestFS = overlay.requestFullscreen || overlay.webkitRequestFullscreen || overlay.msRequestFullscreen;
+    if (requestFS) {
+      requestFS.call(overlay).catch(() => {});
+    }
+  }
+
+  function closeFullscreen() {
+    fullscreenTopic = null;
+    document.getElementById('lightboxOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+
+    const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+    if (exitFS && (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement)) {
+      exitFS.call(document).catch(() => {});
+    }
+  }
+
+  // If the user exits fullscreen via the browser's own controls/gesture
+  // (Esc key, swipe down, back button, etc.), close our overlay too so
+  // state stays in sync instead of leaving a dark screen with no image.
+  ['fullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange'].forEach(evt => {
+    document.addEventListener(evt, () => {
+      const stillFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+      if (!stillFullscreen && fullscreenTopic) {
+        fullscreenTopic = null;
+        document.getElementById('lightboxOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+
+  function lightboxChange(direction) {
+    if (!fullscreenTopic) return;
+    changeSlide(fullscreenTopic, direction);
+  }
+
+  // Tap/click left half = previous slide, right half = next slide
+  document.getElementById('lightboxZoneLeft').addEventListener('click', () => lightboxChange(-1));
+  document.getElementById('lightboxZoneRight').addEventListener('click', () => lightboxChange(1));
+
+  document.addEventListener('keydown', (e) => {
+    if (!fullscreenTopic) return;
+    if (e.key === 'Escape') closeFullscreen();
+    if (e.key === 'ArrowLeft') lightboxChange(-1);
+    if (e.key === 'ArrowRight') lightboxChange(1);
+  });
+
+  function switchTopic(topic) {
+    document.querySelectorAll('.slide-viewer').forEach(v => v.style.display = 'none');
+    document.getElementById(`${topic}Viewer`).style.display = 'grid';
+    document.querySelectorAll('.topic-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.topic-tab[onclick="switchTopic('${topic}')"]`).classList.add('active');
+    currentTopic = topic;
+    updateSlide(topic);
+  }
+
+  updateSlide('alg');
+
+  // ---------- AI Chat (copied from aitutor.html) ----------
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatText(text) {
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function appendMsg(text, sender) {
+    const box = document.getElementById('aiChatMessages');
+    const msg = document.createElement('div');
+    msg.className = `ai-message ${sender}`;
+    msg.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ${sender === 'bot' ? 'ti-robot' : 'ti-user'}"></i></div>
+      <div class="ai-bubble">${sender === 'bot' ? formatText(text) : escapeHtml(text)}</div>
+    `;
+    box.appendChild(msg);
+    if (typeof MathJax !== 'undefined') {
+      MathJax.typesetPromise();
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function showTyping() {
+    const box = document.getElementById('aiChatMessages');
+    const typing = document.createElement('div');
+    typing.className = 'ai-message bot';
+    typing.id = 'typingIndicator';
+    typing.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ti-robot"></i></div>
+      <div class="ai-bubble" style="padding:0;">
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+    box.appendChild(typing);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function removeTyping() {
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
+  }
+
+  let aiOpen = false;
+  function toggleAIChat() {
+    aiOpen = !aiOpen;
+    document.getElementById('aiChatPanel').classList.toggle('open', aiOpen);
+  }
+
+  async function sendAIMessage() {
+    const input = document.getElementById('aiInput');
+    const btn = document.querySelector('.ai-chat-input button');
+    const msg = input.value.trim();
+    if (!msg || btn.disabled) return;
+
+    appendMsg(msg, 'user');
+    input.value = '';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i>';
+    showTyping();
+
+    const slideData = slides[currentTopic][currentSlide[currentTopic]];
+    const slideTitle = slideData.explanation.match(/<h4>(.*?)<\/h4>/)?.[1] || 'current slide';
+    const slideText = slideData.explanation.replace(/<[^>]*>/g, '');
+    const context = `The student is viewing a Grade 8 math slide titled "${slideTitle}". The slide explanation is: "${slideText}". Answer the student's question based on this slide content. Keep your answer short and friendly. Use bullet points if helpful.`;
+
+    try {
+      const res = await fetch('/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: context },
+            { role: 'user', content: msg }
+          ]
+        })
+      });
+      const data = await res.json();
+      removeTyping();
+      if (data.success) {
+        appendMsg(data.answer, 'bot');
+      } else {
+        appendMsg(data.answer || 'Something went wrong. Please try again.', 'bot');
+      }
+    } catch {
+      removeTyping();
+      appendMsg('Something went wrong. Please check your connection and try again.', 'bot');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Send';
+    input.focus();
+  }
+
+  // Load sidebar & bottom nav
+  fetch('/sidebar?role=' + user.role).then(r => r.text()).then(h => {
+    document.getElementById('sidebarContent').innerHTML = h;
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('lessons')) btn.classList.add('active');
+    });
+  });
+  fetch('/bottomnav?role=' + user.role).then(r => r.text()).then(h => {
+    document.getElementById('bottomNavContainer').innerHTML = h;
+    document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('lessons')) btn.classList.add('active');
+    });
+  });
+</script>
+<div id="bottomNavContainer"></div>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Lessons</title>
+  <link rel="stylesheet" href="/css/lessons.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+  <!-- No inline style – all styles come from global CSS -->
+</head>
+<body class="dashboard-page">
+
+<div class="sidebar" id="sidebar">
+  <div id="sidebarContent"></div>
+</div>
+
+<!-- Bottom nav is injected here -->
+<div id="bottomNavContainer"></div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <h1><i class="ti ti-book"></i> Lessons</h1>
+      <p>Choose your grade level</p>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:1rem;">
+    <!-- Grade 8 -->
+    <div class="lesson-item" style="flex:1; min-width:220px; cursor:pointer; padding:2rem; border-radius:16px; background:white; box-shadow:0 2px 12px rgba(16,185,129,0.08); align-items:center; gap:1.5rem;" onclick="location.href='/lessons/grade8.html'">
+      <div class="lesson-item-icon" style="background:#D1FAE5; width:56px; height:56px; font-size:24px; border-radius:14px; display:flex; align-items:center; justify-content:center;">8️⃣</div>
+      <div class="lesson-item-info">
+        <div class="lesson-item-title" style="font-size:18px;">Grade 8</div>
+        <div class="lesson-item-desc">Number & Algebra, Geometry, Statistics & Probability</div>
+      </div>
+      <div class="lesson-item-arrow" style="font-size:24px; color:#10B981;">›</div>
+    </div>
+
+    <!-- Basic Foundation -->
+    <div class="lesson-item" style="flex:1; min-width:220px; cursor:pointer; padding:2rem; border-radius:16px; background:white; box-shadow:0 2px 12px rgba(24,95,165,0.08); align-items:center; gap:1.5rem;" onclick="location.href='/lessons/foundation.html'">
+      <div class="lesson-item-icon" style="background:#E6F1FB; width:56px; height:56px; font-size:24px; border-radius:14px; display:flex; align-items:center; justify-content:center;">🧮</div>
+      <div class="lesson-item-info">
+        <div class="lesson-item-title" style="font-size:18px;">Basic Foundation</div>
+        <div class="lesson-item-desc">Master essential skills before Grade 8</div>
+      </div>
+      <div class="lesson-item-arrow" style="font-size:24px; color:#185FA5;">›</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || (user.role !== 'student' && user.role !== 'teacher')) window.location.href = '/'
+  function logout() {
+    localStorage.removeItem('SigMath_user')
+    window.location.href = '/'
+  }
+</script>
+
+<script>
+  // Sidebar active state
+  fetch('/sidebar?role=' + user.role)
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebarContent').innerHTML = html
+      const path = location.pathname.replace(/\/$/, '')
+      document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        const onclick = btn.getAttribute('onclick') || ''
+        const match = onclick.match(/location\.href=['"]([^'"]+)['"]/)
+        if (match) {
+          const btnUrl = match[1]
+          if (path.endsWith(btnUrl)) {
+            btn.classList.add('active')
+          }
+        }
+      })
+    })
+
+  // Bottom nav – exact match (no inline style conflict now)
+  fetch('/bottomnav?role=' + user.role)
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('bottomNavContainer').innerHTML = html
+      const btns = document.querySelectorAll('.bottom-nav-btn')
+      if (user.role === 'teacher') {
+        // Teacher nav: Home, Lessons, Students, Class, Profile, Private
+        btns[1]?.classList.add('active')
+        return
+      }
+      const path = location.pathname.replace(/\/$/, '')
+      const map = {
+        'dashboard': 0, 'lessons': 1, 'quizzes': 2,
+        'games': 3, 'flashcards': 4, 'aitutor': 5,
+        'chat': 6, 'private-chat': 7, 'leaderboard': 8, 'profile': 9
+      }
+      // Exact match, not substring match: "private-chat.html" also matched
+      // the "chat" key under the old logic since it ends with "chat.html" too.
+      const segments = path.split('/').filter(Boolean)
+      const currentFile = segments[segments.length - 1] || ''
+      Object.entries(map).forEach(([key, i]) => {
+        const isActive = (key === 'lessons' || key === 'quizzes')
+          ? segments[0] === key
+          : currentFile === key + '.html'
+        if (isActive) btns[i]?.classList.add('active')
+      })
+    })
+</script>
+</body>
+</html>

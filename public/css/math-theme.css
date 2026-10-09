@@ -1,0 +1,588 @@
+/* ============================================================
+   SIGMATH – GAME MODE MATH THEME (neon purple, no floating formulas)
+   ============================================================ */
+
+/* ---------- Base & Typography ---------- */
+body.game-mode {
+  font-family: 'Courier New', Courier, monospace;
+  background: #fef9e7;
+  color: #042C53;
+  background-image:
+    linear-gradient(90deg, rgba(24,95,165,0.08) 1px, transparent 1px),
+    linear-gradient(rgba(24,95,165,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridPulse 10s infinite alternate;
+}
+
+@keyframes gridPulse {
+  0%   { background-size: 40px 40px; }
+  100% { background-size: 44px 44px; }
+}
+
+/* =================== NEON PURPLE DARK MODE =================== */
+body.game-mode.dark-mode {
+  background: #0b0b1a;
+  background-image:
+    linear-gradient(90deg, rgba(180, 77, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(rgba(180, 77, 255, 0.25) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: neonGridPulse 4s infinite alternate;
+  color: #e0e8d8;
+}
+
+@keyframes neonGridPulse {
+  0%   { background-size: 40px 40px; }
+  100% { background-size: 44px 44px; }
+}
+
+/* Neon glow overlay (subtle) */
+body.game-mode.dark-mode::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(180, 77, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(180, 77, 255, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- FLOATING MATH SYMBOLS (large symbols, not formulas) ---------- */
+body.game-mode .main-content::after {
+  content: '√';
+  position: fixed;
+  bottom: 120px;
+  right: 50px;
+  font-size: 140px;
+  color: rgba(180, 77, 255, 0.15);
+  text-shadow: 0 0 20px #b44dff, 0 0 40px #b44dff;
+  font-family: 'Courier New', monospace;
+  pointer-events: none;
+  z-index: 1;
+  animation: floatRoot 30s infinite ease-in-out;
+}
+
+@keyframes floatRoot {
+  0%   { bottom: 20%; right: 10%; transform: rotate(0deg); }
+  50%  { bottom: 80%; right: 80%; transform: rotate(180deg); }
+  100% { bottom: 20%; right: 10%; transform: rotate(360deg); }
+}
+
+/* ---------- BOLDER HEADERS (game identity) ---------- */
+body.game-mode h1,
+body.game-mode h2,
+body.game-mode .card-title,
+body.game-mode .badges-title,
+body.game-mode .topic-name {
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+body.game-mode h1 {
+  text-shadow: 2px 2px 0 rgba(24,95,165,0.15);
+}
+
+body.game-mode.dark-mode h1,
+body.game-mode.dark-mode h2 {
+  text-shadow: 0 0 10px rgba(180, 77, 255, 0.5);
+}
+
+/* ---------- STARFIELD PARTICLES (dark game mode) ---------- */
+body.game-mode.dark-mode {
+  background-image:
+    linear-gradient(90deg, rgba(180, 77, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(rgba(180, 77, 255, 0.25) 1px, transparent 1px),
+    radial-gradient(2px 2px at 10% 15%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(2px 2px at 32% 68%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 55% 24%, rgba(180,77,255,0.8), transparent),
+    radial-gradient(1.5px 1.5px at 72% 78%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 88% 40%, rgba(180,77,255,0.7), transparent),
+    radial-gradient(1.5px 1.5px at 20% 88%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 95% 12%, rgba(255,255,255,0.6), transparent);
+  background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px, 200px 200px, 200px 200px, 200px 200px, 200px 200px, 200px 200px;
+  animation: neonGridPulse 4s infinite alternate, starTwinkle 3s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+body.game-mode .sidebar::before {
+  content: '∫';
+  position: fixed;
+  top: 50%;
+  left: 5%;
+  font-size: 100px;
+  color: rgba(180, 77, 255, 0.15);
+  text-shadow: 0 0 20px #b44dff, 0 0 40px #b44dff;
+  font-family: 'Courier New', monospace;
+  pointer-events: none;
+  z-index: 1;
+  animation: floatInt 22s infinite ease-in-out;
+}
+
+@keyframes floatInt {
+  0%   { top: 50%; left: 5%; transform: rotate(0deg); }
+  50%  { top: 10%; left: 20%; transform: rotate(-180deg); }
+  100% { top: 50%; left: 5%; transform: rotate(0deg); }
+}
+
+/* icon containers – keep system font for emojis */
+body.game-mode .icon,
+body.game-mode .lesson-item-icon,
+body.game-mode .grade-card .icon,
+body.game-mode .topic-card .icon,
+body.game-mode .lesson-card .icon,
+body.game-mode .quiz-card .icon,
+body.game-mode .game-card .icon,
+body.game-mode .stat-emoji,
+body.game-mode .badge-pill .icon,
+body.game-mode .question-count .icon {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ---------- Main content area ---------- */
+body.game-mode .main-content {
+  background: transparent;
+  border-radius: 0;
+}
+
+/* ---------- CARDS – purple glow + chalk symbols ---------- */
+body.game-mode .quiz-card,
+body.game-mode .lesson-item,
+body.game-mode .game-card,
+body.game-mode .stat-card,
+body.game-mode .card,
+body.game-mode .lesson-card,
+body.game-mode .grade-card,
+body.game-mode .topic-card {
+  background: rgba(255,252,245,0.9);
+  backdrop-filter: blur(6px);
+  border: 2px solid #b44dff !important;
+  box-shadow: 4px 4px 0 rgba(24,95,165,0.1), 0 0 12px rgba(180, 77, 255, 0.3);
+  border-radius: 10px;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+}
+
+body.game-mode .quiz-card::after {
+  content: 'π';
+  position: absolute; bottom: 6px; right: 14px;
+  font-size: 46px; color: rgba(180, 77, 255, 0.7);
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 10px #b44dff;
+}
+body.game-mode .lesson-item::after {
+  content: '√';
+  position: absolute; bottom: 8px; right: 14px;
+  font-size: 44px; color: rgba(180, 77, 255, 0.7);
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 10px #b44dff;
+}
+body.game-mode .stat-card::after {
+  content: 'δ';
+  position: absolute; bottom: 8px; right: 14px;
+  font-size: 42px; color: rgba(180, 77, 255, 0.7);
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 10px #b44dff;
+}
+body.game-mode .game-card::after {
+  content: '∞';
+  position: absolute; bottom: 8px; right: 14px;
+  font-size: 50px; color: rgba(180, 77, 255, 0.7);
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 10px #b44dff;
+}
+
+/* Dark mode cards – purple border and inner glow */
+body.game-mode.dark-mode .quiz-card,
+body.game-mode.dark-mode .lesson-item,
+body.game-mode.dark-mode .game-card,
+body.game-mode.dark-mode .stat-card,
+body.game-mode.dark-mode .card,
+body.game-mode.dark-mode .lesson-card,
+body.game-mode.dark-mode .grade-card,
+body.game-mode.dark-mode .topic-card {
+  background: rgba(20,25,40,0.92);
+  border-color: #b44dff !important;
+  box-shadow: 0 0 15px rgba(180, 77, 255, 0.5), inset 0 0 10px rgba(180, 77, 255, 0.1);
+}
+
+body.game-mode.dark-mode .quiz-card::after,
+body.game-mode.dark-mode .lesson-item::after,
+body.game-mode.dark-mode .stat-card::after,
+body.game-mode.dark-mode .game-card::after {
+  text-shadow: 0 0 14px #b44dff, 0 0 28px #b44dff;
+}
+
+/* ---------- SETTINGS GEAR BUTTON (game mode) ---------- */
+body.game-mode #settingsGearBtn {
+  background: #fef9e7 !important;
+  color: #042C53 !important;
+  border: 2px solid #b44dff !important;
+  box-shadow: 0 0 12px rgba(180, 77, 255, 0.5) !important;
+}
+
+body.game-mode.dark-mode #settingsGearBtn {
+  background: #0b0b1a !important;
+  color: #e0e8d8 !important;
+  border: 2px solid #b44dff !important;
+  box-shadow: 0 0 15px rgba(180, 77, 255, 0.6), inset 0 0 8px rgba(180, 77, 255, 0.2) !important;
+}
+
+/* ---------- SIDEBAR DESIGN ---------- */
+body.game-mode .sidebar {
+  background: #e8f0f8;
+  border-right: 2px solid #b44dff;
+  box-shadow: 0 0 12px rgba(180, 77, 255, 0.15);
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+body.game-mode.dark-mode .sidebar {
+  background: #141428;
+  border-right-color: #b44dff;
+  box-shadow: 0 0 15px rgba(180, 77, 255, 0.2);
+}
+
+body.game-mode .sidebar::after {
+  content: 'E=mc²';
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-size: 18px;
+  color: rgba(180, 77, 255, 0.3);
+  font-family: 'Courier New', monospace;
+  pointer-events: none;
+}
+
+body.game-mode.dark-mode .sidebar::after {
+  color: rgba(180, 77, 255, 0.6);
+  text-shadow: 0 0 6px #b44dff;
+}
+
+body.game-mode .sidebar-btn {
+  color: #185FA5;
+}
+
+body.game-mode.dark-mode .sidebar-btn {
+  color: #b0bee0;
+}
+
+body.game-mode .sidebar-btn:hover,
+body.game-mode .sidebar-btn.active {
+  background: #b44dff;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(180, 77, 255, 0.5);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
+}
+
+body.game-mode.dark-mode .sidebar-btn:hover,
+body.game-mode.dark-mode .sidebar-btn.active {
+  background: rgba(180, 77, 255, 0.2);
+  color: #fff;
+  text-shadow: 0 0 6px #b44dff;
+}
+
+/* Purple focus ring */
+body.game-mode .sidebar-btn:focus-visible,
+body.game-mode .sidebar-btn:focus,
+body.game-mode .sidebar-btn:active {
+  outline: 2px solid #b44dff !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(180, 77, 255, 0.6) !important;
+}
+
+body.game-mode.dark-mode .sidebar-btn:focus-visible,
+body.game-mode.dark-mode .sidebar-btn:focus,
+body.game-mode.dark-mode .sidebar-btn:active {
+  outline-color: #b44dff !important;
+  box-shadow: 0 0 12px rgba(180, 77, 255, 0.8) !important;
+}
+
+/* ---------- BOTTOM NAVIGATION ---------- */
+body.game-mode .bottom-nav,
+body.game-mode #bottomNavContainer {
+  background: #e8f0f8;
+  border-top: 2px solid #b44dff;
+  box-shadow: 0 0 10px rgba(180, 77, 255, 0.15);
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+body.game-mode.dark-mode .bottom-nav,
+body.game-mode.dark-mode #bottomNavContainer {
+  background: #141428;
+  border-top-color: #b44dff;
+  box-shadow: 0 0 12px rgba(180, 77, 255, 0.2);
+}
+
+body.game-mode .bottom-nav-btn {
+  color: #185FA5;
+}
+
+body.game-mode.dark-mode .bottom-nav-btn {
+  color: #b0bee0;
+}
+
+body.game-mode .bottom-nav-btn.active {
+  background: #b44dff;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(180, 77, 255, 0.6);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
+}
+
+body.game-mode.dark-mode .bottom-nav-btn.active {
+  background: rgba(180, 77, 255, 0.3);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(180, 77, 255, 0.6);
+  text-shadow: 0 0 6px #b44dff;
+}
+
+/* ---------- Buttons & interactive ---------- */
+body.game-mode .auth-submit,
+body.game-mode .ai-btn,
+body.game-mode .chat-send,
+body.game-mode .ltab.active {
+  background: #185FA5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  box-shadow: 3px 3px 0 rgba(24,95,165,0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+body.game-mode.dark-mode .auth-submit,
+body.game-mode.dark-mode .ai-btn,
+body.game-mode.dark-mode .chat-send,
+body.game-mode.dark-mode .ltab.active {
+  background: #7b3fa3;               /* deep purple */
+  box-shadow: 0 0 10px rgba(180, 77, 255, 0.5);
+}
+
+body.game-mode .auth-submit:hover,
+body.game-mode .ai-btn:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(24,95,165,0.3);
+}
+
+body.game-mode.dark-mode .auth-submit:hover,
+body.game-mode.dark-mode .ai-btn:hover {
+  box-shadow: 0 0 16px rgba(180, 77, 255, 0.7);
+}
+
+/* ---------- Progress bars – purple glow ---------- */
+body.game-mode.dark-mode .xp-bar-fill,
+body.game-mode.dark-mode .progress-fill {
+  background: #b44dff !important;
+  box-shadow: 0 0 12px #b44dff;
+}
+
+/* ---------- Badges – neon purple ---------- */
+body.game-mode.dark-mode .badge-pill,
+body.game-mode.dark-mode .question-count {
+  box-shadow: 0 0 6px rgba(180, 77, 255, 0.8);
+}
+
+/* ---------- Scrollbar ---------- */
+body.game-mode ::-webkit-scrollbar-thumb {
+  background: #8b9bb4;
+}
+
+body.game-mode.dark-mode ::-webkit-scrollbar-thumb {
+  background: #7b3fa3;
+}
+
+/* ============================================================
+   PAGE‑SPECIFIC MATH DECORATIONS (sigma‑free, varied)
+   ============================================================ */
+
+body.game-mode .dashboard-header::after {
+  content: 'Δ';
+  position: absolute; top: 10px; right: 20px;
+  font-size: 40px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.2);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .dashboard-header::after {
+  color: rgba(180, 77, 255, 0.5);
+  text-shadow: 0 0 10px #b44dff;
+}
+
+body.game-mode .quiz-grid::before {
+  content: '?';
+  position: absolute; top: 30%; left: 5%;
+  font-size: 200px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.08);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .quiz-grid::before {
+  color: rgba(180, 77, 255, 0.15);
+  text-shadow: 0 0 30px #b44dff;
+}
+
+body.game-mode .lesson-grid::before {
+  content: '√';
+  position: absolute; bottom: 5%; right: 5%;
+  font-size: 120px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.12);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .lesson-grid::before {
+  color: rgba(180, 77, 255, 0.25);
+  text-shadow: 0 0 20px #b44dff;
+}
+
+body.game-mode .slide-viewer::before {
+  content: 'π';
+  position: absolute; top: 10%; left: 2%;
+  font-size: 130px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.1);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .slide-viewer::before {
+  color: rgba(180, 77, 255, 0.2);
+  text-shadow: 0 0 24px #b44dff;
+}
+
+body.game-mode .topic-list::before {
+  content: 'Δ';
+  position: absolute; top: 20%; right: 3%;
+  font-size: 150px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.1);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .topic-list::before {
+  color: rgba(180, 77, 255, 0.22);
+  text-shadow: 0 0 20px #b44dff;
+}
+
+body.game-mode .flashcard-container::after {
+  content: '↔';
+  position: absolute; bottom: 10px; left: 10px;
+  font-size: 60px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.15);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .flashcard-container::after {
+  color: rgba(180, 77, 255, 0.3);
+  text-shadow: 0 0 14px #b44dff;
+}
+
+body.game-mode .game-select-card::before {
+  content: '∞';
+  position: absolute; top: 5%; right: 5%;
+  font-size: 50px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.1);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .game-select-card::before {
+  color: rgba(180, 77, 255, 0.25);
+  text-shadow: 0 0 12px #b44dff;
+}
+
+body.game-mode .chat-container::after {
+  content: '∫';
+  position: absolute; top: 20%; left: 5%;
+  font-size: 180px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.06);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .chat-container::after {
+  color: rgba(180, 77, 255, 0.12);
+  text-shadow: 0 0 30px #b44dff;
+}
+
+body.game-mode .private-chat-container::before {
+  content: '∂';
+  position: absolute; bottom: 10%; right: 3%;
+  font-size: 140px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.07);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .private-chat-container::before {
+  color: rgba(180, 77, 255, 0.15);
+  text-shadow: 0 0 25px #b44dff;
+}
+
+body.game-mode .ai-chat-wrap::after {
+  content: '∇';
+  position: absolute; top: 10%; right: 5%;
+  font-size: 100px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.1);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .ai-chat-wrap::after {
+  color: rgba(180, 77, 255, 0.18);
+  text-shadow: 0 0 18px #b44dff;
+}
+
+/* ---------- AI CHAT PANEL & ASK AI BUTTON (quizzes/lessons/flashcards/games) ---------- */
+body.game-mode .ai-chat-panel {
+  background: rgba(255,252,245,0.97) !important;
+  border-left: 2px solid #b44dff !important;
+  box-shadow: 0 0 20px rgba(180, 77, 255, 0.35) !important;
+}
+body.game-mode.dark-mode .ai-chat-panel {
+  background: rgba(20,25,40,0.97) !important;
+  box-shadow: 0 0 20px rgba(180, 77, 255, 0.5), inset 0 0 12px rgba(180, 77, 255, 0.1) !important;
+}
+body.game-mode .ai-chat-header,
+body.game-mode .ai-chat-input {
+  border-color: rgba(180, 77, 255, 0.4) !important;
+}
+body.game-mode .open-ai-btn {
+  background: #fef9e7 !important;
+  color: #042C53 !important;
+  border: 2px solid #b44dff !important;
+  box-shadow: 0 0 14px rgba(180, 77, 255, 0.5) !important;
+}
+body.game-mode.dark-mode .open-ai-btn {
+  background: #0b0b1a !important;
+  color: #e0e8d8 !important;
+  box-shadow: 0 0 16px rgba(180, 77, 255, 0.6), inset 0 0 8px rgba(180, 77, 255, 0.2) !important;
+}
+
+body.game-mode .leaderboard::before {
+  content: 'Ω';
+  position: absolute; top: 5%; left: 50%;
+  transform: translateX(-50%);
+  font-size: 80px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.15);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .leaderboard::before {
+  color: rgba(180, 77, 255, 0.35);
+  text-shadow: 0 0 20px #b44dff;
+}
+
+body.game-mode .profile-card::after {
+  content: 'θ';
+  position: absolute; bottom: 5%; right: 5%;
+  font-size: 100px;
+  font-family: 'Courier New', monospace;
+  color: rgba(180, 77, 255, 0.1);
+  pointer-events: none;
+}
+body.game-mode.dark-mode .profile-card::after {
+  color: rgba(180, 77, 255, 0.25);
+  text-shadow: 0 0 16px #b44dff;
+}

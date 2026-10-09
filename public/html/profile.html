@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Profile</title>
+  <link rel="stylesheet" href="/css/profile.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+</head>
+<body class="dashboard-page">
+
+<div class="sidebar" id="sidebar">
+  <div id="sidebarContent"></div>
+</div>
+
+<div class="main-content">
+
+  <div class="dashboard-header">
+    <h1><i class="ti ti-user"></i> My Profile</h1>
+    <p>Your progress, badges, and stats.</p>
+  </div>
+
+  <!-- Profile Card -->
+  <div class="card" style="margin-bottom:1rem;">
+    <div style="display:flex; align-items:center; gap:20px;">
+      <div class="profile-avatar" id="avatarInitial">?</div>
+      <div>
+        <div class="profile-name" id="profileName">Loading...</div>
+        <div class="profile-role" id="profileRole">Student</div>
+        <div style="margin-top:6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span class="level-badge" id="profileLevel">Level 1</span>
+          <span id="rankBadge" style="display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:bold; padding:3px 10px; border-radius:99px;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- XP Bar -->
+  <div class="card" style="margin-bottom:1rem;">
+    <div style="display:flex; align-items:center; margin-bottom:4px;">
+      <div class="card-title" style="margin:0;"><i class="ti ti-star"></i> XP Progress</div>
+    </div>
+    <div class="xp-bar-wrap">
+      <div class="xp-bar-fill" id="xpBarFill" style="width:0%;"></div>
+    </div>
+    <div class="xp-label">
+      <span id="xpCurrent">0 XP</span>
+      <span id="xpNext">Next level: 100 XP</span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="card-title"><i class="ti ti-chart-bar"></i> My Stats</div>
+    <div class="stat-row"><span class="stat-row-label">Quizzes Taken</span><span class="stat-row-value" id="pStatQuizzes">—</span></div>
+    <div class="stat-row"><span class="stat-row-label">Quiz Average</span><span class="stat-row-value" id="pStatAvg">—</span></div>
+    <div class="stat-row"><span class="stat-row-label">Topics Attempted</span><span class="stat-row-value" id="pStatTopics">—</span></div>
+    <div class="stat-row"><span class="stat-row-label">Day Streak 🔥</span><span class="stat-row-value" id="pStatStreak">—</span></div>
+    <div class="stat-row"><span class="stat-row-label">Total XP Earned</span><span class="stat-row-value" id="pStatXP">—</span></div>
+  </div>
+
+  <!-- Badges -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-award"></i> All Badges</div>
+    <div class="badge-grid" id="badgeGrid">
+      <div style="font-size:13px; color:#378ADD;">Loading badges...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || user.role !== 'student') window.location.href = '/'
+
+  document.getElementById('profileName').textContent = user.full_name
+  document.getElementById('profileRole').textContent = 'Junior High School Student · ' + (user.class_code || 'No class')
+  document.getElementById('avatarInitial').textContent = user.full_name.charAt(0).toUpperCase()
+
+  const allBadges = [
+    { id: 'first_quiz', icon: '📝', label: 'First Quiz', desc: 'Complete your first quiz' },
+    { id: 'perfect_score', icon: '💯', label: 'Perfect Score', desc: 'Get 100% on any quiz' },
+    { id: 'quiz_5', icon: '🎯', label: 'Quiz Streak', desc: 'Complete 5 quizzes' },
+    { id: 'level_5', icon: '⭐', label: 'Rising Star', desc: 'Reach Level 5' },
+    { id: 'streak_3', icon: '🔥', label: 'On Fire', desc: '3-day study streak' },
+    { id: 'streak_7', icon: '🏆', label: 'Unstoppable', desc: '7-day study streak' },
+    { id: 'first_game', icon: '🎮', label: 'Gamer', desc: 'Play your first game' },
+    { id: 'all_topics', icon: '📚', label: 'Explorer', desc: 'Attempt all topics' },
+  ]
+
+  function getLevel(xp) { return Math.floor(xp / 100) + 1 }
+
+  const RANKS = [
+    { min: 1,  name: 'Novice',      icon: '🌱', color: '#4ade80' },
+    { min: 5,  name: 'Apprentice',  icon: '📖', color: '#3b82f6' },
+    { min: 10, name: 'Adept',       icon: '🔮', color: '#a78bfa' },
+    { min: 15, name: 'Sorcerer',    icon: '⚡', color: '#f59e0b' },
+    { min: 20, name: 'Archmage',    icon: '🧙', color: '#8b5cf6' },
+    { min: 30, name: 'Math Sage',   icon: '🐉', color: '#ef4444' },
+  ]
+  function getRank(level) {
+    let rank = RANKS[0]
+    for (const r of RANKS) { if (level >= r.min) rank = r }
+    return rank
+  }
+
+  function renderXP(xp) {
+    const level = getLevel(xp)
+    const xpInLevel = xp % 100
+    document.getElementById('profileLevel').textContent = 'Level ' + level
+    document.getElementById('xpBarFill').style.width = xpInLevel + '%'
+    document.getElementById('xpCurrent').textContent = xp + ' XP'
+    document.getElementById('xpNext').textContent = 'Next level: ' + (level * 100) + ' XP'
+    document.getElementById('pStatXP').textContent = xp + ' XP'
+
+    const rank = getRank(level)
+    const rankEl = document.getElementById('rankBadge')
+    rankEl.textContent = `${rank.icon} ${rank.name}`
+    rankEl.style.background = rank.color + '22'
+    rankEl.style.color = rank.color
+
+    const rankKey = 'SigMath_lastRank_' + user.id
+    const lastRank = localStorage.getItem(rankKey)
+    if (lastRank && lastRank !== rank.name) {
+      showRankUpCelebration(rank)
+    }
+    localStorage.setItem(rankKey, rank.name)
+  }
+
+  function showRankUpCelebration(rank) {
+    const overlay = document.createElement('div')
+    overlay.id = 'rankUpOverlay'
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(4,44,83,0.75); z-index:5000; display:flex; align-items:center; justify-content:center;'
+    overlay.innerHTML = `
+      <div style="background:white; border-radius:24px; padding:2rem 2.5rem; text-align:center; max-width:320px; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <div style="font-size:56px; margin-bottom:8px;">${rank.icon}</div>
+        <div style="font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.05em; color:#85B7EB;">Rank Up!</div>
+        <div style="font-size:20px; font-weight:800; color:${rank.color}; margin:6px 0 16px;">${rank.name}</div>
+        <button onclick="document.getElementById('rankUpOverlay').remove()" style="background:${rank.color}; color:white; border:none; border-radius:12px; padding:10px 24px; font-weight:bold; font-size:14px; cursor:pointer;">Nice!</button>
+      </div>
+    `
+    document.body.appendChild(overlay)
+  }
+
+  function renderBadges(earned) {
+    document.getElementById('badgeGrid').innerHTML = allBadges.map(b => {
+      const has = earned.includes(b.id)
+      return `<div class="badge-card ${has ? '' : 'locked'}">
+        <div class="badge-icon">${b.icon}${!has ? ' 🔒' : ''}</div>
+        <div class="badge-name">${b.label}</div>
+        <div class="badge-desc">${b.desc}</div>
+      </div>`
+    }).join('')
+  }
+
+  fetch('/student-stats?user_id=' + user.id)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('pStatQuizzes').textContent = data.totalQuizzes || '0'
+      document.getElementById('pStatAvg').textContent = data.totalQuizzes > 0 ? data.avgScore + '%' : '—'
+      document.getElementById('pStatTopics').textContent = data.uniqueTopics || '0'
+      document.getElementById('pStatStreak').textContent = (data.streak || 0) + ' days'
+      renderXP(data.xp || 0)
+      renderBadges(data.badges || [])
+    })
+    .catch(() => showToast('Could not load your profile stats. Check your connection.'))
+
+  function showToast(msg, type = 'error') {
+    const existing = document.getElementById('toastMsg')
+    if (existing) existing.remove()
+    const toast = document.createElement('div')
+    toast.id = 'toastMsg'
+    toast.textContent = msg
+    toast.style.cssText = `position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:${type === 'error' ? '#e53e3e' : '#38a169'}; color:white; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:bold; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); max-width:90vw; text-align:center;`
+    document.body.appendChild(toast)
+    setTimeout(() => toast.remove(), 4000)
+  }
+
+  window.addEventListener('offline', () => showToast('You are offline. Some features may not work.'))
+  window.addEventListener('online', () => showToast('Back online!', 'success'))
+
+  function logout() {
+    localStorage.removeItem('SigMath_user')
+    window.location.href = '/'
+  }
+</script>
+
+<script>
+  fetch('/sidebar')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebarContent').innerHTML = html
+      const path = location.pathname
+      document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(path.replace('/', ''))) {
+          btn.classList.add('active')
+        }
+      })
+    })
+</script>
+<div id="bottomNavContainer"></div>
+<script>
+fetch('/bottomnav')
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('bottomNavContainer').innerHTML = html
+    const path = location.pathname.replace(/\/$/, '')
+    const map = {
+      'dashboard': 0, 'lessons': 1, 'quizzes': 2,
+      'games': 3, 'flashcards': 4, 'aitutor': 5, 'chat': 6, 'private-chat': 7, 'leaderboard': 8, 'profile': 9
+    }
+    const btns = document.querySelectorAll('.bottom-nav-btn')
+    // Exact match, not substring match: "private-chat.html" was previously
+    // also matching the "chat" key because it ends with "chat.html" too,
+    // lighting up both Class and Private Chat buttons at once.
+    const segments = path.split('/').filter(Boolean)
+    const currentFile = segments[segments.length - 1] || ''
+    Object.entries(map).forEach(([key, i]) => {
+      const isActive = (key === 'lessons' || key === 'quizzes')
+        ? segments[0] === key
+        : currentFile === key + '.html'
+      if (isActive) btns[i]?.classList.add('active')
+    })
+  })
+</script>
+</body>
+</html>

@@ -1,0 +1,721 @@
+/* ============================================================
+   SIGMATH – DARK MODE (Soft Navy, muted blue accents)
+   ============================================================ */
+
+body.dark-mode {
+  background: #1a1f36 !important;
+  color: #e0e7ff;
+}
+
+body.dark-mode .main-content {
+  background: #1a1f36;
+}
+
+body.dark-mode .sidebar,
+body.dark-mode #sidebar {
+  background: #242b42;
+  border-right-color: #374151;
+}
+
+body.dark-mode .sidebar-btn {
+  color: #b0bee0;
+}
+
+body.dark-mode .sidebar-btn:hover,
+body.dark-mode .sidebar-btn.active {
+  background: rgba(91, 143, 217, 0.15);
+  color: #fff;
+}
+
+body.dark-mode .bottom-nav,
+body.dark-mode #bottomNavContainer {
+  background: #242b42;
+  border-top-color: #374151;
+}
+
+body.dark-mode .bottom-nav-btn {
+  color: #b0bee0;
+}
+
+body.dark-mode .bottom-nav-btn.active {
+  background: #5b8fd9;
+  color: #fff;
+}
+
+/* ── Cards (quizzes, lessons, games, etc.) ── */
+body.dark-mode .quiz-card,
+body.dark-mode .lesson-item,
+body.dark-mode .game-card,
+body.dark-mode .stat-card,
+body.dark-mode .card,
+body.dark-mode .lesson-card,
+body.dark-mode .grade-card {
+  background: #242b42 !important;
+  border-color: #374151;
+}
+
+body.dark-mode .quiz-card .info h3,
+body.dark-mode .lesson-item .info h3,
+body.dark-mode .game-card .info h3,
+body.dark-mode .lesson-card .info h3,
+body.dark-mode .grade-card h3,
+body.dark-mode .lesson-item-title {
+  color: #f1f5f9 !important;
+}
+
+body.dark-mode .quiz-card .info p,
+body.dark-mode .lesson-item .info p,
+body.dark-mode .game-card .info p,
+body.dark-mode .lesson-card .info p,
+body.dark-mode .grade-card p,
+body.dark-mode .lesson-item-desc {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .lesson-item-icon,
+body.dark-mode .lesson-card .icon {
+  background: #334155 !important;
+  color: #e0e7ff !important;
+  text-shadow: 0 0 0 currentColor;
+}
+
+body.dark-mode .lesson-item-arrow {
+  color: #5b8fd9 !important;
+}
+
+/* Dashboard */
+body.dark-mode .stat-label { color: #94a3b8 !important; }
+body.dark-mode .stat-value { color: #e0e7ff !important; }
+body.dark-mode .card-title { color: #e0e7ff !important; }
+body.dark-mode .ai-desc { color: #94a3b8 !important; }
+body.dark-mode .ai-sample { background: #242b42 !important; color: #94a3b8 !important; }
+body.dark-mode .xp-label { color: #94a3b8 !important; }
+body.dark-mode .level-badge { background: #5b8fd9 !important; color: #fff !important; }
+body.dark-mode .game-name { color: #e0e7ff !important; }
+body.dark-mode .game-topic { color: #94a3b8 !important; }
+body.dark-mode .lb-name { color: #e0e7ff !important; }
+body.dark-mode .lb-xp { color: #93c5fd !important; }
+body.dark-mode .topic-name { color: #e0e7ff !important; }
+body.dark-mode .topic-sub { color: #94a3b8 !important; }
+body.dark-mode .topic-pct { color: #93c5fd !important; }
+
+/* Question & options */
+body.dark-mode .question-text { color: #f1f5f9 !important; }
+
+body.dark-mode .option-btn {
+  background: #242b42 !important;
+  border-color: #374151;
+  color: #e0e7ff !important;
+}
+body.dark-mode .option-btn:hover { background: #334155 !important; border-color: #5b8fd9; }
+body.dark-mode .option-btn.correct { background: #14532d !important; border-color: #22c55e; }
+body.dark-mode .option-btn.wrong { background: #7f1d1d !important; border-color: #ef4444; }
+
+/* Modals & auth */
+body.dark-mode .auth-card,
+body.dark-mode .lesson-modal-card,
+body.dark-mode .modal-content {
+  background: #242b42 !important;
+  border-color: #374151;
+  color: #e0e7ff;
+}
+body.dark-mode .auth-input,
+body.dark-mode .chat-input {
+  background: #1a1f36 !important;
+  border-color: #374151;
+  color: #e0e7ff;
+}
+
+/* Topbar */
+body.dark-mode .topbar h1 { color: #f1f5f9 !important; }
+body.dark-mode .topbar p { color: #94a3b8 !important; }
+body.dark-mode .back-btn {
+  background: #242b42 !important;
+  border-color: #374151;
+  color: #93c5fd !important;
+}
+body.dark-mode .ltab { background: #242b42 !important; color: #93c5fd !important; }
+body.dark-mode .ltab.active { background: #5b8fd9 !important; color: #fff !important; }
+
+/* Hint, practice, badges */
+body.dark-mode .hint-btn {
+  background: #422006 !important;
+  border-color: #f59e0b;
+  color: #fbbf24 !important;
+}
+body.dark-mode .practice-btn {
+  background: #242b42 !important;
+  border-color: #374151;
+  color: #93c5fd !important;
+}
+body.dark-mode .badge-pill,
+body.dark-mode .question-count {
+  background: #1e3a5f !important;
+  color: #93c5fd !important;
+}
+
+/* XP & progress bars */
+body.dark-mode .xp-bar-wrap,
+body.dark-mode .progress-bar { background: #334155 !important; }
+body.dark-mode .xp-bar-fill,
+body.dark-mode .progress-fill { background: #5b8fd9 !important; }
+
+/* Lessons list (grade selector) & Foundation topic list */
+body.dark-mode .lessons-list { background: transparent; }
+body.dark-mode .lesson-grid { background: transparent; }
+
+body.dark-mode .progress-summary {
+  background: #242b42 !important;
+  border-color: #374151;
+  color: #94a3b8 !important;
+}
+body.dark-mode .progress-summary .label { color: #94a3b8 !important; }
+body.dark-mode .progress-summary .bar { background: #334155 !important; }
+body.dark-mode .progress-summary .fill { background: #5b8fd9 !important; }
+
+/* ── Foundation lesson cards (lesson-card) ── */
+body.dark-mode .lesson-card {
+  background: #242b42 !important;
+  border-color: #374151;
+}
+body.dark-mode .lesson-card:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+}
+body.dark-mode .lesson-card .icon {
+  background: #334155 !important;
+  color: #e0e7ff !important;
+  text-shadow: 0 0 0 currentColor;
+}
+body.dark-mode .lesson-card .info h3 {
+  color: #f1f5f9 !important;
+}
+body.dark-mode .lesson-card .info p {
+  color: #94a3b8 !important;
+}
+body.dark-mode .lesson-card .badge-difficulty {
+  background: #1e3a5f !important;
+  color: #93c5fd !important;
+}
+
+/* Grade 8 lesson */
+body.dark-mode .custom-explanation {
+  background: #242b42 !important;
+  border-left: 4px solid #5b8fd9;
+  color: #cbd5e1 !important;
+}
+body.dark-mode .custom-explanation h4 { color: #93c5fd !important; }
+body.dark-mode .slide-image { background: #242b42 !important; border-color: #374151; }
+body.dark-mode .slide-controls button { background: #334155 !important; color: #cbd5e1 !important; }
+body.dark-mode .slide-num { color: #94a3b8 !important; }
+body.dark-mode .topic-tab { background: #242b42 !important; border-color: #374151; color: #93c5fd !important; }
+body.dark-mode .topic-tab.active { background: #5b8fd9 !important; color: #fff !important; }
+
+/* AI Chat panel (floating) */
+body.dark-mode .ai-chat-panel {
+  background: #242b42 !important;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.3);
+}
+body.dark-mode .ai-chat-header { border-bottom-color: #374151; color: #e0e7ff !important; }
+body.dark-mode .ai-chat-header h3 { color: #e0e7ff !important; }
+body.dark-mode .ai-chat-messages { background: #1a1f36 !important; }
+body.dark-mode .ai-message.user { background: #5b8fd9 !important; color: #fff !important; }
+body.dark-mode .ai-message.bot { background: #242b42 !important; color: #e0e7ff !important; }
+body.dark-mode .ai-chat-input { border-top-color: #374151; background: #242b42 !important; }
+body.dark-mode .ai-chat-input input { background: #1a1f36 !important; border-color: #374151; color: #e0e7ff !important; }
+body.dark-mode .ai-chat-input button { background: #5b8fd9 !important; color: #fff !important; }
+body.dark-mode .open-ai-btn { background: #5b8fd9 !important; color: #fff !important; }
+
+/* ── AI TUTOR CHAT BUBBLES (all possible selectors) ── */
+body.dark-mode .chat-msg.user .chat-bubble,
+body.dark-mode .chat-msg.user .msg,
+body.dark-mode .msg.sent {
+  background: #5b8fd9 !important;
+  color: #fff !important;
+}
+
+body.dark-mode .chat-msg.ai .chat-bubble,
+body.dark-mode .chat-msg.ai .msg,
+body.dark-mode .msg.received,
+body.dark-mode .ai-chat-box .chat-bubble.ai,
+body.dark-mode .ai-chat-box .msg.ai {
+  background: #242b42 !important;
+  color: #e0e7ff !important;
+}
+
+/* Grade selector cards (flashcards/games) */
+body.dark-mode .grade-card {
+  background: #242b42 !important;
+  border-color: #374151;
+  color: #e0e7ff !important;
+}
+body.dark-mode .grade-card h3 { color: #e0e7ff !important; }
+body.dark-mode .grade-card p { color: #94a3b8 !important; }
+
+/* Quiz */
+body.dark-mode .quiz-result .score { color: #e0e7ff !important; }
+body.dark-mode .quiz-result .message { color: #cbd5e1 !important; }
+body.dark-mode .feedback-box.correct { color: #bbf7d0 !important; }
+body.dark-mode .feedback-box.wrong { color: #fecaca !important; }
+/* quizModalTitle and modalTitle are IDs, not classes - the selectors above
+   never matched anything, so modal titles stayed dark-on-dark. Targeting
+   the shared header class fixes both the Quiz modal and Lesson modal. */
+body.dark-mode .lesson-modal-header h2 { color: #f1f5f9 !important; }
+body.dark-mode .quiz-content { color: #e0e7ff !important; }
+body.dark-mode .quiz-timer { color: #fbbf24 !important; }
+
+/* Lesson modal */
+body.dark-mode .lesson-modal { background: rgba(0,0,0,0.6); }
+body.dark-mode .lesson-section h3 { color: #93c5fd !important; }
+body.dark-mode .lesson-section p { color: #cbd5e1 !important; }
+body.dark-mode .lesson-example {
+  background: #1e293b !important;
+  border-left-color: #5b8fd9;
+  color: #cbd5e1 !important;
+}
+body.dark-mode .close-btn { background: #374151 !important; color: #93c5fd !important; }
+body.dark-mode .lesson-modal-footer { border-top-color: #374151; background: #242b42 !important; }
+body.dark-mode .lesson-modal-header { border-bottom-color: #374151; }
+
+/* ── CHAT (Class Chat, Private Chat) ── */
+body.dark-mode .chat-container {
+  background: #242b42 !important;
+  box-shadow: none !important;
+}
+body.dark-mode .chat-header {
+  background: #242b42 !important;
+  border-bottom-color: #374151 !important;
+}
+body.dark-mode .chat-header h3 { color: #f1f5f9 !important; }
+body.dark-mode .chat-header p { color: #94a3b8 !important; }
+body.dark-mode .chat-messages {
+  background: #1a1f36 !important;
+}
+body.dark-mode .msg.received {
+  background: #242b42 !important;
+  border-color: #374151 !important;
+  color: #e0e7ff !important;
+}
+body.dark-mode .msg.received .sender { color: #93c5fd !important; }
+body.dark-mode .msg.sent {
+  background: #5b8fd9 !important;
+  color: #fff !important;
+}
+body.dark-mode .msg .time {
+  color: #94a3b8 !important;
+}
+body.dark-mode .msg.sent .time {
+  color: rgba(255,255,255,0.6) !important;
+}
+body.dark-mode .chat-input-row {
+  background: #242b42 !important;
+  border-top-color: #374151 !important;
+}
+body.dark-mode .chat-input {
+  background: #1a1f36 !important;
+  border-color: #374151 !important;
+  color: #e0e7ff !important;
+}
+body.dark-mode .chat-input:focus {
+  border-color: #5b8fd9 !important;
+  background: #1a1f36 !important;
+}
+body.dark-mode .chat-send {
+  background: #5b8fd9 !important;
+}
+body.dark-mode .chat-send:hover { background: #1570C0 !important; }
+
+/* Private chat specific */
+body.dark-mode .contact-list {
+  background: #242b42 !important;
+  box-shadow: none !important;
+}
+body.dark-mode .contact-list h4 { color: #e0e7ff !important; }
+body.dark-mode .contact-item { color: #e0e7ff !important; }
+body.dark-mode .contact-item:hover { background: #334155 !important; }
+body.dark-mode .contact-item.active { background: #1e3a5f !important; border-color: #5b8fd9 !important; }
+body.dark-mode .contact-item .name { color: #e0e7ff !important; }
+body.dark-mode .chat-area {
+  background: #242b42 !important;
+  box-shadow: none !important;
+}
+body.dark-mode .chat-area-header {
+  background: #242b42 !important;
+  border-bottom-color: #374151 !important;
+  color: #f1f5f9 !important;
+}
+body.dark-mode .chat-area-messages {
+  background: #1a1f36 !important;
+}
+body.dark-mode .empty-state { color: #94a3b8 !important; }
+
+/* ── AI TUTOR PAGE (specific classes) ── */
+body.dark-mode .ai-chat-wrap {
+  background: #242b42 !important;
+  border-color: #374151;
+  box-shadow: none !important;
+}
+body.dark-mode .ai-chat-header {
+  background: #242b42 !important;
+  border-bottom-color: #374151 !important;
+  color: #e0e7ff !important;
+}
+body.dark-mode .ai-chat-box {
+  background: #1a1f36 !important;
+}
+body.dark-mode .ai-input-row {
+  background: #242b42 !important;
+  border-top-color: #374151 !important;
+}
+body.dark-mode .ai-input-row input {
+  background: #1a1f36 !important;
+  border-color: #374151 !important;
+  color: #e0e7ff !important;
+}
+body.dark-mode .ai-input-row button {
+  background: #5b8fd9 !important;
+  color: #fff !important;
+}
+
+/* ── GAMES (game select cards) ── */
+body.dark-mode .game-select-card {
+  background: #242b42 !important;
+  border-color: #374151 !important;
+  box-shadow: none !important;
+}
+body.dark-mode .game-select-card:hover {
+  background: #334155 !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3) !important;
+}
+body.dark-mode .game-select-title {
+  color: #f1f5f9 !important;
+}
+body.dark-mode .game-select-desc {
+  color: #94a3b8 !important;
+}
+body.dark-mode .game-select-badge {
+  background: #1e3a5f !important;
+  color: #93c5fd !important;
+}
+body.dark-mode .game-select-icon {
+  background: #334155 !important;
+}
+
+/* ── GAMES – Number Rush ── */
+body.dark-mode .nr-header {
+  background: transparent;
+}
+body.dark-mode .nr-stat-label {
+  color: #94a3b8 !important;
+}
+body.dark-mode .nr-stat-value {
+  color: #e0e7ff !important;
+}
+body.dark-mode .nr-timer-bar {
+  background: #334155 !important;
+}
+body.dark-mode .nr-timer-fill {
+  background: #5b8fd9 !important;
+}
+body.dark-mode .nr-question-box {
+  background: #242b42 !important;
+  border-color: #374151;
+}
+body.dark-mode .nr-topic {
+  color: #93c5fd !important;
+}
+body.dark-mode .nr-question {
+  color: #e0e7ff !important;
+}
+body.dark-mode .nr-option {
+  background: #242b42 !important;
+  border-color: #374151 !important;
+  color: #e0e7ff !important;
+}
+body.dark-mode .nr-option:hover {
+  background: #334155 !important;
+}
+body.dark-mode .nr-option.correct {
+  background: #14532d !important;
+  border-color: #22c55e !important;
+}
+body.dark-mode .nr-option.wrong {
+  background: #7f1d1d !important;
+  border-color: #ef4444 !important;
+}
+
+/* ── GAMES – Math Puzzle ── */
+body.dark-mode .mp-question-box {
+  background: #242b42 !important;
+  border-color: #374151;
+}
+/* Duel Setup screen reuses .mp-question-box as its container, but its
+   "Choose Mode" / "Player 2 Name" / "Difficulty" labels and the name
+   input are inline color:#042C53 - need an override or they go dark-on-dark. */
+body.dark-mode .duel-setup-label {
+  color: #e0e7ff !important;
+}
+body.dark-mode #p2Name {
+  color: #e0e7ff !important;
+  background: #1a1f36 !important;
+  border-color: #374151 !important;
+}
+body.dark-mode .mp-topic-tag {
+  background: #1e3a5f !important;
+  color: #93c5fd !important;
+}
+body.dark-mode .mp-question-text {
+  color: #e0e7ff !important;
+}
+body.dark-mode .mp-equation {
+  color: #e0e7ff !important;
+}
+body.dark-mode .mp-choices .mp-choice {
+  background: #242b42 !important;
+  border-color: #374151 !important;
+  color: #e0e7ff !important;
+}
+body.dark-mode .mp-choices .mp-choice:hover {
+  background: #334155 !important;
+}
+body.dark-mode .mp-blank {
+  background: #334155 !important;
+  color: #fbbf24 !important;
+}
+body.dark-mode .mp-blank.filled {
+  background: #1e3a5f !important;
+}
+body.dark-mode .mp-blank.correct {
+  background: #14532d !important;
+  color: #bbf7d0 !important;
+}
+body.dark-mode .mp-blank.wrong {
+  background: #7f1d1d !important;
+  color: #fecaca !important;
+}
+body.dark-mode .mp-feedback.correct {
+  color: #bbf7d0 !important;
+}
+body.dark-mode .mp-feedback.wrong {
+  color: #fecaca !important;
+}
+/* mpProgressLabel/mpScoreLabel are IDs in the HTML, not classes -
+   the selectors above never matched, so these stayed unstyled in dark mode. */
+body.dark-mode #mpProgressLabel,
+body.dark-mode #mpScoreLabel {
+  color: #94a3b8 !important;
+}
+body.dark-mode .mp-progress-bar {
+  background: #334155 !important;
+}
+body.dark-mode .mp-progress-fill {
+  background: #5b8fd9 !important;
+}
+
+/* ── GAMES – Duel ── */
+body.dark-mode .duel-player {
+  background: #242b42 !important;
+  border-color: #374151;
+}
+body.dark-mode .duel-player-name {
+  color: #e0e7ff !important;
+}
+body.dark-mode .duel-player-score {
+  color: #f1f5f9 !important;
+}
+body.dark-mode .duel-turn-banner {
+  color: #e0e7ff !important;
+}
+body.dark-mode .duel-question-box {
+  background: #242b42 !important;
+  border-color: #374151;
+}
+body.dark-mode .duel-question {
+  color: #e0e7ff !important;
+}
+body.dark-mode .duel-option {
+  background: #242b42 !important;
+  border-color: #374151 !important;
+  color: #e0e7ff !important;
+}
+body.dark-mode .duel-option:hover {
+  background: #334155 !important;
+}
+body.dark-mode .duel-option.correct {
+  background: #14532d !important;
+  border-color: #22c55e !important;
+}
+body.dark-mode .duel-option.wrong {
+  background: #7f1d1d !important;
+  border-color: #ef4444 !important;
+}
+
+/* ── GAMES – Math Quest ── */
+body.dark-mode .quest-node {
+  background: #242b42 !important;
+  border-color: #374151;
+}
+body.dark-mode .quest-node-title {
+  color: #e0e7ff !important;
+}
+body.dark-mode .quest-node-desc {
+  color: #94a3b8 !important;
+}
+body.dark-mode .quest-question-box {
+  background: #242b42 !important;
+  border-color: #374151;
+}
+/* #questQ and #questStageName use inline color:#042C53 in the HTML,
+   so they need an explicit override here or they stay dark-on-dark. */
+body.dark-mode #questQ {
+  color: #e0e7ff !important;
+}
+body.dark-mode #questStageName {
+  color: #e0e7ff !important;
+}
+body.dark-mode .quest-option {
+  background: #242b42 !important;
+  border-color: #374151 !important;
+  color: #e0e7ff !important;
+}
+body.dark-mode .quest-option:hover {
+  background: #334155 !important;
+}
+body.dark-mode .quest-option.correct {
+  background: #14532d !important;
+  border-color: #22c55e !important;
+}
+body.dark-mode .quest-option.wrong {
+  background: #7f1d1d !important;
+  border-color: #ef4444 !important;
+}
+
+/* Leaderboard */
+body.dark-mode .lb-row { background: #242b42 !important; }
+body.dark-mode .lb-row.you { background: #1e3a5f !important; border-color: #5b8fd9; }
+
+/* Class badge */
+body.dark-mode .class-badge { background: #242b42 !important; border-color: #374151; color: #93c5fd !important; }
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar-track { background: #1a1f36; }
+body.dark-mode ::-webkit-scrollbar-thumb { background: #475569; }
+
+/* ── FLASHCARDS (topic selection cards – FINAL FIX) ── */
+body.dark-mode .topic-list { background: transparent; }
+
+body.dark-mode .topic-card {
+  background: #242b42 !important;
+  border: 1px solid #374151 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+  outline: none !important;
+}
+
+body.dark-mode .topic-card,
+body.dark-mode .topic-card:focus,
+body.dark-mode .topic-card:focus-visible,
+body.dark-mode .topic-card:active,
+body.dark-mode .topic-card:hover {
+  outline: none !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+body.dark-mode .topic-card:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important;
+}
+
+body.dark-mode .topic-card .icon {
+  background: #334155 !important;
+  color: #e0e7ff !important;
+  text-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+body.dark-mode .topic-card .icon:focus,
+body.dark-mode .topic-card .icon:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+body.dark-mode .topic-card h3 { color: #f1f5f9 !important; }
+body.dark-mode .topic-card p { color: #94a3b8 !important; }
+
+/* ── FLASHCARDS (flashcard viewer) ── */
+body.dark-mode .flashcard-front {
+  background: linear-gradient(135deg, #334155, #242b42) !important;
+  color: #e0e7ff !important;
+  border-color: #374151 !important;
+}
+
+body.dark-mode .flashcard-back {
+  background: #242b42 !important;
+  color: #93c5fd !important;
+  border-color: #374151 !important;
+}
+
+body.dark-mode .flashcard-controls button {
+  background: #334155 !important;
+  color: #e0e7ff !important;
+}
+
+body.dark-mode .flashcard-controls button:disabled { opacity: 0.4; }
+
+body.dark-mode .card-counter { color: #94a3b8 !important; }
+
+/* Back to topics / Back to grades buttons */
+body.dark-mode .back-btn {
+  background: #242b42 !important;
+  border-color: #374151 !important;
+  color: #93c5fd !important;
+}
+
+body.dark-mode .back-btn:hover { background: #334155 !important; }
+
+/* ── NUCLEAR FIX for green glow on flashcard topic icons ── */
+body.dark-mode .topic-card .icon,
+body.dark-mode .topic-card .icon *,
+body.dark-mode .topic-card .icon::before,
+body.dark-mode .topic-card .icon::after {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-text-stroke: 0 !important;
+}
+/* Ensure settings gear is always clickable */
+#settingsGear {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 20px !important;
+  z-index: 9999 !important;        /* highest possible */
+  pointer-events: auto !important; /* ensure clicks register */
+  touch-action: manipulation;      /* improve mobile tap */
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: white !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+  cursor: pointer !important;
+}
+
+/* Make sure the panel is also above everything */
+#settingsPanel {
+  z-index: 10000 !important;
+}
+
+/* Settings gear – top‑right on mobile */
+@media (max-width: 768px) {
+  #settingsGear {
+    bottom: auto !important;
+    top: 20px !important;
+    left: auto !important;
+    right: 20px !important;
+  }
+}

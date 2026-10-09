@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foundation Quizzes – SigMath</title>
+  <link rel="stylesheet" href="/css/quizzes.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+
+  <!-- ✅ MathJax (already present) -->
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+
+  <style>
+    .quiz-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 1.5rem; }
+    .quiz-card {
+      background: white; border-radius: 16px; padding: 1.25rem 1.5rem;
+      display: flex; align-items: center; gap: 16px; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(24,95,165,0.06); border: 1px solid #E6F1FB;
+    }
+    .quiz-card:hover { transform: translateX(6px); box-shadow: 0 6px 16px rgba(24,95,165,0.10); }
+    .quiz-card .icon { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; background: #F0F5FC; }
+    .quiz-card .info { flex: 1; }
+    .quiz-card .info h3 { font-size: 16px; font-weight: 700; color: #042C53; margin: 0 0 4px 0; }
+    .quiz-card .info p { font-size: 13px; color: #64748b; margin: 0; }
+    .quiz-card .question-count { font-size: 13px; color: #185FA5; font-weight: 700; background: #E6F1FB; padding: 4px 14px; border-radius: 99px; }
+    .quiz-card .status { font-size: 20px; margin-left: 12px; }
+    .quiz-card .status.pending { color: #B5D4F4; }
+    .question-text { font-size: 16px; margin: 1rem 0; color: #042C53; }
+    .option-list { display: flex; flex-direction: column; gap: 8px; }
+    .option-btn {
+      padding: 12px 16px; border: 2px solid #E6F1FB; border-radius: 12px;
+      background: white; cursor: pointer; text-align: left; font-size: 14px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .option-btn:hover { border-color: #185FA5; }
+    .option-btn.correct { border-color: #22c55e; background: #dcfce7; animation: correctPulse 0.5s ease; }
+    .option-btn.wrong { border-color: #ef4444; background: #fee2e2; animation: wrongShake 0.4s ease; }
+    @keyframes correctPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+      40% { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(34,197,94,0.15); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+    @keyframes wrongShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .feedback-icon-pop {
+      display: inline-block;
+      animation: iconPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes iconPop {
+      0% { transform: scale(0); }
+      60% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .confetti-piece {
+      position: fixed; top: -10px; width: 8px; height: 14px; opacity: 0.9;
+      animation: confettiFall linear forwards; z-index: 3000; pointer-events: none;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(105vh) rotate(540deg); opacity: 0.4; }
+    }
+    .quiz-result { text-align: center; padding: 1.5rem; }
+    .quiz-result .score { font-size: 32px; font-weight: 700; color: #185FA5; animation: iconPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .quiz-result .message { font-size: 16px; color: #042C53; margin-top: 8px; }
+    .modal-content { max-width: 600px; }
+    .back-btn {
+      display: inline-block; background: white; border: 1px solid #B5D4F4;
+      padding: 8px 18px; border-radius: 10px; color: #185FA5; font-weight: 600;
+      text-decoration: none; font-size: 13px; margin-bottom: 1rem;
+    }
+    .back-btn:hover { background: #F0F5FC; }
+    .hint-btn {
+      background: #FFF3E0; border: 1px solid #FFA726; border-radius: 8px;
+      padding: 6px 12px; font-size: 13px; font-weight: 600; color: #E65100;
+      cursor: pointer; margin-left: auto;
+    }
+    .hint-btn:hover { background: #FFE0B2; }
+    .practice-btn {
+      background: #F0F5FC; border: 1px solid #B5D4F4; border-radius: 10px;
+      padding: 10px 20px; font-weight: 600; color: #185FA5; cursor: pointer;
+      margin-top: 1rem;
+    }
+    .practice-btn:hover { background: #E6F1FB; }
+
+    /* AI chat panel */
+    .ai-chat-panel {
+      position: fixed; right: 0; top: 0; width: 360px; height: 100vh;
+      background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+      z-index: 1000; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.3s;
+      border-radius: 20px 0 0 20px; overflow: hidden;
+    }
+    .ai-chat-panel.open { transform: translateX(0); }
+    .ai-chat-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid #E6F1FB; }
+    .ai-chat-header h3 { margin: 0; color: #042C53; }
+    .ai-chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 12px; }
+    .ai-message { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; }
+    .ai-message.user { align-self: flex-end; background: #185FA5; color: white; }
+    .ai-message.bot { align-self: flex-start; background: #F0F5FC; color: #042C53; }
+    .ai-chat-input { display: flex; padding: 0.8rem; border-top: 1px solid #E6F1FB; }
+    .ai-chat-input input { flex: 1; padding: 10px 14px; border: 1.5px solid #B5D4F4; border-radius: 12px; outline: none; }
+    .ai-chat-input button { margin-left: 8px; background: #185FA5; color: white; border: none; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: pointer; }
+    .open-ai-btn { position: fixed; bottom: 30px; right: 30px; background: #185FA5; color: white; border: none; border-radius: 50px; padding: 12px 24px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(24,95,165,0.25); z-index: 999; }
+    .ai-message ul { margin-top: 6px; margin-bottom: 6px; }
+    .ai-message li { margin-bottom: 4px; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+    }
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #185FA5;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-8px); }
+    }
+    .ai-msg-avatar { display: none; }
+
+    @media (max-width: 768px) { .quiz-card { padding: 1rem; } .ai-chat-panel { width: 100%; border-radius: 0; } }
+  </style>
+</head>
+<body class="dashboard-page">
+
+<div class="sidebar" id="sidebar"><div id="sidebarContent"></div></div>
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <a href="/quizzes/" class="back-btn">← Back to Grades</a>
+      <h1>🧮 Foundation Quizzes</h1>
+      <p>Practice essential math skills</p>
+    </div>
+  </div>
+  <div class="quiz-grid" id="quizGrid"></div>
+</div>
+
+<div id="bottomNavContainer"></div>
+
+<!-- Quiz Modal -->
+<div class="lesson-modal" id="quizModal" style="display:none;">
+  <div class="lesson-modal-card modal-content">
+    <div class="lesson-modal-header">
+      <h2 id="quizModalTitle">Quiz</h2>
+      <button class="close-btn" onclick="closeQuizModal()">✕</button>
+    </div>
+    <div class="lesson-modal-body" id="quizModalBody">
+      <div id="quizContent">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating AI chat button -->
+<button class="open-ai-btn" onclick="toggleAIChat()"><i class="ti ti-robot"></i> Ask AI</button>
+
+<!-- AI Chat Panel -->
+<div class="ai-chat-panel" id="aiChatPanel">
+  <div class="ai-chat-header"><h3><i class="ti ti-robot"></i> AI Tutor</h3><button onclick="toggleAIChat()" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button></div>
+  <div class="ai-chat-messages" id="aiChatMessages"></div>
+  <div class="ai-chat-input">
+    <input type="text" id="aiInput" placeholder="Ask about this quiz..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+    <button onclick="sendAIMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || user.role !== 'student') window.location.href = '/'
+
+  // ============================================================
+  // FOUNDATION QUIZ DATA (11 topics, 20 questions each)
+  // ============================================================
+  const quizData = {
+    'whole-numbers': {
+      title: 'Whole Numbers', icon: '🔢',
+      questions: [
+        { q:'What is the place value of 7 in 5,728?', options:['Ones','Tens','Hundreds','Thousands'], answer:2, explanation:'7 is in the hundreds place.' },
+        { q:'What is 345 + 289?', options:['534','624','634','724'], answer:2, explanation:'345 + 289 = 634.' },
+        { q:'Round 4,567 to the nearest hundred.', options:['4,500','4,600','4,700','5,000'], answer:1, explanation:'Tens digit is 6 ≥ 5, so round up.' },
+        { q:'What is 23 × 15?', options:['325','335','345','355'], answer:2, explanation:'23 × 15 = 345.' },
+        { q:'Which number is the smallest?', options:['2,345','2,354','2,435','2,543'], answer:0, explanation:'2,345 is the smallest.' },
+        { q:'What is 1,000 less than 4,832?', options:['3,832','4,732','4,822','3,932'], answer:0, explanation:'4,832 - 1,000 = 3,832.' },
+        { q:'Write 9,076 in words.', options:['Nine thousand seventy-six','Nine hundred seventy-six','Nine thousand seven hundred six','Nine thousand seven hundred sixty'], answer:0, explanation:'9,076 = nine thousand seventy-six.' },
+        { q:'What is 6 × 7 × 2?', options:['42','84','56','72'], answer:1, explanation:'6×7=42, 42×2=84.' },
+        { q:'What is the remainder when 85 is divided by 7?', options:['1','5','6','2'], answer:0, explanation:'7×12=84, remainder 1.' },
+        { q:'Round 23,456 to the nearest thousand.', options:['23,000','24,000','23,500','22,000'], answer:0, explanation:'Hundreds digit is 4 < 5, so round down.' },
+        { q:'What is 5,000 + 800 + 60 + 3?', options:['5,863','5,836','5,683','5,638'], answer:0, explanation:'5,000+800=5,800, +60=5,860, +3=5,863.' },
+        { q:'Which is the largest?', options:['4,321','4,312','4,231','4,213'], answer:0, explanation:'4,321 > 4,312 > 4,231 > 4,213.' },
+        { q:'What is 1,234 + 5,678?', options:['6,912','7,012','6,812','7,102'], answer:0, explanation:'1,234 + 5,678 = 6,912.' },
+        { q:'Subtract: 8,005 - 2,987', options:['5,018','5,028','5,118','4,918'], answer:0, explanation:'8,005 - 2,987 = 5,018.' },
+        { q:'What is the product of 15 and 40?', options:['600','550','650','700'], answer:0, explanation:'15 × 40 = 600.' },
+        { q:'Divide 144 by 12.', options:['10','11','12','13'], answer:2, explanation:'12 × 12 = 144.' },
+        { q:'What is 250 × 4?', options:['1,000','800','1,200','900'], answer:0, explanation:'250 × 4 = 1,000.' },
+        { q:'Round 9,999 to the nearest hundred.', options:['9,900','10,000','9,990','9,800'], answer:1, explanation:'Tens digit 9 ≥ 5, round up to 10,000.' },
+        { q:'Find the missing number: 8 × ? = 96', options:['10','11','12','13'], answer:2, explanation:'96 ÷ 8 = 12.' },
+        { q:'What is 3,000 + 400 + 20 + 9?', options:['3,429','3,492','3,249','3,924'], answer:0, explanation:'3,000+400=3,400, +20=3,420, +9=3,429.' }
+      ]
+    },
+    'integers': {
+      title: 'Integers', icon: '➕',
+      questions: [
+        { q:'What is -5 + 8?', options:['-13','-3','3','13'], answer:2, explanation:'-5 + 8 = 3.' },
+        { q:'What is -3 × -4?', options:['-12','-7','7','12'], answer:3, explanation:'Product of two negatives is positive.' },
+        { q:'What is the absolute value of -9?', options:['-9','0','9','18'], answer:2, explanation:'|-9| = 9.' },
+        { q:'What is -7 - (-3)?', options:['-10','-4','4','10'], answer:1, explanation:'-7 + 3 = -4.' },
+        { q:'Which number is greater?', options:['-6','-4','0','2'], answer:3, explanation:'2 is the greatest.' },
+        { q:'What is -10 + 6?', options:['-4','-16','4','16'], answer:0, explanation:'-10 + 6 = -4.' },
+        { q:'What is the additive inverse of 12?', options:['-12','12','0','1/12'], answer:0, explanation:'12 + (-12) = 0.' },
+        { q:'Simplify: -2 + 5 + (-3)', options:['0','-4','6','2'], answer:0, explanation:'-2+5=3, 3+(-3)=0.' },
+        { q:'What is 6 × (-2)?', options:['-12','12','-8','8'], answer:0, explanation:'6 × (-2) = -12.' },
+        { q:'Which is the smallest?', options:['-10','-5','0','3'], answer:0, explanation:'-10 is the smallest.' },
+        { q:'What is -15 ÷ 3?', options:['-5','5','-12','12'], answer:0, explanation:'-15 ÷ 3 = -5.' },
+        { q:'What is | -20 |?', options:['-20','20','0','40'], answer:1, explanation:'Absolute value makes it positive.' },
+        { q:'What is -8 - 3?', options:['-5','-11','5','11'], answer:1, explanation:'-8 - 3 = -11.' },
+        { q:'What is the opposite of -15?', options:['-15','15','0','30'], answer:1, explanation:'The opposite of -15 is 15.' },
+        { q:'Multiply: -4 × (-5) × (-2)', options:['-40','40','-30','30'], answer:0, explanation:'-4×(-5)=20, 20×(-2)=-40.' },
+        { q:'What is -20 ÷ (-4)?', options:['-5','5','-16','16'], answer:1, explanation:'-20 ÷ (-4) = 5.' },
+        { q:'Which integer is neither positive nor negative?', options:['0','1','-1','10'], answer:0, explanation:'Zero is neutral.' },
+        { q:'What is 3 + (-3) + 7?', options:['7','-7','13','0'], answer:0, explanation:'3 + (-3) = 0, then +7 = 7.' },
+        { q:'Order from least to greatest: -2, 5, -8, 0', options:['-8, -2, 0, 5','0, -2, 5, -8','5, 0, -2, -8','-2, -8, 0, 5'], answer:0, explanation:'-8 < -2 < 0 < 5.' }
+      ]
+    },
+    'mdas': {
+      title: 'MDAS', icon: '📐',
+      questions: [
+        { q:'What is 8 + 6 × 2?', options:['16','20','28','36'], answer:1, explanation:'6×2=12, then 8+12=20.' },
+        { q:'What is 24 ÷ 3 + 2?', options:['6','8','10','12'], answer:2, explanation:'24÷3=8, then 8+2=10.' },
+        { q:'What is 5 × 4 - 3?', options:['5','8','17','23'], answer:2, explanation:'5×4=20, then 20-3=17.' },
+        { q:'What is 12 + 8 ÷ 4?', options:['5','11','14','20'], answer:2, explanation:'8÷4=2, then 12+2=14.' },
+        { q:'What is (6 + 2) × 3?', options:['12','18','24','30'], answer:2, explanation:'(6+2)=8, then 8×3=24.' },
+        { q:'What is 20 - 5 × 2?', options:['10','15','30','25'], answer:0, explanation:'5×2=10, 20-10=10.' },
+        { q:'What is 3 + 4 × 5 - 6?', options:['17','11','29','14'], answer:0, explanation:'4×5=20, 3+20=23, 23-6=17.' },
+        { q:'What is 36 ÷ (3 × 4)?', options:['3','4','9','12'], answer:0, explanation:'3×4=12, 36÷12=3.' },
+        { q:'What is 2 × 3 + 4 × 5?', options:['26','50','36','46'], answer:0, explanation:'2×3=6, 4×5=20, 6+20=26.' },
+        { q:'What is 18 - (6 + 2) × 2?', options:['2','4','10','8'], answer:0, explanation:'6+2=8, 8×2=16, 18-16=2.' },
+        { q:'What is 5 + 5 × 0 + 5?', options:['5','10','0','15'], answer:1, explanation:'5×0=0, 5+0+5=10.' },
+        { q:'What is 42 ÷ 7 + 3 × 2?', options:['12','18','9','15'], answer:0, explanation:'42÷7=6, 3×2=6, 6+6=12.' },
+        { q:'What is 9 × (4 + 3) - 5?', options:['58','56','54','52'], answer:0, explanation:'4+3=7, 9×7=63, 63-5=58.' },
+        { q:'What is 100 - 25 ÷ 5 × 4?', options:['80','75','90','85'], answer:0, explanation:'25÷5=5, 5×4=20, 100-20=80.' },
+        { q:'What is (10 - 3) × (2 + 4)?', options:['42','30','36','48'], answer:0, explanation:'7×6=42.' },
+        { q:'What is 15 + 3 × 4 - 6 ÷ 2?', options:['24','22','26','20'], answer:0, explanation:'3×4=12, 6÷2=3, 15+12=27, 27-3=24.' },
+        { q:'What is 8 × 2 + 12 ÷ 4?', options:['19','16','18','20'], answer:0, explanation:'8×2=16, 12÷4=3, 16+3=19.' },
+        { q:'What is 30 ÷ 5 × 3 - 4?', options:['14','16','12','10'], answer:0, explanation:'30÷5=6, 6×3=18, 18-4=14.' },
+        { q:'What is (5 + 3)² - 10 × 2?', options:['44','54','34','24'], answer:0, explanation:'8²=64, 10×2=20, 64-20=44.' }
+      ]
+    },
+    'fractions': {
+      title: 'Fractions', icon: '➗',
+      questions: [
+        { q:'What is 1/2 + 1/4?', options:['1/6','1/4','1/2','3/4'], answer:3, explanation:'1/2=2/4, so 2/4+1/4=3/4.' },
+        { q:'What is 3/4 × 2/3?', options:['1/4','1/2','2/3','3/4'], answer:1, explanation:'3×2=6, 4×3=12 → 1/2.' },
+        { q:'What is 5/6 - 1/3?', options:['1/6','1/3','1/2','2/3'], answer:2, explanation:'1/3=2/6, so 3/6=1/2.' },
+        { q:'What is 4/5 ÷ 2/5?', options:['1','2','4','8'], answer:1, explanation:'4/5 × 5/2 = 20/10 = 2.' },
+        { q:'What is 2/3 + 1/6?', options:['1/6','1/3','1/2','5/6'], answer:3, explanation:'2/3=4/6, so 5/6.' },
+        { q:'Simplify 6/8 to lowest terms.', options:['2/3','3/4','4/5','1/2'], answer:1, explanation:'Divide both by 2 → 3/4.' },
+        { q:'What is 1/3 of 24?', options:['6','8','12','18'], answer:1, explanation:'24 ÷ 3 = 8.' },
+        { q:'What is the reciprocal of 5/7?', options:['5/7','7/5','5/5','7/7'], answer:1, explanation:'Flip the fraction → 7/5.' },
+        { q:'Add: 3/5 + 1/10', options:['2/5','7/10','4/10','3/10'], answer:1, explanation:'3/5=6/10, 6/10+1/10=7/10.' },
+        { q:'What is 7/8 - 1/4?', options:['3/8','5/8','6/8','1/2'], answer:1, explanation:'1/4=2/8, 7/8-2/8=5/8.' },
+        { q:'Multiply: 2/3 × 3/5', options:['1/5','2/5','3/5','4/5'], answer:1, explanation:'2×3=6, 3×5=15 → 2/5.' },
+        { q:'Divide: 3/4 ÷ 1/2', options:['3/8','3/2','1/2','2/3'], answer:1, explanation:'3/4 × 2/1 = 6/4 = 3/2.' },
+        { q:'Which is larger, 2/3 or 3/4?', options:['2/3','3/4','They are equal','Cannot tell'], answer:1, explanation:'2/3=8/12, 3/4=9/12 → 3/4 larger.' },
+        { q:'Convert 0.75 to a fraction.', options:['3/4','1/2','2/3','4/5'], answer:0, explanation:'0.75 = 75/100 = 3/4.' },
+        { q:'What is 1/2 + 2/3?', options:['1/6','5/6','7/6','1'], answer:2, explanation:'3/6 + 4/6 = 7/6.' },
+        { q:'Simplify: 4/10', options:['1/5','2/5','2/10','4/5'], answer:1, explanation:'Divide by 2 → 2/5.' },
+        { q:'What is the mixed number for 7/3?', options:['2 1/3','1 4/3','2 2/3','3 1/3'], answer:0, explanation:'7÷3 = 2 remainder 1 → 2 1/3.' },
+        { q:'What is 5 × 2/5?', options:['1','2','5','10'], answer:1, explanation:'5 × 2/5 = 10/5 = 2.' },
+        { q:'What fraction of 1 meter is 25 cm?', options:['1/2','1/4','1/5','1/10'], answer:1, explanation:'25 cm = 1/4 of 100 cm.' }
+      ]
+    },
+    'decimals': {
+      title: 'Decimals', icon: '🔟',
+      questions: [
+        { q:'What is 0.5 + 0.75?', options:['0.8','1.0','1.25','1.5'], answer:2, explanation:'0.5 + 0.75 = 1.25.' },
+        { q:'What is 3.6 - 1.8?', options:['1.2','1.8','2.0','2.2'], answer:1, explanation:'3.6 - 1.8 = 1.8.' },
+        { q:'What is 2.5 × 4?', options:['6','8','10','12'], answer:2, explanation:'2.5 × 4 = 10.' },
+        { q:'What is 0.12 + 0.08?', options:['0.16','0.18','0.20','0.22'], answer:2, explanation:'0.12 + 0.08 = 0.20.' },
+        { q:'What is 7.5 ÷ 5?', options:['0.5','1.0','1.5','2.0'], answer:2, explanation:'7.5 ÷ 5 = 1.5.' },
+        { q:'Round 3.276 to the nearest tenth.', options:['3.2','3.3','3.28','3.0'], answer:1, explanation:'Hundredths digit 7 ≥ 5, so round up to 3.3.' },
+        { q:'What is 4.25 + 3.75?', options:['7.5','8.0','7.75','8.5'], answer:1, explanation:'4.25 + 3.75 = 8.00.' },
+        { q:'Subtract: 5.6 - 2.9', options:['2.3','2.7','3.1','3.5'], answer:1, explanation:'5.6 - 2.9 = 2.7.' },
+        { q:'Multiply: 0.3 × 0.7', options:['0.21','0.21','0.30','0.49'], answer:0, explanation:'3×7=21, two decimal places → 0.21.' },
+        { q:'Divide: 4.8 ÷ 0.6', options:['0.8','8','6','4.2'], answer:1, explanation:'4.8 ÷ 0.6 = 8.' },
+        { q:'What is 0.08 as a fraction?', options:['8/10','8/100','80/100','1/8'], answer:1, explanation:'0.08 = 8/100 = 2/25.' },
+        { q:'Which is larger: 0.6 or 0.55?', options:['0.6','0.55','Equal','Cannot tell'], answer:0, explanation:'0.6 = 0.60 > 0.55.' },
+        { q:'What is 1.5 × 100?', options:['15','150','1,500','0.015'], answer:1, explanation:'1.5 × 100 = 150.' },
+        { q:'What is 0.25 as a percentage?', options:['2.5%','25%','0.25%','250%'], answer:1, explanation:'0.25 × 100 = 25%.' },
+        { q:'What is 9.99 rounded to the nearest whole number?', options:['9','10','9.9','9.0'], answer:1, explanation:'Tenths digit 9 ≥ 5, round up to 10.' },
+        { q:'Add: 0.45 + 0.55', options:['0.90','1.00','0.100','0.95'], answer:1, explanation:'0.45 + 0.55 = 1.00.' },
+        { q:'What is 6 ÷ 10?', options:['0.06','0.6','6.0','60'], answer:1, explanation:'6 ÷ 10 = 0.6.' },
+        { q:'What is 3.14 × 2?', options:['6.28','6.18','6.38','5.28'], answer:0, explanation:'3.14 × 2 = 6.28.' },
+        { q:'What is 0.001 × 1000?', options:['0.01','0.1','1','10'], answer:2, explanation:'0.001 × 1000 = 1.' }
+      ]
+    },
+    'percentages': {
+      title: 'Percentages', icon: '💯',
+      questions: [
+        { q:'What is 50% of 200?', options:['50','75','100','150'], answer:2, explanation:'(50/100)×200 = 100.' },
+        { q:'What is 25% as a fraction?', options:['1/2','1/3','1/4','1/5'], answer:2, explanation:'25% = 25/100 = 1/4.' },
+        { q:'What is 30% of 80?', options:['16','20','24','30'], answer:2, explanation:'(30/100)×80 = 24.' },
+        { q:'What percentage is 15 out of 60?', options:['15%','20%','25%','30%'], answer:2, explanation:'15/60 = 0.25 = 25%.' },
+        { q:'What is 75% as a decimal?', options:['0.25','0.5','0.75','1.0'], answer:2, explanation:'75% = 75/100 = 0.75.' },
+        { q:'What is 10% of 350?', options:['35','30','3.5','350'], answer:0, explanation:'10% of 350 = 35.' },
+        { q:'If a shirt costs $40 and is 20% off, what is the discount?', options:['$4','$8','$12','$20'], answer:1, explanation:'20% of 40 = $8.' },
+        { q:'What is 5% of 200?', options:['5','10','20','25'], answer:1, explanation:'5% of 200 = 10.' },
+        { q:'Express 0.6 as a percentage.', options:['6%','60%','0.6%','600%'], answer:1, explanation:'0.6 × 100 = 60%.' },
+        { q:'What is 1% of 1,000?', options:['1','10','100','0.1'], answer:1, explanation:'1% of 1000 = 10.' },
+        { q:'A student scored 18/20 on a test. What is the percentage?', options:['80%','85%','90%','95%'], answer:2, explanation:'18/20 = 0.9 = 90%.' },
+        { q:'What is 12% of 50?', options:['5','6','7','8'], answer:1, explanation:'0.12 × 50 = 6.' },
+        { q:'Convert 0.04 to a percentage.', options:['0.04%','0.4%','4%','40%'], answer:2, explanation:'0.04 × 100 = 4%.' },
+        { q:'What is 200% of 30?', options:['30','60','90','120'], answer:1, explanation:'200% = 2, 2×30=60.' },
+        { q:'A bag originally $80 is now $64. What percent discount?', options:['10%','15%','20%','25%'], answer:2, explanation:'80-64=16, 16/80=0.2=20% off.' },
+        { q:'What is 33% of 300?', options:['33','66','99','100'], answer:2, explanation:'0.33 × 300 = 99.' },
+        { q:'Express 3/5 as a percentage.', options:['30%','35%','50%','60%'], answer:3, explanation:'3/5 = 0.6 = 60%.' },
+        { q:'What is 150% of 40?', options:['40','50','60','80'], answer:2, explanation:'1.5 × 40 = 60.' },
+        { q:'If 20% of a number is 8, what is the number?', options:['20','32','40','80'], answer:2, explanation:'0.2x = 8 → x = 40.' }
+      ]
+    },
+    'ratios': {
+      title: 'Ratios & Proportions', icon: '📊',
+      questions: [
+        { q:'Simplify the ratio 4:6', options:['2:3','3:2','4:6','6:4'], answer:0, explanation:'Divide both by 2.' },
+        { q:'Solve for x: 2/5 = 6/x', options:['10','12','15','18'], answer:2, explanation:'Cross multiply: 2x = 30 → x = 15.' },
+        { q:'What is 3:4 equivalent to?', options:['6:10','9:12','12:16','15:20'], answer:1, explanation:'Multiply both by 3: 9:12.' },
+        { q:'Solve: x/8 = 3/4', options:['4','6','8','12'], answer:1, explanation:'x = 8 × 3/4 = 6.' },
+        { q:'If 5 apples cost $2, how much for 15?', options:['$4','$5','$6','$8'], answer:2, explanation:'15 is 3×5, so $2×3 = $6.' },
+        { q:'Simplify 10:25', options:['2:5','1:5','5:12','2:3'], answer:0, explanation:'Divide both by 5 → 2:5.' },
+        { q:'If 3 pens cost $9, what is the price of 1 pen?', options:['$2','$3','$4','$6'], answer:1, explanation:'$9 ÷ 3 = $3 per pen.' },
+        { q:'A recipe uses 2 cups flour for 3 cups sugar. How much sugar for 6 cups flour?', options:['6','9','12','3'], answer:1, explanation:'2:3 = 6:x → 2x=18 → x=9.' },
+        { q:'What is the ratio of 15 cm to 1 m?', options:['15:1','3:20','1:15','20:3'], answer:1, explanation:'1 m = 100 cm, ratio 15:100 = 3:20.' },
+        { q:'Solve: 4/7 = x/21', options:['8','10','12','14'], answer:2, explanation:'4×21=7x → 84=7x → x=12.' },
+        { q:'Ratio of boys to girls is 5:4. If 20 boys, how many girls?', options:['12','16','20','25'], answer:1, explanation:'5/4 = 20/x → 5x=80 → x=16.' },
+        { q:'Simplify 18:24', options:['3:4','2:3','4:3','9:12'], answer:0, explanation:'Divide by 6 → 3:4.' },
+        { q:'If a car travels 180 km in 3 hours, speed?', options:['50 km/h','60 km/h','70 km/h','90 km/h'], answer:1, explanation:'180 ÷ 3 = 60 km/h.' },
+        { q:'What is the missing value: 8:12 = 2:?', options:['3','4','5','6'], answer:0, explanation:'8/12 = 2/3 → ? = 3.' },
+        { q:'Divide $60 in the ratio 1:2.', options:['$20 and $40','$15 and $45','$30 and $30','$10 and $50'], answer:0, explanation:'1+2=3 parts, each $20 → $20 and $40.' },
+        { q:'Scale on a map is 1 cm : 5 km. How far is 3 cm?', options:['5 km','10 km','15 km','20 km'], answer:2, explanation:'3 × 5 = 15 km.' },
+        { q:'Solve: x/5 = 8/10', options:['2','3','4','5'], answer:2, explanation:'10x = 40 → x=4.' },
+        { q:'If 4 workers build a wall in 6 days, how many days for 2 workers?', options:['3','6','9','12'], answer:3, explanation:'Inverse proportion: 4×6 = 2×x → x=12.' },
+        { q:'A fruit basket has apples and oranges in ratio 3:2. If 15 apples, how many oranges?', options:['5','8','10','12'], answer:2, explanation:'3/2 = 15/x → 3x=30 → x=10.' }
+      ]
+    },
+    'basic-algebra': {
+      title: 'Basic Algebra', icon: '✏️',
+      questions: [
+        { q:'Solve: 2x + 3 = 11', options:['3','4','5','6'], answer:1, explanation:'2x = 8 → x = 4.' },
+        { q:'Solve: 3y - 5 = 16', options:['5','6','7','8'], answer:2, explanation:'3y = 21 → y = 7.' },
+        { q:'Simplify: 3x + 2x', options:['3x','4x','5x','6x'], answer:2, explanation:'3x + 2x = 5x.' },
+        { q:'Solve: 4x = 20', options:['4','5','6','8'], answer:1, explanation:'x = 20/4 = 5.' },
+        { q:'Expand: 2(x + 3)', options:['2x + 3','2x + 6','x + 6','2x + 5'], answer:1, explanation:'Distribute: 2x + 6.' },
+        { q:'Solve: x + 7 = 15', options:['6','7','8','9'], answer:2, explanation:'x = 15 - 7 = 8.' },
+        { q:'Simplify: 4a - a + 2a', options:['5a','6a','7a','4a'], answer:0, explanation:'4a - a + 2a = 5a.' },
+        { q:'If x = 3, evaluate 2x + 1.', options:['5','6','7','8'], answer:2, explanation:'2(3) + 1 = 7.' },
+        { q:'Solve: 5x = 30', options:['5','6','7','8'], answer:1, explanation:'x = 30/5 = 6.' },
+        { q:'Expand: 3(x - 4)', options:['3x - 4','3x - 12','3x + 12','x - 12'], answer:1, explanation:'3x - 12.' },
+        { q:'Solve: x/2 = 9', options:['4.5','9','18','27'], answer:2, explanation:'x = 9 × 2 = 18.' },
+        { q:'Simplify: 2(x + 1) + 3x', options:['5x + 2','5x + 1','2x + 3','5x + 3'], answer:0, explanation:'2x + 2 + 3x = 5x + 2.' },
+        { q:'What is the coefficient of y in 7y + 3?', options:['3','7','y','10'], answer:1, explanation:'The coefficient is 7.' },
+        { q:'Solve: 2x - 4 = 10', options:['3','5','7','8'], answer:2, explanation:'2x = 14 → x = 7.' },
+        { q:'Simplify: 6m ÷ 2', options:['3m','4m','2m','6m'], answer:0, explanation:'6m/2 = 3m.' },
+        { q:'If a = 5, b = 2, evaluate 3a - b.', options:['13','15','11','9'], answer:0, explanation:'3(5) - 2 = 13.' },
+        { q:'Solve: x + 3 = -2', options:['-5','-1','1','5'], answer:0, explanation:'x = -2 - 3 = -5.' },
+        { q:'Expand: 5(2x - 3)', options:['10x - 15','10x + 15','7x - 3','2x - 15'], answer:0, explanation:'10x - 15.' },
+        { q:'Solve: 3x + 2 = 14', options:['2','3','4','5'], answer:2, explanation:'3x = 12 → x = 4.' }
+      ]
+    },
+    'factoring': {
+      title: 'Factoring Polynomials', icon: '📝',
+      questions: [
+        { q:'Factor: x² + 5x + 6', options:['(x+2)(x+3)','(x+1)(x+6)','(x-2)(x-3)','(x+2)(x+4)'], answer:0, explanation:'Factors of 6 that add to 5: 2 and 3.' },
+        { q:'Factor: x² - 9', options:['(x-3)(x+3)','(x-3)(x-3)','(x+3)(x+3)','(x-9)(x+1)'], answer:0, explanation:'Difference of squares.' },
+        { q:'Factor: 2x + 4', options:['2(x+2)','2(x+4)','4(x+1)','x(2+4)'], answer:0, explanation:'Factor out 2.' },
+        { q:'Factor: x² - 16', options:['(x-4)(x+4)','(x-4)(x-4)','(x+4)(x+4)','(x-8)(x+8)'], answer:0, explanation:'Difference of squares.' },
+        { q:'Factor: x² + 7x + 12', options:['(x+2)(x+6)','(x+3)(x+4)','(x+1)(x+12)','(x-3)(x-4)'], answer:1, explanation:'Factors of 12 that add to 7: 3 and 4.' },
+        { q:'Factor: 3x + 6', options:['3(x+2)','3(x+6)','6(x+1)','x(3+6)'], answer:0, explanation:'Factor out 3 → 3(x+2).' },
+        { q:'Factor: x² - 25', options:['(x-5)(x+5)','(x-5)(x-5)','(x+5)(x+5)','(x-25)(x+1)'], answer:0, explanation:'Difference of squares: (x-5)(x+5).' },
+        { q:'Factor: 4x + 8', options:['4(x+2)','2(2x+4)','8(x+1)','4(x+8)'], answer:0, explanation:'GCF is 4 → 4(x+2).' },
+        { q:'Factor: x² + 6x + 9', options:['(x+3)(x+3)','(x+2)(x+4)','(x+1)(x+9)','(x-3)(x-3)'], answer:0, explanation:'Perfect square trinomial: (x+3)².' },
+        { q:'Factor: 5x - 15', options:['5(x-3)','5(x-5)','3(x-5)','15(x-1)'], answer:0, explanation:'GCF is 5 → 5(x-3).' },
+        { q:'Factor: x² - 4x + 4', options:['(x-2)(x-2)','(x+2)(x+2)','(x-4)(x-1)','(x+4)(x-1)'], answer:0, explanation:'Perfect square: (x-2)².' },
+        { q:'Factor: x² + 8x + 16', options:['(x+4)(x+4)','(x+2)(x+6)','(x+1)(x+16)','(x-4)(x-4)'], answer:0, explanation:'Perfect square: (x+4)².' },
+        { q:'Factor out the GCF: 6x² - 9x', options:['3x(2x-3)','3(2x²-3x)','x(6x-9)','3x(2x+3)'], answer:0, explanation:'GCF is 3x → 3x(2x-3).' },
+        { q:'Factor: x² + x - 6', options:['(x+3)(x-2)','(x-3)(x+2)','(x+1)(x-6)','(x-1)(x+6)'], answer:0, explanation:'Factors of -6 that add to 1: 3 and -2.' },
+        { q:'Factor: 2x² + 5x + 2', options:['(2x+1)(x+2)','(2x+2)(x+1)','(x+1)(2x+2)','(2x+1)(x+1)'], answer:0, explanation:'2x²+5x+2 = (2x+1)(x+2).' },
+        { q:'Factor: x² - 36', options:['(x-6)(x+6)','(x-6)(x-6)','(x+6)(x+6)','(x-36)(x+1)'], answer:0, explanation:'Difference of squares.' },
+        { q:'Factor: 10x + 15', options:['5(2x+3)','10(x+1.5)','5(2x+5)','2(5x+7.5)'], answer:0, explanation:'GCF is 5 → 5(2x+3).' },
+        { q:'Factor: x² - 2x - 15', options:['(x-5)(x+3)','(x+5)(x-3)','(x-1)(x+15)','(x+1)(x-15)'], answer:0, explanation:'Factors of -15 that add to -2: -5 and 3.' },
+        { q:'Factor: 8x - 12', options:['4(2x-3)','2(4x-6)','4(2x+3)','8(x-1.5)'], answer:0, explanation:'GCF is 4 → 4(2x-3).' }
+      ]
+    },
+    'geometry-basics': {
+      title: 'Geometry Basics', icon: '📐',
+      questions: [
+        { q:'Area of rectangle length 5, width 3?', options:['8','10','15','20'], answer:2, explanation:'Area = 5 × 3 = 15.' },
+        { q:'Perimeter of square side 4?', options:['8','12','16','20'], answer:2, explanation:'4 × 4 = 16.' },
+        { q:'Sum of angles in a triangle?', options:['90°','180°','270°','360°'], answer:1, explanation:'Triangle angles sum to 180°.' },
+        { q:'Area of circle radius 3? (π ≈ 3.14)', options:['9.42','18.84','28.26','37.68'], answer:2, explanation:'π × 3² = 28.26.' },
+        { q:'Volume of cube side 2?', options:['4','6','8','12'], answer:2, explanation:'2³ = 8.' },
+        { q:'Perimeter of rectangle 7 by 4?', options:['22','28','18','26'], answer:0, explanation:'2(7+4) = 22.' },
+        { q:'What type of angle is exactly 90°?', options:['Acute','Right','Obtuse','Straight'], answer:1, explanation:'A right angle is 90°.' },
+        { q:'Area of triangle base 8, height 5?', options:['20','30','40','13'], answer:0, explanation:'½ × 8 × 5 = 20.' },
+        { q:'Circumference of circle with diameter 10? (π ≈ 3.14)', options:['15.7','31.4','62.8','78.5'], answer:1, explanation:'C = πd = 3.14×10 = 31.4.' },
+        { q:'Volume of rectangular prism 3×4×5?', options:['12','20','30','60'], answer:3, explanation:'3×4×5 = 60.' },
+        { q:'How many sides does a hexagon have?', options:['5','6','7','8'], answer:1, explanation:'A hexagon has 6 sides.' },
+        { q:'Sum of angles in a quadrilateral?', options:['180°','270°','360°','540°'], answer:2, explanation:'Quadrilateral angles sum to 360°.' },
+        { q:'Area of square side 9?', options:['18','36','72','81'], answer:3, explanation:'9×9 = 81.' },
+        { q:'What is the radius if diameter is 14?', options:['7','14','28','3.5'], answer:0, explanation:'Radius = diameter/2 = 7.' },
+        { q:'Perimeter of equilateral triangle side 5?', options:['10','15','20','25'], answer:1, explanation:'3×5 = 15.' },
+        { q:'How many vertices does a cube have?', options:['6','8','10','12'], answer:1, explanation:'A cube has 8 vertices.' },
+        { q:'Area of parallelogram base 6, height 4?', options:['10','12','24','48'], answer:2, explanation:'6 × 4 = 24.' },
+        { q:'What is the name of a triangle with all sides equal?', options:['Isosceles','Scalene','Equilateral','Right'], answer:2, explanation:'Equilateral triangle has three equal sides.' },
+        { q:'Find the supplement of a 70° angle.', options:['20°','70°','110°','140°'], answer:2, explanation:'180° - 70° = 110°.' }
+      ]
+    },
+    'data-graphs': {
+      title: 'Data & Graphs', icon: '📈',
+      questions: [
+        { q:'Mean of 2, 4, 6, 8, 10?', options:['4','5','6','7'], answer:2, explanation:'Sum=30, count=5, mean=6.' },
+        { q:'Median of 3, 7, 9, 12, 15?', options:['7','9','10','12'], answer:1, explanation:'Middle value is 9.' },
+        { q:'Mode of 2, 3, 3, 5, 7, 7, 7?', options:['3','5','7','2'], answer:2, explanation:'7 appears most often.' },
+        { q:'Range of 10, 15, 20, 25, 30?', options:['10','15','20','25'], answer:2, explanation:'30 - 10 = 20.' },
+        { q:'Mean of 5, 10, 15, 20?', options:['10','12.5','15','17.5'], answer:1, explanation:'Sum=50, count=4, mean=12.5.' },
+        { q:'Find the median of 2, 4, 6, 8.', options:['4','5','6','7'], answer:1, explanation:'(4+6)/2 = 5.' },
+        { q:'What type of graph shows parts of a whole?', options:['Line graph','Bar graph','Pie chart','Histogram'], answer:2, explanation:'Pie chart shows percentages of a whole.' },
+        { q:'Mean of 3, 3, 3, 3, 3?', options:['3','5','15','1'], answer:0, explanation:'Sum=15, count=5, mean=3.' },
+        { q:'Range of 5, 5, 5, 5 is?', options:['0','5','10','25'], answer:0, explanation:'Max - Min = 5 - 5 = 0.' },
+        { q:'The tallest bar in a bar graph represents the?', options:['Mode','Mean','Median','Range'], answer:0, explanation:'Tallest bar shows the mode (highest frequency).' },
+        { q:'What is the mean of 7, 9, 11?', options:['7','9','10','11'], answer:1, explanation:'Sum=27, count=3, mean=9.' },
+        { q:'Find the mode: 1, 2, 2, 3, 4, 4, 4', options:['1','2','3','4'], answer:3, explanation:'4 appears most (3 times).' },
+        { q:'What graph is best for showing change over time?', options:['Bar graph','Pie chart','Line graph','Histogram'], answer:2, explanation:'Line graph shows trends over time.' },
+        { q:'Median of 100, 200, 300?', options:['100','200','300','250'], answer:1, explanation:'Middle value is 200.' },
+        { q:'What is the range of 45, 50, 55, 60?', options:['5','10','15','20'], answer:2, explanation:'60 - 45 = 15.' },
+        { q:'How many values are in the data set: 4, 4, 5, 5, 5, 6?', options:['5','6','15','30'], answer:1, explanation:'Count = 6.' },
+        { q:'The mean of 1, 2, 3, 4, 5, 6 is?', options:['3','3.5','4','21'], answer:1, explanation:'Sum=21, count=6, mean=3.5.' },
+        { q:'Which measure is not affected by extreme values?', options:['Mean','Median','Range','None'], answer:1, explanation:'Median is resistant to outliers.' },
+        { q:'A graph that uses bars that touch is a?', options:['Bar chart','Pie chart','Histogram','Line graph'], answer:2, explanation:'Histogram bars touch to show continuous data.' }
+      ]
+    }
+  }
+
+  // ---------- SOUND EFFECTS (Web Audio) ----------
+  function playSound(type) {
+  // 👇 Check if sound is enabled
+  if (typeof window.isSoundEnabled === 'function' && !window.isSoundEnabled()) return;
+
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if (type === 'correct') {
+      osc.frequency.value = 880;
+      gain.gain.value = 0.3;
+      osc.start(); osc.stop(ctx.currentTime + 0.15);
+    } else if (type === 'wrong') {
+      osc.frequency.value = 220;
+      gain.gain.value = 0.3;
+      osc.start(); osc.stop(ctx.currentTime + 0.3);
+    }
+  } catch(e) { /* ignore */ }
+}
+
+  // ---------- RENDER QUIZ LIST ----------
+  function renderQuizzes() {
+    const container = document.getElementById('quizGrid')
+    container.innerHTML = ''
+    Object.keys(quizData).forEach(key => {
+      const quiz = quizData[key]
+      const card = document.createElement('div')
+      card.className = 'quiz-card'
+      card.innerHTML = `
+        <div class="icon">${quiz.icon}</div>
+        <div class="info"><h3>${quiz.title}</h3><p>20 questions (5 per attempt)</p></div>
+        <span class="question-count">5 random</span>
+        <span class="status pending">⏳</span>
+      `
+      card.addEventListener('click', () => startQuiz(key))
+      container.appendChild(card)
+    })
+  }
+
+  // ---------- QUIZ STATE ----------
+  let currentQuizKey = null, currentQuestions = [], currentIndex = 0, score = 0
+  let answered = false, shuffledOptions = [], correctDisplayIndex = 0
+  let quizHistory = []
+  let hintShown = false
+
+  function startQuiz(quizKey) {
+    currentQuizKey = quizKey
+    const allQuestions = quizData[quizKey].questions
+    currentQuestions = shuffle([...allQuestions]).slice(0, 5)
+    currentIndex = 0; score = 0; answered = false; quizHistory = []
+    document.getElementById('quizModalTitle').textContent = quizData[quizKey].title
+    document.getElementById('quizModal').style.display = 'flex'
+    loadQuestion()
+  }
+
+  function shuffle(arr) {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]]
+    }
+    return a
+  }
+
+  function loadQuestion() {
+    answered = false; hintShown = false
+    const q = currentQuestions[currentIndex]
+    const container = document.getElementById('quizContent')
+    const labels = ['A','B','C','D']
+    const correctText = q.options[q.answer]
+    shuffledOptions = shuffle(q.options)
+    correctDisplayIndex = shuffledOptions.indexOf(correctText)
+
+    container.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <span style="font-size:13px; color:#85B7EB;">Question ${currentIndex+1} of ${currentQuestions.length}</span>
+        <button class="hint-btn" onclick="showHint()" id="hintBtn">💡 Hint</button>
+      </div>
+      <div style="background:#E6F1FB; border-radius:8px; height:6px; margin-top:8px; margin-bottom:1rem;">
+        <div style="background:#185FA5; height:6px; border-radius:8px; width:${((currentIndex+1)/currentQuestions.length)*100}%;"></div>
+      </div>
+      <div class="question-text">${q.q}</div>
+      <div class="option-list" id="optionList">
+        ${shuffledOptions.map((opt,i) => `
+          <button class="option-btn" data-index="${i}" onclick="selectOption(${i})">${labels[i]}. ${opt}</button>
+        `).join('')}
+      </div>
+      <div id="feedbackBox" style="margin-top:1rem; display:none;"></div>
+      <div id="hintBox" style="margin-top:0.5rem; display:none; font-size:13px; color:#E65100; background:#FFF3E0; padding:8px 12px; border-radius:8px;"></div>
+      <button id="nextBtn" onclick="nextQuestion()" style="display:none; margin-top:1rem; width:100%; padding:12px; background:#185FA5; color:white; border:none; border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer;">Next Question →</button>
+    `
+    // Re-render math for the question content
+    if (window.MathJax) MathJax.typesetPromise()
+  }
+
+  async function showHint() {
+    if (hintShown || answered) return
+    hintShown = true
+    const hintBox = document.getElementById('hintBox')
+    hintBox.style.display = 'block'
+    hintBox.textContent = 'Getting a hint...'
+    const q = currentQuestions[currentIndex]
+    try {
+      const res = await fetch('/ask-ai', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          messages: [
+            { role:'system', content:'Give a very short hint for the following math question. Do NOT give the answer, just a gentle nudge in the right direction.' },
+            { role:'user', content: q.q }
+          ]
+        })
+      })
+      const data = await res.json()
+      hintBox.textContent = data.answer || 'Think about what operation the words are asking for.'
+    } catch(e) {
+      hintBox.textContent = 'Hint not available right now.'
+    }
+  }
+
+  function selectOption(index) {
+    if (answered) return
+    answered = true
+    const buttons = document.querySelectorAll('.option-btn')
+    const feedback = document.getElementById('feedbackBox')
+    const q = currentQuestions[currentIndex]
+    buttons.forEach(b => b.disabled = true)
+
+    const isCorrect = (index === correctDisplayIndex)
+    if (isCorrect) {
+      score++
+      buttons[index].classList.add('correct')
+      feedback.className = 'feedback-box correct'
+      feedback.style.display = 'block'
+      feedback.innerHTML = `<span class="feedback-icon-pop">✅</span> Correct! ${q.explanation}`
+      playSound('correct')
+    } else {
+      buttons[index].classList.add('wrong')
+      buttons[correctDisplayIndex].classList.add('correct')
+      feedback.className = 'feedback-box wrong'
+      feedback.style.display = 'block'
+      feedback.innerHTML = `<span class="feedback-icon-pop">❌</span> Wrong. ${q.explanation}`
+      playSound('wrong')
+    }
+
+    quizHistory.push({
+      question: q.q,
+      options: shuffledOptions,
+      correctIndex: correctDisplayIndex,
+      userChoice: index,
+      explanation: q.explanation
+    })
+
+    document.getElementById('nextBtn').style.display = 'block'
+    document.getElementById('nextBtn').textContent = currentIndex < currentQuestions.length - 1 ? 'Next Question →' : 'See Results'
+    document.getElementById('hintBtn').style.display = 'none'
+  }
+
+  function nextQuestion() {
+    currentIndex++
+    if (currentIndex < currentQuestions.length) {
+      loadQuestion()
+    } else {
+      showResults()
+    }
+  }
+
+  function launchConfetti() {
+    const colors = ['#185FA5', '#4FA8FF', '#FFD166', '#22c55e', '#ef4444', '#a855f7']
+    for (let i = 0; i < 60; i++) {
+      const piece = document.createElement('div')
+      piece.className = 'confetti-piece'
+      piece.style.left = Math.random() * 100 + 'vw'
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)]
+      piece.style.animationDuration = (2 + Math.random() * 1.5) + 's'
+      piece.style.animationDelay = (Math.random() * 0.4) + 's'
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px'
+      document.body.appendChild(piece)
+      setTimeout(() => piece.remove(), 4000)
+    }
+  }
+
+  async function showResults() {
+    const container = document.getElementById('quizContent')
+    const total = currentQuestions.length
+    const pct = Math.round((score/total)*100)
+    const emoji = pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '📖'
+    const msg = pct >= 80 ? 'Excellent work!' : pct >= 60 ? 'Good job!' : 'Keep practicing!'
+
+    container.innerHTML = `
+      <div class="quiz-result">
+        <div style="font-size:48px; margin-bottom:1rem;">${emoji}</div>
+        <div class="score">${score} / ${total}</div>
+        <div class="message">${msg}</div>
+        <div style="font-size:14px; color:#85B7EB;">Score: ${pct}%</div>
+        <button class="auth-submit" style="margin-top:1.5rem; max-width:200px;" onclick="closeQuizModal()">Close</button>
+        <button class="practice-btn" id="reviewBtn" onclick="reviewMistakes()">🔁 Review Mistakes</button>
+        <button class="practice-btn" id="aiPracticeBtn" onclick="generateAIPractice()">🤖 Get 3 More Questions</button>
+      </div>
+    `
+
+    if (pct === 100) {
+      launchConfetti()
+    }
+
+    try {
+      await fetch('/save-quiz', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ user_id:user.id, topic:quizData[currentQuizKey].title, score, total }) })
+    } catch(err) {}
+  }
+
+  function reviewMistakes() {
+    const mistakes = quizHistory.filter(h => h.userChoice !== h.correctIndex)
+    if (mistakes.length === 0) {
+      showToast('Perfect score! No mistakes to review.', 'success')
+      return
+    }
+    currentQuestions = mistakes.map(m => ({
+      q: m.question,
+      options: m.options,
+      answer: m.correctIndex,
+      explanation: m.explanation
+    }))
+    currentIndex = 0; score = 0; answered = false; quizHistory = []
+    document.getElementById('quizModalTitle').textContent = 'Review Mistakes'
+    loadQuestion()
+  }
+
+  async function generateAIPractice() {
+    const btn = document.getElementById('aiPracticeBtn')
+    btn.textContent = 'Generating...'; btn.disabled = true
+    const topic = quizData[currentQuizKey].title
+    try {
+      const res = await fetch('/ask-ai', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          messages: [
+            { role:'system', content:`Generate exactly 3 new multiple-choice questions about "${topic}" suitable for Foundation level. Format each as: Q: [question] | Options: A) ..., B) ..., C) ..., D) ... | Answer: [letter]. No extra text.` },
+            { role:'user', content:'Generate 3 questions.' }
+          ]
+        })
+      })
+      const data = await res.json()
+      const raw = data.answer
+      const blocks = raw.split(/\n\s*\n/)
+      const newQuestions = []
+      blocks.forEach(block => {
+        const qMatch = block.match(/Q:\s*(.+)/i)
+        const optMatch = block.match(/Options:\s*(.+)/i)
+        const ansMatch = block.match(/Answer:\s*([A-D])/i)
+        if (qMatch && optMatch && ansMatch) {
+          const options = optMatch[1].split(/,\s*/).map(o => o.replace(/^[A-D]\)\s*/, ''))
+          const answerLetter = ansMatch[1].toUpperCase()
+          const answerIndex = ['A','B','C','D'].indexOf(answerLetter)
+          if (answerIndex >= 0 && options.length === 4) {
+            newQuestions.push({ q: qMatch[1], options, answer: answerIndex, explanation: '' })
+          }
+        }
+      })
+      if (newQuestions.length === 0) {
+        showToast('Could not generate questions. Try again later.')
+        btn.textContent = '🤖 Get 3 More Questions'; btn.disabled = false
+        return
+      }
+      currentQuestions = newQuestions.slice(0, 3)
+      currentIndex = 0; score = 0; answered = false; quizHistory = []
+      document.getElementById('quizModalTitle').textContent = 'AI Practice – ' + topic
+      loadQuestion()
+    } catch(e) {
+      showToast('Failed to generate questions.')
+      btn.textContent = '🤖 Get 3 More Questions'; btn.disabled = false
+    }
+  }
+
+  function closeQuizModal() {
+    document.getElementById('quizModal').style.display = 'none'
+  }
+  document.getElementById('quizModal').addEventListener('click', function(e) {
+    if (e.target === this) closeQuizModal()
+  })
+
+  renderQuizzes()
+
+  // Load sidebar & bottom nav
+  fetch('/sidebar').then(r => r.text()).then(html => {
+    document.getElementById('sidebarContent').innerHTML = html
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('quizzes')) btn.classList.add('active')
+    })
+  })
+  fetch('/bottomnav').then(r => r.text()).then(html => {
+    document.getElementById('bottomNavContainer').innerHTML = html
+    document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('quizzes')) btn.classList.add('active')
+    })
+  })
+
+  // ---------- AI Chat (copied from aitutor.html) ----------
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatText(text) {
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function appendMsg(text, sender) {
+    const box = document.getElementById('aiChatMessages');
+    const msg = document.createElement('div');
+    msg.className = `ai-message ${sender}`;
+    msg.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ${sender === 'bot' ? 'ti-robot' : 'ti-user'}"></i></div>
+      <div class="ai-bubble">${sender === 'bot' ? formatText(text) : escapeHtml(text)}</div>
+    `;
+    box.appendChild(msg);
+    if (typeof MathJax !== 'undefined') {
+      MathJax.typesetPromise();
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function showTyping() {
+    const box = document.getElementById('aiChatMessages');
+    const typing = document.createElement('div');
+    typing.className = 'ai-message bot';
+    typing.id = 'typingIndicator';
+    typing.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ti-robot"></i></div>
+      <div class="ai-bubble" style="padding:0;">
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+    box.appendChild(typing);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function removeTyping() {
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
+  }
+
+  let aiOpen = false;
+  function toggleAIChat() {
+    aiOpen = !aiOpen;
+    document.getElementById('aiChatPanel').classList.toggle('open', aiOpen);
+  }
+
+  async function sendAIMessage() {
+    const input = document.getElementById('aiInput');
+    const btn = document.querySelector('.ai-chat-input button');
+    const msg = input.value.trim();
+    if (!msg || btn.disabled) return;
+
+    appendMsg(msg, 'user');
+    input.value = '';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i>';
+    showTyping();
+
+    let context = `The student is taking a Foundation quiz on ${quizData[currentQuizKey]?.title || 'math'}.`;
+    if (currentQuizKey) {
+      const topic = quizData[currentQuizKey]?.title || 'math';
+      context = `The student is taking a quiz on "${topic}". They are asking a question about this topic. Help them understand the concept without giving away the answer to the specific quiz question if they are asking about it. Keep your answer short and friendly. Use bullet points if helpful.`;
+    }
+
+    try {
+      const res = await fetch('/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: context },
+            { role: 'user', content: msg }
+          ]
+        })
+      });
+      const data = await res.json();
+      removeTyping();
+      if (data.success) {
+        appendMsg(data.answer, 'bot');
+      } else {
+        appendMsg(data.answer || 'Something went wrong. Please try again.', 'bot');
+      }
+    } catch {
+      removeTyping();
+      appendMsg('Something went wrong. Please check your connection and try again.', 'bot');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Send';
+    input.focus();
+  }
+
+  function showToast(msg, type = 'error') {
+    const existing = document.getElementById('toastMsg');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.id = 'toastMsg';
+    toast.textContent = msg;
+    toast.style.cssText = `position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:${type === 'error' ? '#e53e3e' : '#38a169'}; color:white; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:bold; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); max-width:90vw; text-align:center;`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+</script>
+</body>
+</html>

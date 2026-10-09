@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Games</title>
+  <link rel="stylesheet" href="/css/games.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+
+  <style>
+    /* All game‑specific styles – no bottom‑nav overrides */
+    .grade-selector { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 2rem; }
+    .grade-card { flex: 1; min-width: 200px; background: white; border-radius: 20px; padding: 2rem; text-align: center; cursor: pointer; border: 1px solid #E6F1FB; box-shadow: 0 4px 12px rgba(24,95,165,0.06); transition: all 0.2s; }
+    .grade-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(24,95,165,0.10); }
+    .grade-card .icon { font-size: 40px; margin-bottom: 1rem; }
+    .grade-card h3 { color: #042C53; font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .grade-card p { color: #64748b; font-size: 0.9rem; }
+    .back-btn { display: inline-block; background: white; border: 1px solid #B5D4F4; padding: 8px 18px; border-radius: 10px; color: #185FA5; font-weight: 600; text-decoration: none; font-size: 13px; margin-bottom: 1rem; cursor: pointer; }
+    .back-btn:hover { background: #F0F5FC; }
+
+    /* AI chat panel */
+    .ai-chat-panel { position: fixed; right: 0; top: 0; width: 360px; height: 100vh; background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.1); z-index: 1000; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s; border-radius: 20px 0 0 20px; overflow: hidden; }
+    .ai-chat-panel.open { transform: translateX(0); }
+    .ai-chat-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid #E6F1FB; }
+    .ai-chat-header h3 { margin: 0; color: #042C53; }
+    .ai-chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 12px; }
+    .ai-message { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; }
+    .ai-message.user { align-self: flex-end; background: #185FA5; color: white; }
+    .ai-message.bot { align-self: flex-start; background: #F0F5FC; color: #042C53; }
+    .ai-chat-input { display: flex; padding: 0.8rem; border-top: 1px solid #E6F1FB; }
+    .ai-chat-input input { flex: 1; padding: 10px 14px; border: 1.5px solid #B5D4F4; border-radius: 12px; outline: none; }
+    .ai-chat-input button { margin-left: 8px; background: #185FA5; color: white; border: none; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: pointer; }
+    .open-ai-btn { position: fixed; bottom: 30px; right: 30px; background: #185FA5; color: white; border: none; border-radius: 50px; padding: 12px 24px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(24,95,165,0.25); z-index: 999; }
+    .ai-message ul { margin-top: 6px; margin-bottom: 6px; }
+    .ai-message li { margin-bottom: 4px; }
+
+    /* Typing indicator */
+    .typing-indicator { display: flex; gap: 4px; padding: 8px 12px; }
+    .typing-indicator span { width: 8px; height: 8px; background: #185FA5; border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+    .ai-msg-avatar { display: none; }
+
+    @media (max-width: 768px) {
+  .open-ai-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #askAiBtn {
+    display: none !important;
+  }
+}
+
+  </style>
+</head>
+<body class="dashboard-page">
+
+<div class="sidebar" id="sidebar">
+  <div id="sidebarContent"></div>
+</div>
+
+<div id="bottomNavContainer"></div>
+
+<div class="main-content">
+
+  <!-- Grade Selection -->
+  <div id="gradeSelector" style="display:block;">
+    <div class="dashboard-header">
+      <h1><i class="ti ti-device-gamepad"></i> Games</h1>
+      <p>Choose your grade level to start playing</p>
+    </div>
+    <div class="grade-selector">
+      <div class="grade-card" onclick="selectGrade('foundation')">
+        <div class="icon">🧮</div>
+        <h3>Foundation</h3>
+        <p>Whole Numbers, Integers, Fractions, more</p>
+      </div>
+      <div class="grade-card" onclick="selectGrade('grade8')">
+        <div class="icon">8️⃣</div>
+        <h3>Grade 8</h3>
+        <p>Algebraic Expressions & Polynomials</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Selection (hidden until grade chosen) -->
+  <div id="gameSelect" style="display:none;">
+    <button class="back-btn" onclick="goBackToGrades()">← Choose another grade</button>
+    <div class="dashboard-header">
+      <h1><i class="ti ti-device-gamepad"></i> Games</h1>
+      <p>Learn math while having fun!</p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px; max-width:640px;">
+      <div class="game-select-card" onclick="startNumberRush()">
+        <div class="game-select-icon" style="background:#E6F1FB;"><i class="ti ti-bolt" style="color:#185FA5;"></i></div>
+        <div>
+          <div class="game-select-title">Number Rush</div>
+          <div class="game-select-desc">Answer math questions before the timer runs out!</div>
+          <span class="game-select-badge" id="nrBadge">All topics</span>
+        </div>
+      </div>
+      <div class="game-select-card" onclick="startMathPuzzle()">
+        <div class="game-select-icon" style="background:#EEEDFE;"><i class="ti ti-puzzle" style="color:#534AB7;"></i></div>
+        <div>
+          <div class="game-select-title">Math Puzzle</div>
+          <div class="game-select-desc">Fill in the missing piece of the equation!</div>
+          <span class="game-select-badge" id="mpBadge">All topics</span>
+        </div>
+      </div>
+      <div class="game-select-card" onclick="showDuelSetup()">
+        <div class="game-select-icon" style="background:#FAECE7;"><i class="ti ti-swords" style="color:#D85A30;"></i></div>
+        <div>
+          <div class="game-select-title">Math Duel</div>
+          <div class="game-select-desc">2 players or vs AI — pick your difficulty and duel!</div>
+          <span class="game-select-badge" id="duelBadge">All Topics · Easy / Medium / Hard</span>
+        </div>
+      </div>
+      <div class="game-select-card" onclick="startMathQuest()">
+        <div class="game-select-icon" style="background:#FAEEDA;"><i class="ti ti-map" style="color:#BA7517;"></i></div>
+        <div>
+          <div class="game-select-title">Math Quest</div>
+          <div class="game-select-desc">Progress through a story map by answering math problems!</div>
+          <span class="game-select-badge" id="questBadge">All topics</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Number Rush -->
+  <div id="numberRush" style="display:none;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:1.5rem;">
+      <button onclick="exitGame()" style="background:#E6F1FB; border:none; border-radius:8px; padding:8px 14px; color:#185FA5; font-weight:bold; cursor:pointer;">← Back</button>
+      <h1 style="font-size:18px; color:#042C53;"><i class="ti ti-bolt"></i> Number Rush</h1>
+    </div>
+    <div class="nr-header">
+      <div class="nr-stat"><div class="nr-stat-label">Score</div><div class="nr-stat-value" id="nrScore">0</div></div>
+      <div class="nr-stat"><div class="nr-stat-label">Streak</div><div class="nr-stat-value" id="nrStreak">0</div></div>
+      <div class="nr-stat"><div class="nr-stat-label">Best</div><div class="nr-stat-value" id="nrBest">0</div></div>
+    </div>
+    <div class="nr-timer-bar"><div class="nr-timer-fill" id="nrTimerFill" style="width:100%;"></div></div>
+    <div class="nr-question-box">
+      <div class="nr-topic" id="nrTopic">Topic</div>
+      <div class="nr-question" id="nrQuestion">Loading...</div>
+    </div>
+    <div class="nr-options" id="nrOptions"></div>
+  </div>
+
+  <!-- Math Puzzle -->
+  <div id="mathPuzzle" style="display:none;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:1.5rem;">
+      <button onclick="exitPuzzle()" style="background:#E6F1FB; border:none; border-radius:8px; padding:8px 14px; color:#185FA5; font-weight:bold; cursor:pointer;">← Back</button>
+      <h1 style="font-size:18px; color:#042C53;"><i class="ti ti-puzzle"></i> Math Puzzle</h1>
+    </div>
+    <div class="mp-progress">
+      <span style="font-size:13px; color:#378ADD;" id="mpProgressLabel">Question 1 of 10</span>
+      <div class="mp-progress-bar"><div class="mp-progress-fill" id="mpProgressFill" style="width:10%;"></div></div>
+      <span style="font-size:13px; font-weight:bold; color:#185FA5;" id="mpScoreLabel">Score: 0</span>
+    </div>
+    <div class="mp-question-box">
+      <span class="mp-topic-tag" id="mpTopic">Topic</span>
+      <div class="mp-question-text" id="mpQuestionText">Question</div>
+      <div class="mp-equation" id="mpEquation"></div>
+      <div class="mp-choices" id="mpChoices"></div>
+      <div class="mp-feedback" id="mpFeedback"></div>
+      <div style="text-align:center;">
+        <button class="mp-btn mp-btn-primary" id="mpNextBtn" onclick="nextPuzzle()" style="display:none;">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Duel Setup -->
+  <div id="duelSetup" style="display:none;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:1.5rem;">
+      <button onclick="showOnly('gameSelect')" style="background:#E6F1FB; border:none; border-radius:8px; padding:8px 14px; color:#185FA5; font-weight:bold; cursor:pointer;">← Back</button>
+      <h1 style="font-size:18px; color:#042C53;"><i class="ti ti-swords"></i> Math Duel — Setup</h1>
+    </div>
+    <div class="mp-question-box">
+      <div style="margin-bottom:1.5rem;">
+        <div class="duel-setup-label" style="font-size:14px; font-weight:bold; color:#042C53; margin-bottom:10px;">Choose Mode</div>
+        <div style="display:flex; gap:10px;">
+          <button class="mode-btn active" id="mode2p" onclick="setDuelMode('2p')">👥 2 Players</button>
+          <button class="mode-btn" id="modeAI" onclick="setDuelMode('ai')">🤖 vs AI</button>
+        </div>
+      </div>
+      <div style="margin-bottom:1.5rem;" id="p2NameDiv">
+        <div class="duel-setup-label" style="font-size:14px; font-weight:bold; color:#042C53; margin-bottom:10px;">Player 2 Name</div>
+        <input id="p2Name" type="text" placeholder="Enter Player 2 name" style="width:100%; padding:10px 14px; border:1.5px solid #B5D4F4; border-radius:10px; font-size:14px; color:#042C53; outline:none;" />
+      </div>
+      <div style="margin-bottom:1.5rem;">
+        <div class="duel-setup-label" style="font-size:14px; font-weight:bold; color:#042C53; margin-bottom:10px;">Difficulty</div>
+        <div style="display:flex; gap:10px;">
+          <button class="diff-btn active" id="diffEasy" onclick="setDiff('easy')">Easy</button>
+          <button class="diff-btn" id="diffMed" onclick="setDiff('medium')">Medium</button>
+          <button class="diff-btn" id="diffHard" onclick="setDiff('hard')">Hard</button>
+        </div>
+      </div>
+      <button onclick="startDuel()" style="width:100%; padding:14px; background:#D85A30; color:white; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer;">⚔️ Start Duel!</button>
+    </div>
+  </div>
+
+  <!-- Math Duel -->
+  <div id="mathDuel" style="display:none;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:1.5rem;">
+      <button onclick="exitDuel()" style="background:#E6F1FB; border:none; border-radius:8px; padding:8px 14px; color:#185FA5; font-weight:bold; cursor:pointer;">← Back</button>
+      <h1 style="font-size:18px; color:#042C53;"><i class="ti ti-swords"></i> Math Duel</h1>
+      <span style="margin-left:auto; font-size:13px; color:#378ADD;" id="duelRoundLabel">Round 1 of 5</span>
+    </div>
+    <div style="display:flex; gap:12px; margin-bottom:1rem;">
+      <div class="duel-player" id="duelP1Card">
+        <div class="duel-player-name" id="duelP1Name">Player 1</div>
+        <div class="duel-player-score" id="duelP1Score">0</div>
+      </div>
+      <div class="duel-vs">VS</div>
+      <div class="duel-player" id="duelP2Card">
+        <div class="duel-player-name" id="duelP2Name">Player 2</div>
+        <div class="duel-player-score" id="duelP2Score">0</div>
+      </div>
+    </div>
+    <div class="duel-turn-banner p1" id="duelTurnBanner">Player 1's Turn</div>
+    <div class="duel-question-box">
+      <div style="font-size:12px; color:#378ADD; margin-bottom:8px;" id="duelTopic">Topic</div>
+      <div class="duel-question" id="duelQuestion">Loading...</div>
+      <div class="duel-options" id="duelOptions"></div>
+    </div>
+  </div>
+
+  <!-- Math Quest -->
+  <div id="mathQuest" style="display:none;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:1.5rem;">
+      <button onclick="exitQuest()" style="background:#E6F1FB; border:none; border-radius:8px; padding:8px 14px; color:#185FA5; font-weight:bold; cursor:pointer;">← Back</button>
+      <h1 style="font-size:18px; color:#042C53;"><i class="ti ti-map"></i> Math Quest</h1>
+      <span style="margin-left:auto; font-size:13px; color:#378ADD;" id="questProgressLabel">0 / 6 completed</span>
+    </div>
+    <div id="questMap">
+      <p style="font-size:13px; color:#378ADD; margin-bottom:1rem;">Complete each stage to unlock the next one!</p>
+      <div class="quest-map" id="questMapNodes"></div>
+    </div>
+    <div id="questQuestion" style="display:none;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:1rem;">
+        <button onclick="backToMap()" style="background:#E6F1FB; border:none; border-radius:8px; padding:8px 14px; color:#185FA5; font-weight:bold; cursor:pointer;">← Map</button>
+        <span style="font-size:14px; font-weight:bold; color:#042C53;" id="questStageName">Stage 1</span>
+      </div>
+      <div style="font-size:11px; color:#378ADD; margin-bottom:4px;" id="questQCounter">Question 1 of 3</div>
+      <div class="quest-question-box">
+        <div style="font-size:12px; color:#378ADD; margin-bottom:8px;" id="questTopic">Topic</div>
+        <div style="font-size:20px; font-weight:bold; color:#042C53;" id="questQ">Question</div>
+        <div class="quest-options" id="questOptions"></div>
+        <div class="quest-feedback" id="questFeedback"></div>
+        <div style="text-align:center; margin-top:1rem;">
+          <button id="questNextBtn" onclick="nextQuestQ()" style="display:none; padding:10px 28px; background:#185FA5; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over screens -->
+  <div id="gameOver" style="display:none;">
+    <div style="background:white; border-radius:20px; padding:2rem; text-align:center; box-shadow:0 4px 24px rgba(24,95,165,0.10);">
+      <div style="font-size:48px; margin-bottom:1rem;" id="gameOverEmoji">⏰</div>
+      <h1 style="font-size:22px; color:#042C53; margin-bottom:8px;">Time's Up!</h1>
+      <p style="color:#378ADD; font-size:14px; margin-bottom:1.5rem;">Number Rush ended</p>
+      <div style="background:#F0F5FC; border-radius:12px; padding:1rem; margin-bottom:0.8rem;">
+        <div style="font-size:36px; font-weight:bold; color:#185FA5;" id="finalScore">0</div>
+        <div style="font-size:13px; color:#378ADD;">Final Score</div>
+      </div>
+      <div style="background:#F0F5FC; border-radius:12px; padding:1rem; margin-bottom:1.5rem;">
+        <div style="font-size:24px; font-weight:bold; color:#185FA5;" id="finalBest">0</div>
+        <div style="font-size:13px; color:#378ADD;">Best Score</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="startNumberRush()" style="flex:1; padding:12px; background:#E6F1FB; color:#185FA5; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Play Again</button>
+        <button onclick="exitGame()" style="flex:1; padding:12px; background:#185FA5; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Exit</button>
+      </div>
+    </div>
+  </div>
+  <div id="puzzleOver" style="display:none;">
+    <div style="background:white; border-radius:20px; padding:2rem; text-align:center; box-shadow:0 4px 24px rgba(24,95,165,0.10);">
+      <div style="font-size:48px; margin-bottom:1rem;" id="puzzleOverEmoji">🧩</div>
+      <h1 style="font-size:22px; color:#042C53; margin-bottom:8px;">Puzzle Complete!</h1>
+      <div style="background:#F0F5FC; border-radius:12px; padding:1rem; margin-bottom:0.8rem;">
+        <div style="font-size:36px; font-weight:bold; color:#185FA5;" id="puzzleFinalScore">0</div>
+        <div style="font-size:13px; color:#378ADD;">Final Score</div>
+      </div>
+      <div style="background:#F0F5FC; border-radius:12px; padding:1rem; margin-bottom:1.5rem;">
+        <div style="font-size:24px; font-weight:bold; color:#185FA5;" id="puzzleFinalCorrect">0 / 10</div>
+        <div style="font-size:13px; color:#378ADD;">Correct Answers</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="startMathPuzzle()" style="flex:1; padding:12px; background:#E6F1FB; color:#185FA5; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Play Again</button>
+        <button onclick="exitPuzzle()" style="flex:1; padding:12px; background:#185FA5; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Exit</button>
+      </div>
+    </div>
+  </div>
+  <div id="duelOver" style="display:none;">
+    <div style="background:white; border-radius:20px; padding:2rem; text-align:center; box-shadow:0 4px 24px rgba(24,95,165,0.10);">
+      <div style="font-size:48px; margin-bottom:1rem;" id="duelOverEmoji">⚔️</div>
+      <h1 style="font-size:22px; color:#042C53; margin-bottom:8px;" id="duelWinnerText">Winner!</h1>
+      <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
+        <div style="flex:1; background:#F0F5FC; border-radius:12px; padding:1rem;">
+          <div style="font-size:13px; color:#378ADD;" id="duelFinalP1Name">P1</div>
+          <div style="font-size:28px; font-weight:bold; color:#185FA5;" id="duelFinalP1Score">0</div>
+        </div>
+        <div style="flex:1; background:#F0F5FC; border-radius:12px; padding:1rem;">
+          <div style="font-size:13px; color:#378ADD;" id="duelFinalP2Name">P2</div>
+          <div style="font-size:28px; font-weight:bold; color:#185FA5;" id="duelFinalP2Score">0</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="startDuel()" style="flex:1; padding:12px; background:#E6F1FB; color:#185FA5; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Play Again</button>
+        <button onclick="exitDuel()" style="flex:1; padding:12px; background:#185FA5; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Exit</button>
+      </div>
+    </div>
+  </div>
+  <div id="questOver" style="display:none;">
+    <div style="background:white; border-radius:20px; padding:2rem; text-align:center; box-shadow:0 4px 24px rgba(24,95,165,0.10);">
+      <div style="font-size:48px; margin-bottom:1rem;">🗺️</div>
+      <h1 style="font-size:22px; color:#042C53; margin-bottom:8px;">Quest Complete!</h1>
+      <p style="color:#378ADD; font-size:14px; margin-bottom:1.5rem;">You cleared all stages!</p>
+      <div style="background:#F0F5FC; border-radius:12px; padding:1rem; margin-bottom:1.5rem;">
+        <div style="font-size:36px; font-weight:bold; color:#185FA5;" id="questFinalScore">0</div>
+        <div style="font-size:13px; color:#378ADD;">Total Score</div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="startMathQuest()" style="flex:1; padding:12px; background:#E6F1FB; color:#185FA5; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Play Again</button>
+        <button onclick="exitQuest()" style="flex:1; padding:12px; background:#185FA5; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">Exit</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Floating AI chat button -->
+<button class="open-ai-btn" id="askAiBtn" onclick="toggleAIChat()"><i class="ti ti-robot"></i> Ask AI</button>
+
+<!-- AI Chat Panel -->
+<div class="ai-chat-panel" id="aiChatPanel">
+  <div class="ai-chat-header">
+    <h3><i class="ti ti-robot"></i> AI Tutor</h3>
+    <button onclick="toggleAIChat()" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+  </div>
+  <div class="ai-chat-messages" id="aiChatMessages"></div>
+  <div class="ai-chat-input">
+    <input type="text" id="aiInput" placeholder="Ask about this game..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+    <button onclick="sendAIMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+const user = JSON.parse(localStorage.getItem('SigMath_user'))
+if (!user || user.role !== 'student') window.location.href = '/'
+
+let currentGrade = '';
+
+// ---------- SOUND EFFECTS (Web Audio) ----------
+function playSound(type) {
+  if (typeof window.isSoundEnabled === 'function' && !window.isSoundEnabled()) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if (type === 'correct') {
+      osc.frequency.value = 880;
+      gain.gain.value = 0.3;
+      osc.start(); osc.stop(ctx.currentTime + 0.15);
+    } else if (type === 'wrong') {
+      osc.frequency.value = 220;
+      gain.gain.value = 0.3;
+      osc.start(); osc.stop(ctx.currentTime + 0.3);
+    }
+  } catch(e) { /* ignore */ }
+}
+
+// ─── QUESTION POOLS ───
+const foundationQ = [
+  { topic:'Whole Numbers', q:'What is 345 + 289?', options:['634','624','534','724'], answer:0 },
+  { topic:'Whole Numbers', q:'Round 4,567 to the nearest hundred.', options:['4,600','4,500','4,700','5,000'], answer:0 },
+  { topic:'Integers', q:'What is -5 + 8?', options:['3','-3','13','-13'], answer:0 },
+  { topic:'Integers', q:'-3 × -4 = ?', options:['12','-12','7','-7'], answer:0 },
+  { topic:'MDAS', q:'8 + 6 × 2 = ?', options:['20','16','28','36'], answer:0 },
+  { topic:'Fractions', q:'1/2 + 1/4 = ?', options:['3/4','1/4','1/2','1/6'], answer:0 },
+  { topic:'Fractions', q:'3/4 × 2/3 = ?', options:['1/2','1/4','2/3','3/4'], answer:0 },
+  { topic:'Decimals', q:'0.5 + 0.75 = ?', options:['1.25','1.0','0.8','1.5'], answer:0 },
+  { topic:'Percentages', q:'50% of 200 = ?', options:['100','50','150','75'], answer:0 },
+  { topic:'Ratios', q:'Simplify 4:6.', options:['2:3','3:2','4:6','6:4'], answer:0 },
+  { topic:'Basic Algebra', q:'2x + 3 = 11 → x = ?', options:['4','3','5','6'], answer:0 },
+  { topic:'Factoring', q:'Factor x² - 9.', options:['(x-3)(x+3)','(x-3)(x-3)','(x+3)(x+3)','(x-9)(x+1)'], answer:0 },
+  { topic:'Geometry Basics', q:'Area of rectangle 5×3 = ?', options:['15','8','10','20'], answer:0 },
+  { topic:'Data & Graphs', q:'Mean of 2,4,6,8,10 = ?', options:['6','5','7','8'], answer:0 },
+];
+
+const grade8Q = [
+  { topic:'Algebraic Expressions', q:'Translate "the sum of a number and 5".', options:['x+5','5x','x-5','5-x'], answer:0 },
+  { topic:'Algebraic Expressions', q:'Coefficient in 3x + 7?', options:['3','7','x','10'], answer:0 },
+  { topic:'Algebraic Expressions', q:'Evaluate 15 + 2k when k=3.', options:['21','18','30','20'], answer:0 },
+  { topic:'Algebraic Expressions', q:'"5 less than a number n" → ?', options:['n-5','5-n','5n','n+5'], answer:0 },
+  { topic:'Polynomials', q:'Degree of 2x³ + 5x² - 3x + 7?', options:['3','2','1','4'], answer:0 },
+  { topic:'Polynomials', q:'Classify: x² + 5x + 6', options:['Trinomial','Monomial','Binomial','Not polynomial'], answer:0 },
+  { topic:'Polynomials', q:'Is 2/x a polynomial?', options:['No','Yes','Only if x≠0','It is monomial'], answer:0 },
+  { topic:'Polynomials', q:'Monomial example:', options:['5xy','x+2','x²-4','3a+2b'], answer:0 },
+  { topic:'Polynomials', q:'Degree of 7?', options:['0','1','Undefined','7'], answer:0 },
+  { topic:'Algebraic Expressions', q:'Constant in 2a - 5?', options:['-5','2','a','2a'], answer:0 },
+  { topic:'Central Tendency', q:'What is the mean of 65, 75, 78, 73, 71, 59, 64, 74?', options:['69.9','68.5','70.2','71.0'], answer:0 },
+  { topic:'Central Tendency', q:'Find the median of 20, 15, 20, 22, 18, 17, 19, 19, 20, 21, 20, 20.', options:['20','19.5','19','21'], answer:0 },
+  { topic:'Central Tendency', q:'What is the mode of 82, 82, 75, 78, 96, 92, 91, 96?', options:['82 and 96','82 only','96 only','No mode'], answer:0 },
+  { topic:'Central Tendency', q:'A data set with two modes is called:', options:['Bimodal','Unimodal','Multimodal','No mode'], answer:0 },
+  { topic:'Central Tendency', q:'The median is most useful when:', options:['Data is skewed','Data is symmetric','Data is categorical','Data has no outliers'], answer:0 },
+  { topic:'Central Tendency', q:'If mean < median, the data is:', options:['Skewed left','Skewed right','Symmetric','Uniform'], answer:0 },
+  { topic:'Central Tendency', q:'If mean > median, the data is:', options:['Skewed right','Skewed left','Symmetric','Uniform'], answer:0 },
+  { topic:'Central Tendency', q:'What symbol represents the mean?', options:['x̄','x̃','m','d'], answer:0 },
+];
+
+// ─── GRADE SELECTION ───
+function selectGrade(grade) {
+  currentGrade = grade;
+  document.getElementById('gradeSelector').style.display = 'none';
+  document.getElementById('gameSelect').style.display = 'block';
+  document.getElementById('nrBadge').textContent = grade === 'foundation' ? 'Foundation Topics' : 'Algebraic Expr., Polynomials & Central Tendency';
+  document.getElementById('mpBadge').textContent = grade === 'foundation' ? 'Foundation Topics' : 'Algebraic Expr., Polynomials & Central Tendency';
+  document.getElementById('duelBadge').textContent = grade === 'foundation' ? 'Foundation · Easy/Med/Hard' : 'Grade 8 · Easy/Med/Hard';
+  document.getElementById('questBadge').textContent = grade === 'foundation' ? 'Foundation Adventure' : 'Grade 8 Adventure';
+}
+
+function goBackToGrades() {
+  document.getElementById('gameSelect').style.display = 'none';
+  document.getElementById('gradeSelector').style.display = 'block';
+  currentGrade = '';
+}
+
+// ─── SHARED QUESTION FUNCTION ───
+function getQuestions() { return currentGrade === 'foundation' ? foundationQ : grade8Q; }
+
+// ─── NUMBER RUSH ───
+let nrScore=0, nrStreak=0, nrBest=0, nrTimeLeft=100, nrTimer=null, nrAnswered=false, nrUsedIndexes=[];
+function startNumberRush() {
+  nrScore=0;nrStreak=0;nrTimeLeft=100;nrUsedIndexes=[];nrAnswered=false;
+  nrBest=parseInt(localStorage.getItem('nr_best_'+currentGrade)||'0');
+  showOnly('numberRush');updateNRStats();nextQuestion();startTimer();
+}
+function startTimer(){
+  clearInterval(nrTimer);
+  nrTimer=setInterval(()=>{
+    nrTimeLeft-=0.5;
+    document.getElementById('nrTimerFill').style.width=Math.max(nrTimeLeft,0)+'%';
+    document.getElementById('nrTimerFill').style.background=nrTimeLeft<=30?'#e53e3e':'#185FA5';
+    if(nrTimeLeft<=0){clearInterval(nrTimer);endGame();}
+  },100);
+}
+function nextQuestion(){
+  nrAnswered=false;
+  const qs=getQuestions();
+  if(nrUsedIndexes.length===qs.length)nrUsedIndexes=[];
+  let idx;do{idx=Math.floor(Math.random()*qs.length)}while(nrUsedIndexes.includes(idx));
+  nrUsedIndexes.push(idx);const q=qs[idx];
+  document.getElementById('nrTopic').textContent=q.topic;
+  document.getElementById('nrQuestion').textContent=q.q;
+  const sh=[...q.options.map((o,i)=>({o,c:i===q.answer}))].sort(()=>Math.random()-0.5);
+  document.getElementById('nrOptions').innerHTML=sh.map(x=>`<button class="nr-option" onclick="selectNR(this,${x.c})">${x.o}</button>`).join('');
+}
+function selectNR(btn,ok){
+  if(nrAnswered)return;nrAnswered=true;
+  document.querySelectorAll('.nr-option').forEach(b=>b.style.pointerEvents='none');
+  if(ok){
+    btn.classList.add('correct');
+    nrScore+=10+(nrStreak*2);
+    nrStreak++;
+    nrTimeLeft=Math.min(nrTimeLeft+8,100);
+    playSound('correct');
+  } else {
+    btn.classList.add('wrong');
+    nrStreak=0;
+    nrTimeLeft=Math.max(nrTimeLeft-10,0);
+    playSound('wrong');
+  }
+  updateNRStats();setTimeout(nextQuestion,800);
+}
+function updateNRStats(){
+  document.getElementById('nrScore').textContent=nrScore;
+  document.getElementById('nrStreak').textContent=nrStreak+(nrStreak>=3?' 🔥':'');
+  document.getElementById('nrBest').textContent=Math.max(nrScore,nrBest);
+}
+function endGame(){
+  showOnly('gameOver');
+  if(nrScore>nrBest){nrBest=nrScore;localStorage.setItem('nr_best_'+currentGrade,nrBest);}
+  document.getElementById('finalScore').textContent=nrScore;
+  document.getElementById('finalBest').textContent=nrBest;
+  document.getElementById('gameOverEmoji').textContent=nrScore>=100?'🏆':nrScore>=50?'👍':'⏰';
+}
+function exitGame(){clearInterval(nrTimer);showOnly('gameSelect');}
+
+// ─── MATH PUZZLE ───
+const mpPool = {
+  foundation: [
+    {topic:'Whole Numbers', text:'Fill in the missing number:', equation:['345 + 289 = ','_'], answer:'634', choices:['624','634','534','724'], explanation:'345 + 289 = 634'},
+    {topic:'Integers', text:'Fill in the missing answer:', equation:['-5 + 8 = ','_'], answer:'3', choices:['-3','3','13','-13'], explanation:'-5+8=3'},
+    {topic:'MDAS', text:'Fill in the missing answer:', equation:['8 + 6 × 2 = ','_'], answer:'20', choices:['16','20','28','36'], explanation:'6×2=12, 8+12=20'},
+    {topic:'Fractions', text:'Fill in the missing answer:', equation:['1/2 + 1/4 = ','_'], answer:'3/4', choices:['1/4','1/2','3/4','1/6'], explanation:'2/4+1/4=3/4'},
+    {topic:'Percentages', text:'Fill in the missing answer:', equation:['50% of 200 = ','_'], answer:'100', choices:['50','100','150','75'], explanation:'0.5×200=100'},
+    {topic:'Ratios', text:'Fill in the missing answer:', equation:['Simplify 4:6 = ','_'], answer:'2:3', choices:['2:3','3:2','4:6','6:4'], explanation:'Divide both by 2'},
+    {topic:'Basic Algebra', text:'Fill in the missing answer:', equation:['2x + 3 = 11 → x = ','_'], answer:'4', choices:['3','4','5','6'], explanation:'2x=8 → x=4'},
+    {topic:'Factoring', text:'Fill in the missing factor:', equation:['Factor x² - 9 = (x - ','_',') (x + 3)'], answer:'3', choices:['2','3','4','9'], explanation:'Difference of squares'},
+    {topic:'Geometry Basics', text:'Fill in the missing answer:', equation:['Area of rectangle 5×3 = ','_'], answer:'15', choices:['8','10','15','20'], explanation:'A=l×w=5×3=15'},
+    {topic:'Data & Graphs', text:'Fill in the missing answer:', equation:['Mean of 2,4,6,8,10 = ','_'], answer:'6', choices:['5','6','7','8'], explanation:'Sum=30, ÷5=6'},
+  ],
+  grade8: [
+    {topic:'Algebraic Expressions', text:'Evaluate:', equation:['15 + 2k when k=3 = ','_'], answer:'21', choices:['18','21','30','20'], explanation:'15+6=21'},
+    {topic:'Algebraic Expressions', text:'Coefficient in 3x + 7:', equation:['Coefficient = ','_'], answer:'3', choices:['3','7','x','10'], explanation:'Number multiplied by x'},
+    {topic:'Algebraic Expressions', text:'Constant in 2a - 5:', equation:['Constant = ','_'], answer:'-5', choices:['-5','2','a','2a'], explanation:'Term without variable'},
+    {topic:'Algebraic Expressions', text:'"5 less than a number n" is:', equation:['','_'], answer:'n-5', choices:['n-5','5-n','5n','n+5'], explanation:'n - 5'},
+    {topic:'Polynomials', text:'Degree of 2x³ + 5x² - 3x + 7:', equation:['Degree = ','_'], answer:'3', choices:['2','3','1','4'], explanation:'Highest exponent 3'},
+    {topic:'Polynomials', text:'Classify: x² + 5x + 6', equation:['','_'], answer:'Trinomial', choices:['Monomial','Binomial','Trinomial','Not polynomial'], explanation:'Three terms = trinomial'},
+    {topic:'Polynomials', text:'Is 2/x a polynomial?', equation:['','_'], answer:'No', choices:['Yes','No','Only if x≠0','It is monomial'], explanation:'Variable in denominator'},
+    {topic:'Polynomials', text:'Monomial example:', equation:['','_'], answer:'5xy', choices:['5xy','x+2','x²-4','3a+2b'], explanation:'One term'},
+    {topic:'Polynomials', text:'Degree of constant 7:', equation:['Degree = ','_'], answer:'0', choices:['0','1','Undefined','7'], explanation:'Constants have degree 0'},
+    {topic:'Algebraic Expressions', text:'Constant in 2a - 5:', equation:['Constant = ','_'], answer:'-5', choices:['-5','2','a','2a'], explanation:'Term without variable'},
+  ]
+};
+let mpIndex=0,mpScore=0,mpCorrect=0,mpAnswered=false;
+function startMathPuzzle(){
+  mpIndex=0;mpScore=0;mpCorrect=0;mpAnswered=false;
+  showOnly('mathPuzzle');loadPuzzle();
+}
+function loadPuzzle(){
+  const pool=mpPool[currentGrade];
+  const q=pool[mpIndex];mpAnswered=false;
+  document.getElementById('mpTopic').textContent=q.topic;
+  document.getElementById('mpQuestionText').textContent=q.text;
+  document.getElementById('mpFeedback').textContent='';
+  document.getElementById('mpFeedback').className='mp-feedback';
+  document.getElementById('mpNextBtn').style.display='none';
+  document.getElementById('mpProgressLabel').textContent=`Question ${mpIndex+1} of ${pool.length}`;
+  document.getElementById('mpProgressFill').style.width=((mpIndex+1)/pool.length*100)+'%';
+  document.getElementById('mpScoreLabel').textContent=`Score: ${mpScore}`;
+  let eqHTML=''; q.equation.forEach(p=>{eqHTML+=p==='_'?`<span class="mp-blank" id="mpBlank">?</span>`:`<span>${p}</span>`});
+  document.getElementById('mpEquation').innerHTML=eqHTML;
+  const sh=[...q.choices].sort(()=>Math.random()-0.5);
+  document.getElementById('mpChoices').innerHTML=sh.map(c=>`<button class="mp-choice" onclick="selectPuzzleChoice(this,'${c}')">${c}</button>`).join('');
+}
+function selectPuzzleChoice(btn,val){
+  if(mpAnswered)return;mpAnswered=true;
+  const pool=mpPool[currentGrade];const q=pool[mpIndex];
+  const blank=document.getElementById('mpBlank');
+  blank.textContent=val;blank.classList.add('filled');
+  document.querySelectorAll('.mp-choice').forEach(b=>b.classList.add('used'));
+  if(val===q.answer){
+    blank.classList.add('correct');
+    document.getElementById('mpFeedback').textContent='✅ Correct! '+q.explanation;
+    document.getElementById('mpFeedback').className='mp-feedback correct';
+    mpScore+=10;mpCorrect++;
+    playSound('correct');
+  } else {
+    blank.classList.add('wrong');
+    document.getElementById('mpFeedback').textContent='❌ Wrong. '+q.explanation;
+    document.getElementById('mpFeedback').className='mp-feedback wrong';
+    playSound('wrong');
+  }
+  document.getElementById('mpScoreLabel').textContent=`Score: ${mpScore}`;
+  document.getElementById('mpNextBtn').style.display='inline-block';
+}
+function nextPuzzle(){ const pool=mpPool[currentGrade]; mpIndex++; if(mpIndex>=pool.length)endPuzzle(); else loadPuzzle(); }
+function endPuzzle(){
+  const pool=mpPool[currentGrade];
+  showOnly('puzzleOver');
+  document.getElementById('puzzleFinalScore').textContent=mpScore;
+  document.getElementById('puzzleFinalCorrect').textContent=`${mpCorrect}/${pool.length}`;
+  document.getElementById('puzzleOverEmoji').textContent=mpCorrect>=8?'🏆':mpCorrect>=5?'👍':'🧩';
+}
+function exitPuzzle(){showOnly('gameSelect');}
+
+// ─── MATH DUEL ───
+let duelQuestions=[],duelRound=0,duelP1Score=0,duelP2Score=0,duelTurn=1,duelAnswered=false;
+let duelP1Name='',duelP2Name='',aiTimer=null,duelDiff='easy',duelMode='2p';
+function showDuelSetup(){showOnly('duelSetup');}
+function setDuelMode(m){ duelMode=m; document.getElementById('mode2p').classList.toggle('active',m==='2p'); document.getElementById('modeAI').classList.toggle('active',m==='ai'); document.getElementById('p2NameDiv').style.display=m==='2p'?'block':'none'; }
+function setDiff(d){ duelDiff=d; ['Easy','Med','Hard'].forEach(x=>document.getElementById('diff'+x).classList.remove('active')); document.getElementById('diff'+d.charAt(0).toUpperCase()+d.slice(1)).classList.add('active'); }
+function startDuel(){
+  const pool=getQuestions().sort(()=>Math.random()-0.5).slice(0,5);
+  duelQuestions=pool; duelRound=0; duelP1Score=0; duelP2Score=0; duelTurn=1; duelAnswered=false;
+  duelP1Name=user.full_name;
+  duelP2Name=duelMode==='ai'?('AI ('+duelDiff+')'):(document.getElementById('p2Name').value||'Player 2');
+  document.getElementById('duelP1Name').textContent=duelP1Name;
+  document.getElementById('duelP2Name').textContent=duelP2Name;
+  showOnly('mathDuel');loadDuelRound();
+}
+function loadDuelRound(){ if(duelRound>=duelQuestions.length){endDuel();return;} duelTurn=1;duelAnswered=false; const q=duelQuestions[duelRound]; document.getElementById('duelRoundLabel').textContent=`Round ${duelRound+1} of 5`; document.getElementById('duelTopic').textContent=q.topic; document.getElementById('duelQuestion').textContent=q.q; document.getElementById('duelP1Score').textContent=duelP1Score; document.getElementById('duelP2Score').textContent=duelP2Score; document.getElementById('duelP1Card').classList.toggle('active',duelTurn===1); document.getElementById('duelP2Card').classList.toggle('active',duelTurn===2); const banner=document.getElementById('duelTurnBanner'); banner.textContent=duelP1Name+"'s Turn"; banner.className='duel-turn-banner p1'; const sh=[...q.options.map((o,i)=>({o,c:i===q.answer}))].sort(()=>Math.random()-0.5); document.getElementById('duelOptions').innerHTML=sh.map(x=>`<button class="duel-option" onclick="selectDuel(this,${x.c})">${x.o}</button>`).join(''); if(duelMode==='ai'&&duelRound>0){scheduleAI();} }
+function selectDuel(btn,ok){ if(duelAnswered)return; if(duelTurn===1){duelAnswered=true; document.querySelectorAll('.duel-option').forEach(b=>b.style.pointerEvents='none'); btn.classList.add(ok?'correct':'wrong'); if(ok){duelP1Score++; playSound('correct');} else {playSound('wrong');} if(duelMode==='2p'){setTimeout(()=>{duelTurn=2;loadP2Turn();},1000);} else{setTimeout(()=>{duelRound++;loadDuelRound();},1000);}} }
+function loadP2Turn(){ duelAnswered=false; const q=duelQuestions[duelRound]; document.getElementById('duelTurnBanner').textContent=duelP2Name+"'s Turn"; document.getElementById('duelTurnBanner').className='duel-turn-banner p2'; document.getElementById('duelP1Card').classList.remove('active'); document.getElementById('duelP2Card').classList.add('active'); const sh=[...q.options.map((o,i)=>({o,c:i===q.answer}))].sort(()=>Math.random()-0.5); document.getElementById('duelOptions').innerHTML=sh.map(x=>`<button class="duel-option" onclick="selectDuelP2(this,${x.c})">${x.o}</button>`).join(''); }
+function selectDuelP2(btn,ok){ if(duelAnswered)return;duelAnswered=true; document.querySelectorAll('.duel-option').forEach(b=>b.style.pointerEvents='none'); btn.classList.add(ok?'correct':'wrong'); if(ok){duelP2Score++; playSound('correct');} else {playSound('wrong');} setTimeout(()=>{duelRound++;loadDuelRound();},1000); }
+function scheduleAI(){ clearTimeout(aiTimer); const delays={easy:3000,medium:2000,hard:800}; const accuracy={easy:0.4,medium:0.65,hard:0.9}; aiTimer=setTimeout(()=>{ const q=duelQuestions[duelRound]; const correct=Math.random()<accuracy[duelDiff]; if(correct)duelP2Score++; document.getElementById('duelTurnBanner').textContent=(correct?'🤖 AI got it right!':'🤖 AI got it wrong!'); document.getElementById('duelTurnBanner').className='duel-turn-banner ai'; document.getElementById('duelP2Score').textContent=duelP2Score; },delays[duelDiff]); }
+function endDuel(){ clearTimeout(aiTimer); showOnly('duelOver'); document.getElementById('duelFinalP1Name').textContent=duelP1Name; document.getElementById('duelFinalP2Name').textContent=duelP2Name; document.getElementById('duelFinalP1Score').textContent=duelP1Score; document.getElementById('duelFinalP2Score').textContent=duelP2Score; let winner=duelP1Score>duelP2Score?duelP1Name:duelP2Score>duelP1Score?duelP2Name:'Tie!'; document.getElementById('duelWinnerText').textContent=winner==='Tie!'?'🤝 It\'s a Tie!':`🏆 ${winner} Wins!`; document.getElementById('duelOverEmoji').textContent=duelP1Score>duelP2Score?'🏆':duelP1Score<duelP2Score?'😅':'🤝'; }
+function exitDuel(){clearTimeout(aiTimer);showOnly('gameSelect');}
+
+// ─── MATH QUEST ───
+const questStages = {
+  foundation: [
+    {title:'Stage 1: Whole Number Village',icon:'🏘️',color:'#E6F1FB',topic:'Whole Numbers',questions:[{q:'345+289=?',options:['634','624','534','724'],answer:0},{q:'Round 4,567 to nearest hundred.',options:['4,600','4,500','4,700','5,000'],answer:0},{q:'23×15=?',options:['345','335','355','325'],answer:0}]},
+    {title:'Stage 2: Integer Ice Cave',icon:'❄️',color:'#D1ECEE',topic:'Integers',questions:[{q:'-5+8=?',options:['3','-3','13','-13'],answer:0},{q:'-3×-4=?',options:['12','-12','7','-7'],answer:0},{q:'|-9|=?',options:['9','-9','0','18'],answer:0}]},
+    {title:'Stage 3: Fraction Forest',icon:'🌳',color:'#FCE7F3',topic:'Fractions',questions:[{q:'1/2+1/4=?',options:['3/4','1/4','1/2','1/6'],answer:0},{q:'3/4×2/3=?',options:['1/2','1/4','2/3','3/4'],answer:0},{q:'4/5÷2/5=?',options:['2','1','4','8'],answer:0}]},
+    {title:'Stage 4: Percent Peak',icon:'🏔️',color:'#FEF3C7',topic:'Percentages',questions:[{q:'50% of 200=?',options:['100','50','150','75'],answer:0},{q:'25% as fraction?',options:['1/4','1/2','1/3','1/5'],answer:0},{q:'30% of 80=?',options:['24','20','16','30'],answer:0}]},
+    {title:'Stage 5: Ratio River',icon:'🏞️',color:'#E0E7FF',topic:'Ratios',questions:[{q:'Simplify 4:6',options:['2:3','3:2','4:6','6:4'],answer:0},{q:'If 5 apples cost $2, how much for 15?',options:['$6','$5','$4','$8'],answer:0},{q:'x/8 = 3/4 → x=?',options:['6','8','4','12'],answer:0}]},
+    {title:'Stage 6: Data Desert',icon:'🏜️',color:'#FAEEDA',topic:'Data & Graphs',questions:[{q:'Mean of 2,4,6,8,10?',options:['6','5','7','8'],answer:0},{q:'Median of 3,7,9,12,15?',options:['9','7','10','12'],answer:0},{q:'Range of 10,15,20,25,30?',options:['20','10','15','25'],answer:0}]}
+  ],
+  grade8: [
+    {title:'Stage 1: Expression Entrance',icon:'🚪',color:'#D1FAE5',topic:'Algebraic Expressions',questions:[{q:'Translate "the sum of a number and 5".',options:['x+5','5x','x-5','5-x'],answer:0},{q:'Coefficient in 3x+7?',options:['3','7','x','10'],answer:0},{q:'Evaluate 15+2k when k=3.',options:['21','18','30','20'],answer:0}]},
+    {title:'Stage 2: Polynomial Plateau',icon:'🏔️',color:'#FCE7F3',topic:'Polynomials',questions:[{q:'Degree of 2x³+5x²-3x+7?',options:['3','2','1','4'],answer:0},{q:'Classify: x²+5x+6',options:['Trinomial','Monomial','Binomial','Not polynomial'],answer:0},{q:'Monomial example:',options:['5xy','x+2','x²-4','3a+2b'],answer:0}]},
+    {title:'Stage 3: Binomial Bridge',icon:'🌉',color:'#E0E7FF',topic:'Polynomials',questions:[{q:'Binomial has how many terms?',options:['2','1','3','4'],answer:0},{q:'Is 2/x a polynomial?',options:['No','Yes','Only if x≠0','It is monomial'],answer:0},{q:'Degree of 7?',options:['0','1','Undefined','7'],answer:0}]},
+    {title:'Stage 4: Trinomial Tower',icon:'🏰',color:'#FEF3C7',topic:'Polynomials',questions:[{q:'Trinomial example:',options:['x²+5x+6','5xy','3x+2','4'],answer:0},{q:'Degree of x²y⁴+xy+3?',options:['6','2','4','3'],answer:0},{q:'Add: (3x²+2x-1)+(x²-x+4)',options:['4x²+x+3','4x²+3x+3','4x²+x-3','4x²-x+3'],answer:0}]}
+  ]
+};
+let questCompleted=[],questCurrentStage,questQIndex,questScore,questQAnswered;
+function startMathQuest(){ questCompleted=[];questScore=0; showOnly('mathQuest'); document.getElementById('questMap').style.display='block'; document.getElementById('questQuestion').style.display='none'; renderQuestMap(); }
+function renderQuestMap(){ const stages=questStages[currentGrade]; document.getElementById('questProgressLabel').textContent=`${questCompleted.length} / ${stages.length} completed`; document.getElementById('questMapNodes').innerHTML=stages.map((s,i)=>{ const done=questCompleted.includes(i); const locked=i>0&&!questCompleted.includes(i-1); return `<div class="quest-node ${done?'completed':locked?'locked':'active'}" onclick="${locked||done?'':('startStage('+i+')')}"><div class="quest-node-icon" style="background:${s.color}">${s.icon}</div><div><div class="quest-node-title">${s.title}</div><div class="quest-node-desc">${done?'✅ Completed':locked?'🔒 Locked':'Click to start'}</div></div></div>`; }).join(''); }
+function startStage(i){ questCurrentStage=i; questQIndex=0; questQAnswered=false; document.getElementById('questMap').style.display='none'; document.getElementById('questQuestion').style.display='block'; loadQuestQ(); }
+function loadQuestQ(){ const stage=questStages[currentGrade][questCurrentStage]; const q=stage.questions[questQIndex]; questQAnswered=false; document.getElementById('questStageName').textContent=stage.title; document.getElementById('questTopic').textContent=stage.topic; document.getElementById('questQCounter').textContent=`Question ${questQIndex+1} of ${stage.questions.length}`; document.getElementById('questQ').textContent=q.q; document.getElementById('questFeedback').textContent=''; document.getElementById('questFeedback').className='quest-feedback'; document.getElementById('questNextBtn').style.display='none'; const sh=[...q.options.map((o,i)=>({o,c:i===q.answer}))].sort(()=>Math.random()-0.5); document.getElementById('questOptions').innerHTML=sh.map(x=>`<button class="quest-option" onclick="selectQuestQ(this,${x.c})">${x.o}</button>`).join(''); }
+function selectQuestQ(btn,ok){ if(questQAnswered)return; questQAnswered=true; document.querySelectorAll('.quest-option').forEach(b=>b.style.pointerEvents='none'); btn.classList.add(ok?'correct':'wrong'); if(ok){questScore+=10;document.getElementById('questFeedback').textContent='✅ Correct!';document.getElementById('questFeedback').className='quest-feedback correct'; playSound('correct');} else{document.getElementById('questFeedback').textContent='❌ Wrong!';document.getElementById('questFeedback').className='quest-feedback wrong'; playSound('wrong');} document.getElementById('questNextBtn').style.display='inline-block'; }
+function nextQuestQ(){ const stage=questStages[currentGrade][questCurrentStage]; questQIndex++; if(questQIndex>=stage.questions.length){ if(!questCompleted.includes(questCurrentStage))questCompleted.push(questCurrentStage); if(questCompleted.length===questStages[currentGrade].length){endQuest();return;} backToMap(); } else{loadQuestQ();} }
+function backToMap(){ document.getElementById('questMap').style.display='block'; document.getElementById('questQuestion').style.display='none'; renderQuestMap(); }
+function endQuest(){ showOnly('questOver'); document.getElementById('questFinalScore').textContent=questScore; }
+function exitQuest(){showOnly('gameSelect');}
+
+// ─── UTILS ───
+function showOnly(id){
+  const sections = ['gradeSelector','gameSelect','numberRush','mathPuzzle','duelSetup','mathDuel','mathQuest','gameOver','puzzleOver','duelOver','questOver'];
+  sections.forEach(s=>{ document.getElementById(s).style.display = (s===id ? 'block' : 'none'); });
+}
+
+function logout(){localStorage.removeItem('SigMath_user');window.location.href='/'}
+
+// ---------- AI Chat (copied from aitutor.html) ----------
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatText(text) {
+  return escapeHtml(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+function appendMsg(text, sender) {
+  const box = document.getElementById('aiChatMessages');
+  const msg = document.createElement('div');
+  msg.className = `ai-message ${sender}`;
+  msg.innerHTML = `
+    <div class="ai-msg-avatar"><i class="ti ${sender === 'bot' ? 'ti-robot' : 'ti-user'}"></i></div>
+    <div class="ai-bubble">${sender === 'bot' ? formatText(text) : escapeHtml(text)}</div>
+  `;
+  box.appendChild(msg);
+  if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise();
+    } else if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+      MathJax.startup.promise.then(() => MathJax.typesetPromise());
+    }
+  box.scrollTop = box.scrollHeight;
+}
+
+function showTyping() {
+  const box = document.getElementById('aiChatMessages');
+  const typing = document.createElement('div');
+  typing.className = 'ai-message bot';
+  typing.id = 'typingIndicator';
+  typing.innerHTML = `
+    <div class="ai-msg-avatar"><i class="ti ti-robot"></i></div>
+    <div class="ai-bubble" style="padding:0;">
+      <div class="typing-indicator">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  `;
+  box.appendChild(typing);
+  box.scrollTop = box.scrollHeight;
+}
+
+function removeTyping() {
+  const typing = document.getElementById('typingIndicator');
+  if (typing) typing.remove();
+}
+
+let aiOpen = false;
+function toggleAIChat() {
+  aiOpen = !aiOpen;
+  document.getElementById('aiChatPanel').classList.toggle('open', aiOpen);
+}
+
+async function sendAIMessage() {
+  const input = document.getElementById('aiInput');
+  const btn = document.querySelector('.ai-chat-input button');
+  const msg = input.value.trim();
+  if (!msg || btn.disabled) return;
+
+  appendMsg(msg, 'user');
+  input.value = '';
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i>';
+  showTyping();
+
+  let context = `The student is playing a math game (${currentGrade} level).`;
+  if (currentGrade === 'foundation') {
+    context = 'The student is playing a Foundation level math game. Topics include whole numbers, integers, fractions, decimals, percentages, ratios, basic algebra, factoring, geometry basics, and data & graphs.';
+  } else if (currentGrade === 'grade8') {
+    context = 'The student is playing a Grade 8 math game. Topics include algebraic expressions and polynomials.';
+  }
+
+  try {
+    const res = await fetch('/ask-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: context },
+          { role: 'user', content: msg }
+        ]
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    if (data.success) {
+      appendMsg(data.answer, 'bot');
+    } else {
+      appendMsg(data.answer || 'Something went wrong. Please try again.', 'bot');
+    }
+  } catch {
+    removeTyping();
+    appendMsg('Something went wrong. Please check your connection and try again.', 'bot');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Send';
+  input.focus();
+}
+
+// ---------- SIDEBAR & BOTTOM NAV (exact‑match fix) ----------
+fetch('/sidebar')
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('sidebarContent').innerHTML = html;
+  });
+
+fetch('/bottomnav')
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('bottomNavContainer').innerHTML = html;
+    const path = location.pathname.replace(/\/$/, '');
+    const map = {
+      'dashboard': 0, 'lessons': 1, 'quizzes': 2,
+      'games': 3, 'flashcards': 4, 'aitutor': 5,
+      'chat': 6, 'private-chat': 7, 'leaderboard': 8, 'profile': 9
+    };
+    const btns = document.querySelectorAll('.bottom-nav-btn');
+    // Exact match, not substring match: "private-chat.html" also matched
+    // the "chat" key under the old logic since it ends with "chat.html" too.
+    const segments = path.split('/').filter(Boolean);
+    const currentFile = segments[segments.length - 1] || '';
+    Object.entries(map).forEach(([key, i]) => {
+      const isActive = (key === 'lessons' || key === 'quizzes')
+        ? segments[0] === key
+        : currentFile === key + '.html';
+      if (isActive) btns[i]?.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

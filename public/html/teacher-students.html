@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Students</title>
+  <link rel="stylesheet" href="/css/teacher-students.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+</head>
+<body class="dashboard-page">
+
+  <div class="sidebar" id="sidebar">
+    <div id="sidebarContent"></div>
+  </div>
+
+  <div class="main-content">
+    <div class="dashboard-header">
+      <h1>👥 Students</h1>
+      <p>Tap a student to view their full progress.</p>
+    </div>
+
+    <div id="studentListWrap" style="display:flex; flex-direction:column; gap:10px;">
+      <div class="sd-empty" id="loadingMsg">Loading students...</div>
+    </div>
+  </div>
+
+  <!-- Student detail modal -->
+  <div class="sd-modal" id="sdModal">
+    <div class="sd-modal-card">
+      <div class="sd-modal-header">
+        <div>
+          <h2 id="sdName" style="font-size:18px; color:#042C53;">Student</h2>
+          <p id="sdEmail" style="font-size:12px; color:#378ADD; margin-top:2px;"></p>
+        </div>
+        <button class="sd-close-btn" onclick="closeStudentDetail()">✕</button>
+      </div>
+
+      <div class="sd-stat-grid">
+        <div class="sd-stat-box">
+          <div class="sd-stat-num" id="sdXP">0</div>
+          <div class="sd-stat-label">XP / Level <span id="sdLevel"></span></div>
+        </div>
+        <div class="sd-stat-box">
+          <div class="sd-stat-num" id="sdStreak">0</div>
+          <div class="sd-stat-label">Day Streak</div>
+        </div>
+        <div class="sd-stat-box">
+          <div class="sd-stat-num" id="sdQuizCount">0</div>
+          <div class="sd-stat-label">Quizzes Taken</div>
+        </div>
+        <div class="sd-stat-box">
+          <div class="sd-stat-num" id="sdAvgScore">0%</div>
+          <div class="sd-stat-label">Avg Score</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px; font-weight:700; color:#378ADD; margin-bottom:8px;">🏅 Badges Earned</div>
+      <div class="sd-badges" id="sdBadges"></div>
+
+      <div style="font-size:13px; font-weight:700; color:#378ADD; margin-bottom:8px;">📈 Score Trend</div>
+      <div id="sdChartWrap" style="margin-bottom:1rem;"></div>
+
+      <div style="font-size:13px; font-weight:700; color:#378ADD; margin-bottom:8px;">📝 Recent Quizzes</div>
+      <div id="sdQuizList"></div>
+
+      <button id="sdRemoveBtn" onclick="removeStudent()" style="margin-top:1.2rem; width:100%; background:#fef2f2; color:#ef4444; border:1px solid #fecaca; border-radius:10px; padding:10px; font-weight:bold; font-size:13px; cursor:pointer;">
+        <i class="ti ti-user-x"></i> Remove from Class
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('SigMath_user'))
+    if (!user || user.role !== 'teacher') window.location.href = '/'
+
+    function logout() {
+      localStorage.removeItem('SigMath_user')
+      window.location.href = '/'
+    }
+
+    function initials(name) {
+      return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+    }
+
+    function getLevel(xp) { return Math.floor(xp / 100) + 1 }
+
+    const badgeMap = {
+      first_quiz: { icon: '🎯', label: 'First Steps' },
+      perfect_score: { icon: '💯', label: 'Perfectionist' },
+      quiz_5: { icon: '🔥', label: '5 Quizzes' },
+      level_5: { icon: '⭐', label: 'Level 5' },
+      streak_3: { icon: '🔥', label: '3-Day Streak' },
+      streak_7: { icon: '🔥', label: '7-Day Streak' },
+      all_topics: { icon: '📚', label: 'Explorer' }
+    }
+
+    async function loadStudents() {
+      try {
+        const res = await fetch('/teacher-data?email=' + user.email)
+        const data = await res.json()
+        const wrap = document.getElementById('studentListWrap')
+
+        if (!data.students || data.students.length === 0) {
+          wrap.innerHTML = '<div class="empty-illustration"><div class="icon">🧑‍🤝‍🧑</div><p>No students yet. Share your class code so students can join!</p></div>'
+          return
+        }
+
+        wrap.innerHTML = data.students.map(s => `
+          <div class="student-row" onclick="openStudentDetail('${s.id}')">
+            <div class="student-avatar">${initials(s.full_name)}</div>
+            <div class="student-info">
+              <div class="student-name">${s.full_name}</div>
+              <div class="student-email">${s.email}</div>
+            </div>
+            <div class="student-xp-pill">${s.xp || 0} XP</div>
+            <div class="student-arrow">›</div>
+          </div>
+        `).join('')
+      } catch {
+        document.getElementById('studentListWrap').innerHTML = '<div class="sd-empty">Failed to load students.</div>'
+      }
+    }
+
+    let currentStudentId = null
+    let currentStudentName = ''
+
+    function renderScoreChart(history) {
+      const wrap = document.getElementById('sdChartWrap')
+      if (!history || history.length === 0) {
+        wrap.innerHTML = '<div class="sd-empty" style="font-size:12px;">Not enough data yet.</div>'
+        return
+      }
+      const w = 320, h = 100, pad = 10
+      const points = history.map(q => Math.round((q.score / q.total) * 100))
+      const stepX = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0
+      const coords = points.map((pct, i) => {
+        const x = pad + i * stepX
+        const y = h - pad - (pct / 100) * (h - pad * 2)
+        return `${x},${y}`
+      })
+      const path = coords.join(' ')
+      const dots = coords.map(c => {
+        const [x, y] = c.split(',')
+        return `<circle cx="${x}" cy="${y}" r="3" fill="#185FA5" />`
+      }).join('')
+      wrap.innerHTML = `
+        <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:100px; background:#F8FAFD; border-radius:10px;">
+          <polyline points="${path}" fill="none" stroke="#185FA5" stroke-width="2" />
+          ${dots}
+        </svg>
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#85B7EB; margin-top:4px;">
+          <span>Oldest</span><span>Most Recent</span>
+        </div>
+      `
+    }
+
+    async function removeStudent() {
+      if (!currentStudentId) return
+      if (!confirm(`Remove ${currentStudentName} from your class? They'll keep their account but will need a new class code to rejoin.`)) return
+      try {
+        const res = await fetch('/remove-student', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ teacher_id: user.id, student_id: currentStudentId })
+        })
+        const data = await res.json()
+        if (data.success) {
+          showToast(`${currentStudentName} was removed from your class.`, 'success')
+          closeStudentDetail()
+          loadStudents()
+        } else {
+          showToast(data.message || 'Failed to remove student.')
+        }
+      } catch {
+        showToast('Something went wrong. Please try again.')
+      }
+    }
+
+    async function openStudentDetail(studentId) {
+      const modal = document.getElementById('sdModal')
+      modal.style.display = 'flex'
+      document.getElementById('sdName').textContent = 'Loading...'
+      document.getElementById('sdQuizList').innerHTML = ''
+      document.getElementById('sdBadges').innerHTML = ''
+
+      try {
+        const res = await fetch(`/teacher-student-detail?teacher_id=${user.id}&student_id=${studentId}`)
+        const data = await res.json()
+
+        if (data.error) {
+          document.getElementById('sdName').textContent = 'Error'
+          document.getElementById('sdEmail').textContent = data.error
+          return
+        }
+
+        const s = data.student
+        currentStudentId = studentId
+        currentStudentName = s.full_name
+        document.getElementById('sdName').textContent = s.full_name
+        document.getElementById('sdEmail').textContent = s.email
+        document.getElementById('sdXP').textContent = s.xp || 0
+        document.getElementById('sdLevel').textContent = '(Lv. ' + getLevel(s.xp || 0) + ')'
+        document.getElementById('sdStreak').textContent = (s.streak || 0) + ' 🔥'
+        document.getElementById('sdQuizCount').textContent = data.totalQuizzes
+        document.getElementById('sdAvgScore').textContent = data.avgScore + '%'
+
+        const badges = s.badges || []
+        const badgesEl = document.getElementById('sdBadges')
+        if (badges.length === 0) {
+          badgesEl.innerHTML = '<span class="sd-empty">🏅 No badges yet</span>'
+        } else {
+          badgesEl.innerHTML = badges.map(b => {
+            const info = badgeMap[b] || { icon: '🏅', label: b }
+            return `<span class="sd-badge-pill">${info.icon} ${info.label}</span>`
+          }).join('')
+        }
+
+        const quizListEl = document.getElementById('sdQuizList')
+        if (!data.recentQuizzes || data.recentQuizzes.length === 0) {
+          quizListEl.innerHTML = '<div class="empty-illustration"><div class="icon">📝</div><p>No quizzes taken yet.</p></div>'
+        } else {
+          quizListEl.innerHTML = data.recentQuizzes.map(q => {
+            const pct = Math.round((q.score / q.total) * 100)
+            return `
+              <div class="sd-quiz-row">
+                <span class="sd-quiz-topic">${q.topic}</span>
+                <span class="sd-quiz-score">${q.score}/${q.total} (${pct}%)</span>
+              </div>
+            `
+          }).join('')
+        }
+
+        renderScoreChart(data.history)
+      } catch {
+        document.getElementById('sdName').textContent = 'Error loading student data'
+      }
+    }
+
+    function closeStudentDetail() {
+      document.getElementById('sdModal').style.display = 'none'
+    }
+
+    loadStudents()
+  </script>
+  <script>
+fetch('/sidebar?role=teacher')
+  .then(r => r.text())
+  .then(html => {
+    document.getElementById('sidebarContent').innerHTML = html
+    const path = location.pathname.replace(/\/$/, '')
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+      const onclick = btn.getAttribute('onclick') || ''
+      const match = onclick.match(/location\.href=['"]([^'"]+)['"]/)
+      if (match) {
+        const btnUrl = match[1]
+        if (path.endsWith(btnUrl)) {
+          btn.classList.add('active')
+        }
+      }
+    })
+  })
+  </script>
+  <div id="bottomNavContainer"></div>
+  <script>
+    fetch('/bottomnav?role=teacher')
+      .then(r => r.text())
+      .then(html => {
+        document.getElementById('bottomNavContainer').innerHTML = html
+        const btns = document.querySelectorAll('.bottom-nav-btn')
+        btns[2]?.classList.add('active')
+      })
+  </script>
+  <script>
+    function showToast(msg, type = 'error') {
+      const existing = document.getElementById('toastMsg')
+      if (existing) existing.remove()
+      const toast = document.createElement('div')
+      toast.id = 'toastMsg'
+      toast.textContent = msg
+      toast.style.cssText = `position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:${type === 'error' ? '#e53e3e' : '#38a169'}; color:white; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:bold; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); max-width:90vw; text-align:center;`
+      document.body.appendChild(toast)
+      setTimeout(() => toast.remove(), 4000)
+    }
+  </script>
+</body>
+</html>

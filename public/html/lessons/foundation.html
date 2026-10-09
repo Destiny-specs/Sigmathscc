@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic Foundation – SigMath</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+
+  <!-- ✅ MathJax added here -->
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+
+  <style>
+    .back-btn {
+      display: inline-block; background: white; border: 1px solid #B5D4F4;
+      padding: 8px 18px; border-radius: 10px; color: #185FA5; font-weight: 600;
+      text-decoration: none; font-size: 13px; margin-bottom: 1rem;
+    }
+    .back-btn:hover { background: #F0F5FC; }
+    .lesson-grid {
+      display: flex; flex-direction: column; gap: 12px; margin-top: 1.5rem;
+    }
+    .lesson-card {
+      background: white; border-radius: 16px; padding: 1.2rem 1.5rem;
+      display: flex; align-items: center; gap: 16px; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(24,95,165,0.06);
+      border: 1px solid #E6F1FB;
+    }
+    .lesson-card:hover {
+      transform: translateX(6px);
+      box-shadow: 0 6px 16px rgba(24,95,165,0.10);
+    }
+    .lesson-card .icon {
+      width: 50px; height: 50px; border-radius: 14px; display: flex;
+      align-items: center; justify-content: center; font-size: 24px;
+      flex-shrink: 0; background: #F0F5FC;
+    }
+    .lesson-card .info { flex: 1; }
+    .lesson-card .info h3 {
+      font-size: 16px; font-weight: 700; color: #042C53; margin: 0 0 4px 0;
+    }
+    .lesson-card .info p {
+      font-size: 13px; color: #64748b; margin: 0;
+    }
+    .lesson-card .badge-difficulty {
+      font-size: 12px; font-weight: 600; padding: 4px 12px;
+      border-radius: 99px; background: #E6F1FB; color: #185FA5;
+      white-space: nowrap;
+    }
+    .lesson-card .status {
+      font-size: 20px; margin-left: 12px;
+    }
+    .lesson-card .status.completed { color: #22c55e; }
+    .lesson-card .status.pending { color: #B5D4F4; }
+    .modal-content { max-width: 720px; }
+    /* AI chat panel */
+    .ai-chat-panel {
+      position: fixed; right: 0; top: 0; width: 360px; height: 100vh;
+      background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+      z-index: 1000; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.3s;
+      border-radius: 20px 0 0 20px; overflow: hidden;
+    }
+    .ai-chat-panel.open { transform: translateX(0); }
+    .ai-chat-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.2rem; border-bottom: 1px solid #E6F1FB;
+    }
+    .ai-chat-header h3 { margin: 0; color: #042C53; }
+    .ai-chat-messages {
+      flex: 1; overflow-y: auto; padding: 1rem; display: flex;
+      flex-direction: column; gap: 12px;
+    }
+    .ai-message {
+      max-width: 85%; padding: 12px 16px; border-radius: 16px;
+      font-size: 14px; line-height: 1.5;
+    }
+    .ai-message.user { align-self: flex-end; background: #185FA5; color: white; }
+    .ai-message.bot { align-self: flex-start; background: #F0F5FC; color: #042C53; }
+    .ai-chat-input {
+      display: flex; padding: 0.8rem; border-top: 1px solid #E6F1FB;
+    }
+    .ai-chat-input input {
+      flex: 1; padding: 10px 14px; border: 1.5px solid #B5D4F4;
+      border-radius: 12px; outline: none;
+    }
+    .ai-chat-input button {
+      margin-left: 8px; background: #185FA5; color: white;
+      border: none; border-radius: 12px; padding: 0 18px; font-weight: 700; cursor: pointer;
+    }
+    .open-ai-btn {
+      position: fixed; bottom: 30px; right: 30px; background: #185FA5;
+      color: white; border: none; border-radius: 50px; padding: 12px 24px;
+      font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(24,95,165,0.25);
+      z-index: 999;
+    }
+    .ai-message ul { margin-top: 6px; margin-bottom: 6px; }
+    .ai-message li { margin-bottom: 4px; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+    }
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #185FA5;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-8px); }
+    }
+    .ai-msg-avatar {
+      display: none; /* optional, we keep it clean */
+    }
+
+    @media (max-width: 768px) {
+      .ai-chat-panel { width: 100%; border-radius: 0; }
+    }
+  </style>
+</head>
+<body class="dashboard-page">
+<div class="sidebar" id="sidebar"><div id="sidebarContent"></div></div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <a href="/lessons/" class="back-btn">← Back to Lessons</a>
+      <h1>🧮 Basic Foundation</h1>
+      <p>Essential math skills for junior high</p>
+    </div>
+  </div>
+
+  <div class="lesson-grid" id="lessonGrid"></div>
+</div>
+
+<!-- Lesson Modal -->
+<div class="lesson-modal" id="lessonModal" style="display:none;">
+  <div class="lesson-modal-card modal-content">
+    <div class="lesson-modal-header">
+      <h2 id="modalTitle">Lesson Title</h2>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="lesson-modal-body" id="modalBody">
+      <div id="modalContent">Loading...</div>
+    </div>
+    <div class="lesson-modal-footer">
+      <button class="ai-btn" onclick="askAIFromModal()"><i class="ti ti-robot"></i> Ask AI about this topic</button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating AI chat button -->
+<button class="open-ai-btn" onclick="toggleAIChat()"><i class="ti ti-robot"></i> Ask AI</button>
+
+<!-- AI Chat Panel -->
+<div class="ai-chat-panel" id="aiChatPanel">
+  <div class="ai-chat-header">
+    <h3><i class="ti ti-robot"></i> AI Tutor</h3>
+    <button onclick="toggleAIChat()" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+  </div>
+  <div class="ai-chat-messages" id="aiChatMessages"></div>
+  <div class="ai-chat-input">
+    <input type="text" id="aiInput" placeholder="Ask about the lesson..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+    <button onclick="sendAIMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || (user.role !== 'student' && user.role !== 'teacher')) window.location.href = '/'
+
+  // Foundation lesson list
+  const foundationLessons = [
+    { id:'whole-numbers', title:'Whole Numbers', icon:'🔢', difficulty:'Beginner', desc:'Place value, operations, rounding' },
+    { id:'integers', title:'Integers', icon:'➕', difficulty:'Beginner', desc:'Negative numbers, absolute value, operations' },
+    { id:'mdas', title:'MDAS', icon:'📐', difficulty:'Beginner', desc:'Order of operations (Multiply, Divide, Add, Subtract)' },
+    { id:'fractions', title:'Fractions', icon:'➗', difficulty:'Beginner', desc:'Types, operations, simplifying' },
+    { id:'decimals', title:'Decimals', icon:'🔟', difficulty:'Beginner', desc:'Place value, arithmetic, rounding' },
+    { id:'percentages', title:'Percentages', icon:'💯', difficulty:'Beginner', desc:'Fractions, decimals, percentage problems' },
+    { id:'ratios', title:'Ratios & Proportions', icon:'📊', difficulty:'Intermediate', desc:'Simplifying, solving proportions, applications' },
+    { id:'basic-algebra', title:'Basic Algebra', icon:'✏️', difficulty:'Intermediate', desc:'Variables, solving simple equations' },
+    { id:'factoring', title:'Factoring Polynomials', icon:'📝', difficulty:'Intermediate', desc:'GCF, trinomials, difference of squares' },
+    { id:'geometry-basics', title:'Geometry Basics', icon:'📐', difficulty:'Intermediate', desc:'Shapes, area, perimeter, volume' },
+    { id:'data-graphs', title:'Data & Graphs', icon:'📈', difficulty:'Intermediate', desc:'Mean, median, mode, range, graphs' }
+  ];
+
+  // Lesson content
+  const lessonContent = {
+    'whole-numbers': {
+      title: '🔢 Whole Numbers',
+      body: `
+        <div class="lesson-section">
+          <h3>What are Whole Numbers?</h3>
+          <p>Whole numbers are {0, 1, 2, 3, …} – they don't have fractions or decimals.</p>
+        </div>
+        <div class="lesson-section">
+          <h3>Place Value</h3>
+          <p>Each digit in a number has a place value (ones, tens, hundreds, thousands…).</p>
+          <div class="lesson-example">In 5,728: 5 → thousands, 7 → hundreds, 2 → tens, 8 → ones.</div>
+        </div>
+        <div class="lesson-section">
+          <h3>Rounding</h3>
+          <p>Look at the digit to the right of the place you want to round to. <strong>5 or above</strong> → round up. <strong>Below 5</strong> → round down.</p>
+          <div class="lesson-example">Round 4,567 to the nearest hundred → 4,600 (tens digit 6 ≥ 5).</div>
+        </div>
+        <div class="lesson-section"><h3>Addition & Subtraction</h3><p>Line up numbers by place value, then add or subtract column by column.</p></div>
+        <div class="lesson-section"><h3>Multiplication & Division</h3><p>Multiplication: repeated addition. Division: splitting into equal groups.</p><div class="lesson-example">23 × 15 = 345 &nbsp; 144 ÷ 12 = 12</div></div>
+      `
+    },
+    'integers': {
+      title: '➕ Integers',
+      body: `
+        <div class="lesson-section"><h3>What are Integers?</h3><p>Integers include positive numbers, zero, and negative numbers: {…, -3, -2, -1, 0, 1, 2, 3, …}</p></div>
+        <div class="lesson-section"><h3>Absolute Value</h3><p>The distance of a number from zero, always positive.</p><div class="lesson-example">| -9 | = 9 &nbsp; | 5 | = 5</div></div>
+        <div class="lesson-section"><h3>Adding & Subtracting</h3><p>Same signs: add, keep sign. Different signs: subtract, keep sign of larger absolute value.</p><div class="lesson-example">-5 + 8 = 3<br>-7 - (-3) = -7 + 3 = -4</div></div>
+        <div class="lesson-section"><h3>Multiplying & Dividing</h3><p>Same signs → positive. Different signs → negative.</p><div class="lesson-example">-3 × -4 = 12 &nbsp; 6 × (-2) = -12</div></div>
+      `
+    },
+    'mdas': {
+      title: '📐 MDAS',
+      body: `
+        <div class="lesson-section"><h3>Order of Operations</h3><p>Standard order: <strong>M</strong>ultiplication, <strong>D</strong>ivision, <strong>A</strong>ddition, <strong>S</strong>ubtraction. M/D and A/S are equal, done left‑to‑right.</p></div>
+        <div class="lesson-section"><h3>Examples</h3><div class="lesson-example">8 + 6 × 2 = 8 + 12 = 20<br>24 ÷ 3 + 2 = 8 + 2 = 10<br>(6 + 2) × 3 = 8 × 3 = 24</div></div>
+        <div class="lesson-section"><p>Try: 12 + 8 ÷ 4 = ?</p></div>
+      `
+    },
+    'fractions': {
+      title: '➗ Fractions',
+      body: `
+        <div class="lesson-section"><h3>Understanding Fractions</h3><p>A fraction represents a part of a whole. Numerator (top) / Denominator (bottom).</p></div>
+        <div class="lesson-section"><h3>Adding & Subtracting</h3><p>Find a common denominator, then add/subtract numerators.</p><div class="lesson-example">1/2 + 1/4 = 2/4 + 1/4 = 3/4</div></div>
+        <div class="lesson-section"><h3>Multiplying</h3><p>Multiply numerators and denominators.</p><div class="lesson-example">3/4 × 2/3 = 6/12 = 1/2</div></div>
+        <div class="lesson-section"><h3>Dividing</h3><p>Keep, Change, Flip: multiply by the reciprocal.</p><div class="lesson-example">4/5 ÷ 2/5 = 4/5 × 5/2 = 20/10 = 2</div></div>
+      `
+    },
+    'decimals': {
+      title: '🔟 Decimals',
+      body: `
+        <div class="lesson-section"><h3>Place Value</h3><p>Digit after decimal point: tenths, hundredths, thousandths…</p></div>
+        <div class="lesson-section"><h3>Adding & Subtracting</h3><p>Line up decimal points.</p><div class="lesson-example">0.5 + 0.75 = 1.25</div></div>
+        <div class="lesson-section"><h3>Multiplying</h3><p>Multiply as whole numbers, then count total decimal places.</p><div class="lesson-example">2.5 × 4 = 10.0</div></div>
+        <div class="lesson-section"><h3>Dividing</h3><p>Move the divisor's decimal to make it a whole number, then move the dividend's point the same amount.</p></div>
+      `
+    },
+    'percentages': {
+      title: '💯 Percentages',
+      body: `
+        <div class="lesson-section"><h3>What is Percent?</h3><p>"Percent" means "out of 100". 25% = 25/100 = 0.25</p></div>
+        <div class="lesson-section"><h3>Finding a Percentage of a Number</h3><p>Multiply the number by the percentage (as a decimal).</p><div class="lesson-example">50% of 200 = 0.5 × 200 = 100</div></div>
+        <div class="lesson-section"><h3>Increase/Decrease</h3><p>Increase = original × (1 + %), Decrease = original × (1 - %).</p></div>
+      `
+    },
+    'ratios': {
+      title: '📊 Ratios & Proportions',
+      body: `
+        <div class="lesson-section"><h3>Ratios</h3><p>A ratio compares two quantities. Simplify like fractions.</p><div class="lesson-example">4:6 simplifies to 2:3</div></div>
+        <div class="lesson-section"><h3>Proportions</h3><p>A proportion is an equation of two equal ratios.</p><div class="lesson-example">2/5 = 6/x → 2x = 30 → x = 15</div></div>
+        <div class="lesson-section"><p>Real-life: If 5 apples cost ₱10, how much for 20 apples?</p></div>
+      `
+    },
+    'basic-algebra': {
+      title: '✏️ Basic Algebra',
+      body: `
+        <div class="lesson-section"><h3>Variables</h3><p>Letters represent unknown numbers.</p></div>
+        <div class="lesson-section"><h3>Solving Equations</h3><p>Isolate the variable using opposite operations.</p><div class="lesson-example">2x + 3 = 11 → 2x = 8 → x = 4</div></div>
+        <div class="lesson-section"><h3>Simplifying Expressions</h3><p>Combine like terms: 3x + 2x = 5x. Distribute: 2(x + 3) = 2x + 6.</p></div>
+      `
+    },
+    'factoring': {
+      title: '📝 Factoring Polynomials',
+      body: `
+        <div class="lesson-section"><h3>What is Factoring?</h3><p>Breaking a polynomial into a product of simpler polynomials.</p></div>
+        <div class="lesson-section"><h3>GCF</h3><p>Factor out the greatest common factor.</p><div class="lesson-example">2x + 4 = 2(x + 2)</div></div>
+        <div class="lesson-section"><h3>Trinomials</h3><p>x² + bx + c → find two numbers that multiply to c and add to b.</p><div class="lesson-example">x² + 5x + 6 = (x+2)(x+3)</div></div>
+        <div class="lesson-section"><h3>Difference of Squares</h3><p>a² - b² = (a - b)(a + b)</p><div class="lesson-example">x² - 9 = (x-3)(x+3)</div></div>
+      `
+    },
+    'geometry-basics': {
+      title: '📐 Geometry Basics',
+      body: `
+        <div class="lesson-section"><h3>Common Shapes</h3><p>Square, rectangle, triangle, circle.</p></div>
+        <div class="lesson-section"><h3>Perimeter & Area</h3><p>Rectangle: P = 2(l+w), A = l×w. Triangle: A = ½×b×h. Circle: C = 2πr, A = πr².</p></div>
+        <div class="lesson-section"><h3>Angles</h3><p>Sum of angles in a triangle = 180°, quadrilateral = 360°.</p></div>
+      `
+    },
+    'data-graphs': {
+      title: '📈 Data & Graphs',
+      body: `
+        <div class="lesson-section"><h3>Mean, Median, Mode</h3><p>Mean: average. Median: middle value. Mode: most frequent.</p></div>
+        <div class="lesson-section"><h3>Range</h3><p>Range = maximum – minimum.</p></div>
+        <div class="lesson-section"><h3>Graphs</h3><p>Bar graph: compare categories. Line graph: changes over time. Pie chart: parts of a whole.</p></div>
+      `
+    }
+  };
+
+  // Render lesson cards
+  function renderLessons() {
+    const grid = document.getElementById('lessonGrid');
+    grid.innerHTML = '';
+    foundationLessons.forEach(lesson => {
+      const card = document.createElement('div');
+      card.className = 'lesson-card';
+      card.innerHTML = `
+        <div class="icon">${lesson.icon}</div>
+        <div class="info">
+          <h3>${lesson.title}</h3>
+          <p>${lesson.desc}</p>
+        </div>
+        <span class="badge-difficulty">${lesson.difficulty}</span>
+        <span class="status pending">⏳</span>
+      `;
+      card.addEventListener('click', () => openLesson(lesson.id));
+      grid.appendChild(card);
+    });
+  }
+
+  let currentLessonId = null;
+  let currentLessonTitle = '';
+
+  function openLesson(id) {
+    currentLessonId = id;
+    const lesson = lessonContent[id];
+    if (!lesson) {
+      document.getElementById('modalTitle').textContent = 'Coming Soon!';
+      document.getElementById('modalContent').innerHTML = '<p style="padding:1rem;">This lesson is being prepared.</p>';
+      currentLessonTitle = '';
+    } else {
+      document.getElementById('modalTitle').textContent = lesson.title;
+      document.getElementById('modalContent').innerHTML = lesson.body;
+      currentLessonTitle = lesson.title;
+    }
+    document.getElementById('lessonModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('lessonModal').style.display = 'none';
+  }
+
+  function askAIFromModal() {
+    if (!aiOpen) toggleAIChat();
+    const input = document.getElementById('aiInput');
+    input.placeholder = 'Ask about ' + (currentLessonTitle || 'this topic') + '...';
+    input.focus();
+  }
+
+  // ---------- AI Chat (copied from aitutor.html) ----------
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatText(text) {
+    return escapeHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function appendMsg(text, sender) {
+    const box = document.getElementById('aiChatMessages');
+    const msg = document.createElement('div');
+    msg.className = `ai-message ${sender}`;
+    msg.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ${sender === 'bot' ? 'ti-robot' : 'ti-user'}"></i></div>
+      <div class="ai-bubble">${sender === 'bot' ? formatText(text) : escapeHtml(text)}</div>
+    `;
+    box.appendChild(msg);
+    if (typeof MathJax !== 'undefined') {
+      MathJax.typesetPromise();
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function showTyping() {
+    const box = document.getElementById('aiChatMessages');
+    const typing = document.createElement('div');
+    typing.className = 'ai-message bot';
+    typing.id = 'typingIndicator';
+    typing.innerHTML = `
+      <div class="ai-msg-avatar"><i class="ti ti-robot"></i></div>
+      <div class="ai-bubble" style="padding:0;">
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    `;
+    box.appendChild(typing);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function removeTyping() {
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
+  }
+
+  let aiOpen = false;
+  function toggleAIChat() {
+    aiOpen = !aiOpen;
+    document.getElementById('aiChatPanel').classList.toggle('open', aiOpen);
+  }
+
+  async function sendAIMessage() {
+    const input = document.getElementById('aiInput');
+    const btn = document.querySelector('.ai-chat-input button');
+    const msg = input.value.trim();
+    if (!msg || btn.disabled) return;
+
+    appendMsg(msg, 'user');
+    input.value = '';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i>';
+    showTyping();
+
+    let context = 'The student is studying the Foundation math lesson.';
+    if (currentLessonId && lessonContent[currentLessonId]) {
+      const bodyText = lessonContent[currentLessonId].body.replace(/<[^>]*>/g, '');
+      context = `The student is viewing the lesson "${currentLessonTitle}". The lesson covers: ${bodyText.substring(0,800)}. Answer the student's question based on this content. Keep it short and friendly. Use bullet points if helpful.`;
+    } else {
+      context += ' Topics include whole numbers, integers, fractions, decimals, percentages, ratios, basic algebra, factoring, geometry basics, and data & graphs.';
+    }
+
+    try {
+      const res = await fetch('/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: context },
+            { role: 'user', content: msg }
+          ]
+        })
+      });
+      const data = await res.json();
+      removeTyping();
+      if (data.success) {
+        appendMsg(data.answer, 'bot');
+      } else {
+        appendMsg(data.answer || 'Something went wrong. Please try again.', 'bot');
+      }
+    } catch {
+      removeTyping();
+      appendMsg('Something went wrong. Please check your connection and try again.', 'bot');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Send';
+    input.focus();
+  }
+
+  // Close modal on outside click
+  document.getElementById('lessonModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Initial render
+  renderLessons();
+
+  // Load sidebar & bottom nav
+  fetch('/sidebar?role=' + user.role).then(r => r.text()).then(h => {
+    document.getElementById('sidebarContent').innerHTML = h;
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('lessons')) btn.classList.add('active');
+    });
+  });
+  fetch('/bottomnav?role=' + user.role).then(r => r.text()).then(h => {
+    document.getElementById('bottomNavContainer').innerHTML = h;
+    document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('lessons')) btn.classList.add('active');
+    });
+  });
+</script>
+<div id="bottomNavContainer"></div>
+</body>
+</html>

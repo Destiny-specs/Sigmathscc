@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Admin Dashboard</title>
+  <link rel="stylesheet" href="/css/teacher.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+</head>
+<body class="dashboard-page">
+
+  <div class="sidebar" id="sidebar">
+    <div id="sidebarContent"></div>
+  </div>
+
+  <div class="main-content">
+    <div class="dashboard-header">
+      <h1>Welcome, <span id="adminName">Admin</span> 🛡️</h1>
+      <p>Site-wide overview and management.</p>
+    </div>
+
+    <div class="cards-row">
+      <div class="stat-card">
+        <div class="stat-label">Teachers</div>
+        <div class="stat-value" id="statTeachers">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Students</div>
+        <div class="stat-value" id="statStudents">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Classes</div>
+        <div class="stat-value" id="statClasses">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Quizzes Taken</div>
+        <div class="stat-value" id="statQuizzes">0</div>
+      </div>
+    </div>
+
+    <div class="section-title">📣 Site-Wide Broadcast</div>
+    <div style="background:white; border-radius:14px; padding:1rem 1.2rem; margin-bottom:1.5rem;">
+      <p style="font-size:12px; color:#378ADD; margin-bottom:8px;">Shown to every student, in every class, regardless of teacher.</p>
+      <textarea id="broadcastInput" placeholder="Write a site-wide announcement..." style="width:100%; min-height:70px; border:1px solid #E6F1FB; border-radius:10px; padding:10px 12px; font-family:inherit; font-size:14px; color:#042C53; resize:vertical; margin-bottom:8px;"></textarea>
+      <button id="broadcastBtn" onclick="postBroadcast()" style="background:#185FA5; color:white; border:none; border-radius:10px; padding:9px 18px; font-size:13px; font-weight:bold; cursor:pointer;">Post Broadcast</button>
+    </div>
+
+    <div class="section-title">🧑‍🏫 Teachers</div>
+    <div style="background:white; border-radius:14px; padding:0.5rem 1rem; margin-bottom:1.5rem;" id="teacherList">
+      <p style="font-size:13px; color:#378ADD; padding:1rem 0;">Loading teachers...</p>
+    </div>
+
+    <div class="section-title">🧑‍🎓 Students</div>
+    <input id="studentSearch" placeholder="Search students by name or email..." style="width:100%; border:1px solid #E6F1FB; border-radius:10px; padding:9px 12px; font-family:inherit; font-size:13px; color:#042C53; margin-bottom:10px;">
+    <div style="background:white; border-radius:14px; padding:0.5rem 1rem; margin-bottom:1.5rem;" id="studentList">
+      <p style="font-size:13px; color:#378ADD; padding:1rem 0;">Loading students...</p>
+    </div>
+
+  </div>
+
+  <div id="bottomNavContainer"></div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || user.role !== 'admin') window.location.href = '/'
+
+  document.getElementById('adminName').textContent = user.full_name
+
+  function logout() {
+    localStorage.removeItem('SigMath_user')
+    window.location.href = '/'
+  }
+
+  let allStudents = []
+
+  function timeAgo(dateStr) {
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000)
+    if (diff < 60) return 'just now'
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago'
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago'
+    return Math.floor(diff / 86400) + 'd ago'
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch('/admin-stats?admin_id=' + user.id)
+      const data = await res.json()
+      document.getElementById('statTeachers').textContent = data.teacherCount ?? 0
+      document.getElementById('statStudents').textContent = data.studentCount ?? 0
+      document.getElementById('statClasses').textContent = data.classCount ?? 0
+      document.getElementById('statQuizzes').textContent = data.quizCount ?? 0
+    } catch {
+      showToast('Failed to load stats.')
+    }
+  }
+
+  async function loadTeachers() {
+    try {
+      const res = await fetch('/admin-teachers?admin_id=' + user.id)
+      const teachers = await res.json()
+      const wrap = document.getElementById('teacherList')
+      if (!teachers.length) {
+        wrap.innerHTML = '<p style="font-size:13px; color:#378ADD; padding:1rem 0;">No teachers yet.</p>'
+        return
+      }
+      wrap.innerHTML = teachers.map(t => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #F0F5FC;">
+          <div>
+            <div style="font-size:14px; font-weight:bold; color:#042C53;">${escapeHtml(t.full_name)}</div>
+            <div style="font-size:12px; color:#378ADD;">${escapeHtml(t.email)} · Class ${t.class_code || '—'} · ${t.studentCount} student${t.studentCount === 1 ? '' : 's'}</div>
+          </div>
+          <button onclick="removeUser('${t.id}', 'teacher', '${escapeHtml(t.full_name).replace(/'/g, "\\'")}')" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:bold; cursor:pointer;">Remove</button>
+        </div>
+      `).join('')
+    } catch {
+      showToast('Failed to load teachers.')
+    }
+  }
+
+  async function loadStudents() {
+    try {
+      const res = await fetch('/admin-students?admin_id=' + user.id)
+      allStudents = await res.json()
+      renderStudents(allStudents)
+    } catch {
+      showToast('Failed to load students.')
+    }
+  }
+
+  function renderStudents(students) {
+    const wrap = document.getElementById('studentList')
+    if (!students.length) {
+      wrap.innerHTML = '<p style="font-size:13px; color:#378ADD; padding:1rem 0;">No students found.</p>'
+      return
+    }
+    wrap.innerHTML = students.map(s => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #F0F5FC;">
+        <div>
+          <div style="font-size:14px; font-weight:bold; color:#042C53;">${escapeHtml(s.full_name)}</div>
+          <div style="font-size:12px; color:#378ADD;">${escapeHtml(s.email)} · ${s.class_name ? escapeHtml(s.class_name) : 'No class'} · ${s.xp || 0} XP</div>
+        </div>
+        <button onclick="removeUser('${s.id}', 'student', '${escapeHtml(s.full_name).replace(/'/g, "\\'")}')" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:bold; cursor:pointer;">Delete</button>
+      </div>
+    `).join('')
+  }
+
+  document.getElementById('studentSearch').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase()
+    renderStudents(allStudents.filter(s => s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)))
+  })
+
+  async function removeUser(targetId, targetRole, name) {
+    const warning = targetRole === 'teacher'
+      ? `Remove ${name}? Their class will be dissolved and all their students will become classless.`
+      : `Delete ${name}'s account permanently? This cannot be undone.`
+    if (!confirm(warning)) return
+    try {
+      const res = await fetch('/admin-remove-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: user.id, target_id: targetId, target_role: targetRole })
+      })
+      const data = await res.json()
+      if (data.success) {
+        showToast(`${name} was removed.`, 'success')
+        loadStats()
+        loadTeachers()
+        loadStudents()
+      } else {
+        showToast(data.message || 'Failed to remove user.')
+      }
+    } catch {
+      showToast('Something went wrong. Please try again.')
+    }
+  }
+
+  async function postBroadcast() {
+    const input = document.getElementById('broadcastInput')
+    const btn = document.getElementById('broadcastBtn')
+    const message = input.value.trim()
+    if (!message) return
+    if (!confirm('Post this to every student in every class?')) return
+
+    btn.disabled = true
+    btn.textContent = 'Posting...'
+    try {
+      const res = await fetch('/admin-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: user.id, message })
+      })
+      const data = await res.json()
+      if (data.success) {
+        input.value = ''
+        showToast('Broadcast posted!', 'success')
+      } else {
+        showToast(data.message || 'Failed to post broadcast.')
+      }
+    } catch {
+      showToast('Something went wrong. Please try again.')
+    }
+    btn.disabled = false
+    btn.textContent = 'Post Broadcast'
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div')
+    div.textContent = str
+    return div.innerHTML
+  }
+
+  function showToast(msg, type = 'error') {
+    const existing = document.getElementById('toastMsg')
+    if (existing) existing.remove()
+    const toast = document.createElement('div')
+    toast.id = 'toastMsg'
+    toast.textContent = msg
+    toast.style.cssText = `position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:${type === 'error' ? '#e53e3e' : '#38a169'}; color:white; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:bold; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); max-width:90vw; text-align:center;`
+    document.body.appendChild(toast)
+    setTimeout(() => toast.remove(), 4000)
+  }
+
+  loadStats()
+  loadTeachers()
+  loadStudents()
+</script>
+
+<script>
+  fetch('/sidebar?role=admin')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebarContent').innerHTML = html
+    })
+</script>
+<script>
+  fetch('/bottomnav?role=admin')
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('bottomNavContainer').innerHTML = html
+      const btns = document.querySelectorAll('.bottom-nav-btn')
+      btns[0]?.classList.add('active')
+    })
+</script>
+</body>
+</html>

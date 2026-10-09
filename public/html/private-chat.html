@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigMath – Private Chat</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/dark-mode.css">
+  <link rel="stylesheet" href="/css/math-theme.css">
+  <script src="/js/dark-mode.js"></script>
+  
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseUrl = 'https://twrhlvxahohgifnxpfgz.supabase.co';
+    const supabaseKey = 'sb_publishable_Ltg6excwVaIdUHODhkvgbA_u1qCTILT';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
+  
+  <style>
+    .private-chat-container {
+      display: flex;
+      gap: 20px;
+      height: calc(100vh - 180px);
+    }
+    .contact-list {
+      width: 250px;
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(24,95,165,0.08);
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .contact-list h4 {
+      font-size: 14px;
+      color: #042C53;
+      margin: 0 0 12px 0;
+    }
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+    }
+    .contact-item:hover { background: #F0F5FC; }
+    .contact-item.active {
+      background: #E6F1FB;
+      border-color: #185FA5;
+    }
+    .contact-item .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #185FA5;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .contact-item .name {
+      flex: 1;
+      font-size: 14px;
+      color: #042C53;
+    }
+    .contact-item .unread {
+      background: #ef4444;
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 99px;
+    }
+    .chat-area {
+      flex: 1;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(24,95,165,0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-area-header {
+      padding: 16px 20px;
+      border-bottom: 1.5px solid #F0F5FC;
+      font-weight: 600;
+      color: #042C53;
+      flex-shrink: 0;
+    }
+    .chat-area-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #F8FAFD;
+    }
+    .chat-area-messages::-webkit-scrollbar { width: 4px; }
+    .chat-area-messages::-webkit-scrollbar-thumb { background: #B5D4F4; border-radius: 4px; }
+    .msg {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+    .msg.sent {
+      align-self: flex-end;
+      background: #185FA5;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.received {
+      align-self: flex-start;
+      background: white;
+      color: #042C53;
+      border: 1px solid #E6F1FB;
+      border-bottom-left-radius: 4px;
+    }
+    .msg .time {
+      font-size: 10px;
+      color: #B5D4F4;
+      margin-top: 4px;
+      text-align: right;
+    }
+    .msg.sent .time {
+      color: rgba(255,255,255,0.5);
+    }
+    .chat-input-row {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      border-top: 1.5px solid #F0F5FC;
+      background: white;
+      flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1;
+      padding: 10px 16px;
+      border: 1.5px solid #B5D4F4;
+      border-radius: 12px;
+      font-size: 14px;
+      outline: none;
+      color: #042C53;
+      background: #F8FAFD;
+      transition: border-color 0.2s;
+    }
+    .chat-input:focus {
+      border-color: #185FA5;
+      background: white;
+    }
+    .chat-send {
+      width: 44px;
+      height: 44px;
+      background: #185FA5;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .chat-send:hover { background: #1570C0; }
+    .chat-send:disabled { background: #B5D4F4; cursor: not-allowed; }
+    .empty-state {
+      text-align: center;
+      color: #85B7EB;
+      padding: 2rem 1rem;
+    }
+    .empty-state .big-icon {
+      font-size: 48px;
+      margin-bottom: 1rem;
+      animation: emptyBounce 2.4s ease-in-out infinite;
+    }
+    @keyframes emptyBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @media (max-width: 768px) {
+      .private-chat-container { flex-direction: column; height: calc(100vh - 140px); }
+      .contact-list { width: 100%; height: 200px; flex-shrink: 0; }
+      .chat-area { height: 100%; }
+    }
+  </style>
+</head>
+<body class="dashboard-page">
+
+<div class="sidebar" id="sidebar">
+  <div id="sidebarContent"></div>
+</div>
+
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <h1><i class="ti ti-messages"></i> Private Chat</h1>
+      <p>Direct messages with your classmates</p>
+    </div>
+  </div>
+
+  <div class="private-chat-container">
+    <div class="contact-list">
+      <h4>Classmates</h4>
+      <div id="contactList">
+        <p style="color:#85B7EB; font-size:13px;">Loading...</p>
+      </div>
+    </div>
+
+    <div class="chat-area" id="chatArea">
+      <div class="chat-area-header" id="chatHeader">Select a classmate to start chatting</div>
+      <div class="chat-area-messages" id="chatMessages">
+        <div class="empty-state">
+          <div class="big-icon">💬</div>
+          <p>Choose a contact to see messages</p>
+        </div>
+      </div>
+      <form class="chat-input-row" id="chatForm" style="display:none;">
+        <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." autocomplete="off">
+        <button class="chat-send" id="sendBtn" type="submit" aria-label="Send message">
+          <i class="ti ti-send"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="bottomNavContainer"></div>
+
+<script>
+  const user = JSON.parse(localStorage.getItem('SigMath_user'))
+  if (!user || (user.role !== 'student' && user.role !== 'teacher')) window.location.href = '/'
+
+  // 🔥 MANUAL UTC+8 TIME (Philippine Time)
+  // Escape user-generated content before inserting into innerHTML (prevents stored XSS)
+  function escapeHtml(str) {
+    const div = document.createElement('div')
+    div.textContent = str == null ? '' : String(str)
+    return div.innerHTML
+  }
+
+    function formatPHTime(timestamp) {
+    let ts = timestamp;
+    // Force UTC interpretation: if the string has no timezone marker
+    // (no trailing Z and no +HH:MM/-HH:MM offset), browsers treat it as
+    // the VIEWER'S local time instead of UTC, which throws the +8 offset
+    // below off by however many hours the viewer's device differs from UTC.
+    if (typeof ts === 'string' && !/[Zz]|[+-]\d\d:?\d\d$/.test(ts)) {
+      ts = ts.replace(' ', 'T') + 'Z';
+    }
+    const date = new Date(ts);
+    const phTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+    let hours = phTime.getUTCHours();
+    const minutes = String(phTime.getUTCMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${hours}:${minutes} ${ampm}`;
+  }
+
+  let currentUserId = user.id
+  let currentUser = user
+  let selectedContactId = null
+  let classmates = []
+  let messages = []
+  let realtimeChannel = null
+  let lastMessageTime = 0;
+
+  async function loadClassmates() {
+    try {
+      const res = await fetch(`/classmates?user_id=${currentUserId}`)
+      const data = await res.json()
+      classmates = data
+      renderContacts()
+    } catch (err) {
+      console.error('Error loading classmates:', err)
+    }
+  }
+
+  function renderContacts() {
+    const container = document.getElementById('contactList')
+    if (!container) return
+    if (classmates.length === 0) {
+      container.innerHTML = '<div style="text-align:center; color:#85B7EB; padding:2rem 1rem;"><div style="font-size:40px; margin-bottom:0.5rem; animation: emptyBounce 2.4s ease-in-out infinite;">🧑‍🤝‍🧑</div><p style="font-size:13px;">No classmates found yet.</p></div>'
+      return
+    }
+    container.innerHTML = ''
+    classmates.forEach(c => {
+      const div = document.createElement('div')
+      div.className = 'contact-item' + (selectedContactId === c.id ? ' active' : '')
+      div.dataset.id = c.id
+      const initial = c.full_name.charAt(0).toUpperCase()
+      div.innerHTML = `
+        <div class="avatar">${initial}</div>
+        <div class="name">${escapeHtml(c.full_name)}${c.is_teacher ? ' <span style="font-size:10px; font-weight:bold; color:#185FA5; background:#F0F5FC; padding:2px 8px; border-radius:99px; margin-left:4px;">Teacher</span>' : ''}</div>
+      `
+      div.addEventListener('click', () => selectContact(c.id))
+      container.appendChild(div)
+    })
+  }
+
+  async function selectContact(contactId) {
+    selectedContactId = contactId
+    renderContacts()
+    const contact = classmates.find(c => c.id === contactId)
+    document.getElementById('chatHeader').textContent = `Chat with ${contact.full_name}${contact.is_teacher ? ' (Teacher)' : ''}`
+    document.getElementById('chatForm').style.display = 'flex'
+    await loadMessages(contactId)
+    setupRealtime(contactId)
+    markAsRead(contactId)
+  }
+
+  async function loadMessages(otherUserId) {
+    try {
+      const res = await fetch(`/direct-messages?user_id=${currentUserId}&other_user_id=${otherUserId}&limit=100`)
+      const data = await res.json()
+      messages = data
+      renderMessages()
+    } catch (err) {
+      console.error('Error loading messages:', err)
+    }
+  }
+
+  function renderMessages() {
+    const container = document.getElementById('chatMessages')
+    if (!container) return
+    if (messages.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="big-icon">💬</div>
+          <p>No messages yet. Say hello!</p>
+        </div>
+      `
+      return
+    }
+    container.innerHTML = ''
+    messages.forEach(msg => {
+      const isSent = msg.sender_id === currentUserId
+      const div = document.createElement('div')
+      div.className = `msg ${isSent ? 'sent' : 'received'}`
+      const time = formatPHTime(msg.created_at)
+      div.innerHTML = `
+        ${escapeHtml(msg.message)}
+        <div class="time">${time}</div>
+      `
+      container.appendChild(div)
+    })
+    container.scrollTop = container.scrollHeight
+  }
+
+  async function sendMessage() {
+    if (!selectedContactId) return
+    const input = document.getElementById('chatInput')
+    const btn = document.getElementById('sendBtn')
+    const text = input.value.trim()
+
+    const now = Date.now()
+    if (now - lastMessageTime < 2000) {
+      showToast('Please wait a moment before sending another message.')
+      return
+    }
+
+    if (!text) return
+
+    input.value = ''
+    btn.disabled = true
+
+    try {
+      const res = await fetch('/direct-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender_id: currentUserId,
+          receiver_id: selectedContactId,
+          message: text
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        const newMsg = data.message
+        messages.push(newMsg)
+        renderMessages()
+      } else {
+        showToast(data.message || 'Failed to send.')
+        input.value = text
+        btn.disabled = false
+        input.focus()
+        return
+      }
+    } catch (err) {
+      console.error('Error sending:', err)
+      input.value = text
+      btn.disabled = false
+      input.focus()
+      return
+    }
+
+    setTimeout(() => { btn.disabled = false }, 2000)
+    lastMessageTime = Date.now()
+    input.focus()
+  }
+
+  async function markAsRead(otherUserId) {
+    try {
+      await fetch('/direct-messages/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUserId, other_user_id: otherUserId })
+      })
+    } catch (err) {
+      console.error('Mark read error:', err)
+    }
+  }
+
+  function setupRealtime(otherUserId) {
+    if (!otherUserId) return
+    if (realtimeChannel) {
+      supabaseClient.removeChannel(realtimeChannel)
+    }
+
+    realtimeChannel = supabaseClient
+      .channel('direct-messages-channel')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'direct_messages',
+        filter: `sender_id=eq.${otherUserId},receiver_id=eq.${currentUserId}`
+      }, (payload) => {
+        const newMsg = payload.new
+        if (newMsg.sender_id === otherUserId && newMsg.receiver_id === currentUserId) {
+          messages.push(newMsg)
+          renderMessages()
+          markAsRead(otherUserId)
+        }
+      })
+      .subscribe()
+  }
+
+  document.getElementById('chatForm').addEventListener('submit', (e) => {
+    e.preventDefault()
+    sendMessage()
+  })
+
+  loadClassmates()
+
+  // Sidebar – exact matching
+  fetch('/sidebar?role=' + user.role)
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('sidebarContent').innerHTML = html
+      const path = location.pathname.replace(/\/$/, '')
+      document.querySelectorAll('.sidebar-btn').forEach(btn => {
+        const onclick = btn.getAttribute('onclick') || ''
+        const match = onclick.match(/location\.href=['"]([^'"]+)['"]/)
+        if (match) {
+          const btnUrl = match[1]
+          if (path.endsWith(btnUrl)) {
+            btn.classList.add('active')
+          }
+        }
+      })
+    })
+
+  // Bottom nav – matches by each button's actual destination URL, so this
+  // works correctly whether the student (10-button) or teacher (4-button)
+  // nav layout gets loaded, instead of assuming a fixed button position.
+  fetch('/bottomnav?role=' + user.role)
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById('bottomNavContainer').innerHTML = html
+      const path = location.pathname.replace(/\/$/, '')
+      document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+        const onclick = btn.getAttribute('onclick') || ''
+        const match = onclick.match(/location\.href=['"]([^'"]+)['"]/)
+        if (!match) return
+        const btnUrl = match[1].replace(/\/$/, '')
+        if (path === btnUrl || path.startsWith(btnUrl + '/')) {
+          btn.classList.add('active')
+        }
+      })
+    })
+
+  function showToast(msg, type = 'error') {
+    const existing = document.getElementById('toastMsg')
+    if (existing) existing.remove()
+    const toast = document.createElement('div')
+    toast.id = 'toastMsg'
+    toast.textContent = msg
+    toast.style.cssText = `position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:${type === 'error' ? '#e53e3e' : '#38a169'}; color:white; padding:10px 20px; border-radius:10px; font-size:13px; font-weight:bold; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2); max-width:90vw; text-align:center;`
+    document.body.appendChild(toast)
+    setTimeout(() => toast.remove(), 4000)
+  }
+</script>
+</body>
+</html>
