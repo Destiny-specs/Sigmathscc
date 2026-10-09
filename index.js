@@ -23,8 +23,8 @@ app.get('/', (req, res) => {
 })
 
 // Sign up
-const TEACHER_ACCESS_CODE = process.env.TEACHER_ACCESS_CODE || 'teachers2026'
-const ADMIN_ACCESS_CODE = process.env.ADMIN_ACCESS_CODE || 'sigmath-admin-2026'
+const TEACHER_ACCESS_CODE = process.env.TEACHER_ACCESS_CODE
+const ADMIN_ACCESS_CODE = process.env.ADMIN_ACCESS_CODE
 
 function generateClassCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -184,7 +184,8 @@ app.get('/teacher-data', async (req, res) => {
       }
     }
 
-    res.json({ class_code, students: students || [], avgScore })
+    const safeStudents = (students || []).map(({ password, ...rest }) => rest)
+    res.json({ class_code, students: safeStudents, avgScore })
   } catch (err) {
     console.error('TEACHER DATA ERROR:', err.message)
     res.json({ students: [], avgScore: null })
@@ -415,8 +416,7 @@ app.post('/ask-ai', async (req, res) => {
     }
 
     const chat = await groq.chat.completions.create({
-      model: 'qwen/qwen3.6-27b',
-      reasoning_effort: 'none',
+      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
