@@ -411,24 +411,33 @@ app.post('/ask-ai', async (req, res) => {
       return res.json({ success: false, answer: 'AI tutor is not configured.' })
     }
 
+    const cleanMessages = messages
+      .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      .slice(-20)
+      .map(m => ({ role: m.role, content: m.content.slice(0, 2000) }))
+    if (cleanMessages.length === 0) {
+      return res.json({ success: false, answer: 'Invalid request.' })
+    }
+
     if (!groq) {
       groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
     }
 
     const chat = await groq.chat.completions.create({
-      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+      model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
       messages: [
         {
           role: 'system',
-          content: `You are a helpful math tutor for junior high school students (Grades 7–10). 
-Always respond in English. 
-Give direct, concise answers. 
-No greetings after the first message. 
-No long introductions. 
-If a student asks for an answer, give it, then briefly explain why. 
-Keep responses short and to the point.`
+          content: `You are SigMath's math tutor for junior high school students (Grades 7-10).
+- Reply in English, in a friendly and encouraging tone. Keep answers short.
+- Only help with math and studying math. If asked about anything else, politely steer back to math.
+- If a student asks for an answer, give it, then briefly explain the steps so they learn how to do it.
+- Show steps as short numbered lines, one step per line.
+- Write math between dollar signs, for example $2x + 5 = 17$. Do not use tables, headings, or code blocks. You may use **bold** for key terms.
+- Do not greet the student after the first message and do not write long introductions.
+- If you are not sure about an answer, say so instead of guessing.`
         },
-        ...messages
+        ...cleanMessages
       ]
     })
 
