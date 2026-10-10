@@ -8,12 +8,15 @@
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
 const user=JSON.parse(localStorage.getItem('SigMath_user')||'null');if(user&&user.full_name)$('name').value=user.full_name
 const qp=new URLSearchParams(location.search).get('pin');if(qp)$('pin').value=qp
-let socket,tick,me
+let socket,tick,me,pin,pid
 function show(id){['join','wait','play','result','final'].forEach(s=>$(s).classList.toggle('hide',s!==id))}
-function join(){socket=io();socket.emit('player:join',{pin:$('pin').value.trim(),name:$('name').value},r=>{if(!r.ok){$('err').textContent=r.error;socket.disconnect();return}me=r.name;show('wait')})
-socket.on('question',d=>{show('play');$('cnt').textContent='Question '+(d.index+1)+' of '+d.total;$('qtext').textContent=d.q;$('locked').textContent='';$('opts').innerHTML=d.options.map((o,i)=>'<button class="opt o'+i+'" onclick="pick('+i+')">'+esc(o)+'</button>').join('');let t=d.time;$('timer').textContent='⏱ '+t;clearInterval(tick);tick=setInterval(()=>{t=Math.max(0,t-1);$('timer').textContent='⏱ '+t},1000)})
+function connect(){socket=io()
+socket.on('connect',()=>{if(pid)socket.emit('player:rejoin',{pin,pid},r=>{if(!r.ok){sessionStorage.removeItem('liveSession');pid=null;show('join');$('err').textContent='The game ended or you were removed.'}else me=r.name})})
+socket.on('question',d=>{show('play');$('cnt').textContent='Question '+(d.index+1)+' of '+d.total;$('qtext').textContent=d.q;$('locked').textContent=d.answered?'Answer locked in ✔':'';$('opts').innerHTML=d.options.map((o,i)=>'<button class="opt o'+i+'" '+(d.answered?'disabled ':'')+'onclick="pick('+i+')">'+esc(o)+'</button>').join('');let t=d.time;$('timer').textContent='⏱ '+t;clearInterval(tick);tick=setInterval(()=>{t=Math.max(0,t-1);$('timer').textContent='⏱ '+t},1000)})
 socket.on('result',r=>{clearInterval(tick);show('result');$('rtitle').textContent=!r.answered?"⏰ Time's up":r.correct?'✅ Correct! +'+r.points:'❌ Not quite';$('rinfo').textContent='Score: '+r.score+' · Rank: #'+r.rank})
-socket.on('final',lb=>{show('final');const m=lb.find(x=>x.name===me);$('fmsg').textContent=m?'You placed #'+m.rank+' with '+m.score+' points.':''})
-socket.on('ended',m=>{show('final');$('fmsg').textContent=m})}
-function pick(i){socket.emit('player:answer',{choice:i},()=>{});[...$('opts').children].forEach((b,j)=>{b.disabled=true;if(j!==i)b.classList.add('dim')});$('locked').textContent='Answer locked in ✔'}
+socket.on('final',lb=>{sessionStorage.removeItem('liveSession');show('final');const m=lb.find(x=>x.name===me);$('fmsg').textContent=m?'You placed #'+m.rank+' with '+m.score+' points.':''})
+socket.on('ended',m=>{sessionStorage.removeItem('liveSession');show('final');$('fmsg').textContent=m})}
+function join(){connect();socket.emit('player:join',{pin:$('pin').value.trim(),name:$('name').value},r=>{if(!r.ok){$('err').textContent=r.error;socket.disconnect();return}me=r.name;pid=r.pid;pin=r.pin;sessionStorage.setItem('liveSession',JSON.stringify({pin,pid,name:me}));show('wait')})}
+function pick(i){$('locked').textContent='Sending…';socket.emit('player:answer',{choice:i},ok=>{if(ok){[...$('opts').children].forEach((b,j)=>{b.disabled=true;if(j!==i)b.classList.add('dim')});$('locked').textContent='Answer locked in ✔'}else $('locked').textContent='Not sent - tap your answer again.'})}
+const saved=JSON.parse(sessionStorage.getItem('liveSession')||'null');if(saved){pin=saved.pin;pid=saved.pid;me=saved.name;connect();show('wait')}
 </script></body></html>

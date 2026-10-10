@@ -1084,7 +1084,28 @@ app.post('/live/generate', async (req, res) => {
     const questions = arr.filter(x => x && typeof x.q === 'string' && Array.isArray(x.options) && x.options.length === 4 && Number.isInteger(x.answer) && x.answer >= 0 && x.answer <= 3)
       .slice(0, n).map(x => ({ q: x.q, options: x.options.map(String), answer: x.answer, explanation: String(x.explanation || '') }))
     if (!questions.length) return res.json({ success: false, message: 'AI returned no valid questions. Try again.' })
-    res.json({ success: true, questions })
+    let checked = questions
+    let note = ''
+    try {
+      const v = await groq.chat.completions.create({
+        model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
+        messages: [
+          { role: 'system', content: 'You solve multiple-choice math questions. Reply with ONLY a JSON array of integers.' },
+          { role: 'user', content: 'Solve each question carefully on your own and give the index (0-3) of the correct option. Return one integer per question, in order.\n' + JSON.stringify(questions.map(x => ({ q: x.q, options: x.options }))) }
+        ]
+      })
+      const vt = v.choices[0].message.content || ''
+      const vm = vt.match(/\[[\s\S]*\]/)
+      const idx = JSON.parse(vm ? vm[0] : vt)
+      checked = questions.filter((x, i) => idx[i] === x.answer)
+      const removed = questions.length - checked.length
+      if (removed) note = removed + ' question(s) were removed because a second AI check disagreed with the answer key.'
+    } catch (e) {
+      note = 'Could not double-check the answers automatically. Please review every answer carefully.'
+    }
+    checked = checked.map(x => ({ ...x, explanation: /oops|correction|actually|wait|mistake|let me/i.test(x.explanation) ? '' : x.explanation }))
+    if (!checked.length) return res.json({ success: false, message: 'The AI could not produce reliable questions. Try again.' })
+    res.json({ success: true, questions: checked, note })
   } catch (err) {
     console.error('LIVE GENERATE ERROR:', err.message)
     res.json({ success: false, message: 'Could not generate questions. Try again.' })
