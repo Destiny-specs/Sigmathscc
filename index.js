@@ -1062,6 +1062,41 @@ app.post('/admin-broadcast', async (req, res) => {
 })
 
 const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
+app.post('/live/generate', async (req, res) => {
+  try {
+    const { teacher_id, topic, grade, count } = req.body
+    const { data: u } = await supabase.from('users').select('role').eq('id', teacher_id).single()
+    if (!u || (u.role !== 'teacher' && u.role !== 'admin')) return res.json({ success: false, message: 'Teachers only.' })
+    if (!topic || !String(topic).trim()) return res.json({ success: false, message: 'Enter a topic.' })
+    if (!process.env.GROQ_API_KEY) return res.json({ success: false, message: 'AI is not configured.' })
+    if (!groq) groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+    const n = Math.min(Math.max(parseInt(count) || 5, 3), 15)
+    const r = await groq.chat.completions.create({
+      model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
+      messages: [
+        { role: 'system', content: 'You write multiple-choice math quiz questions. Reply with ONLY a JSON array and no other text.' },
+        { role: 'user', content: `Write ${n} multiple-choice questions for ${String(grade).slice(0, 30)} students on this topic: ${String(topic).slice(0, 200)}. Each item must look like {"q":"...","options":["...","...","...","..."],"answer":0,"explanation":"one short sentence"} where answer is the index (0-3) of the single correct option. Write math in plain text like x^2 + 3x, with no LaTeX.` }
+      ]
+    })
+    const text = r.choices[0].message.content || ''
+    const m = text.match(/\[[\s\S]*\]/)
+    const arr = JSON.parse(m ? m[0] : text)
+    const questions = arr.filter(x => x && typeof x.q === 'string' && Array.isArray(x.options) && x.options.length === 4 && Number.isInteger(x.answer) && x.answer >= 0 && x.answer <= 3)
+      .slice(0, n).map(x => ({ q: x.q, options: x.options.map(String), answer: x.answer, explanation: String(x.explanation || '') }))
+    if (!questions.length) return res.json({ success: false, message: 'AI returned no valid questions. Try again.' })
+    res.json({ success: true, questions })
+  } catch (err) {
+    console.error('LIVE GENERATE ERROR:', err.message)
+    res.json({ success: false, message: 'Could not generate questions. Try again.' })
+  }
+})
+
+const server = require('http').createServer(app)
+require('./live')(server, async id => {
+  if (!id) return false
+  const { data } = await supabase.from('users').select('role').eq('id', id).single()
+  return !!data && (data.role === 'teacher' || data.role === 'admin')
+})
+server.listen(PORT, () => {
   console.log('SigMath is running on port ' + PORT)
 })
