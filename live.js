@@ -2,14 +2,14 @@ const { Server } = require('socket.io')
 const crypto = require('crypto')
 const games = new Map()
 const newPin = () => { let p; do { p = String(100000 + Math.floor(Math.random() * 900000)) } while (games.has(p)); return p }
-const board = g => [...g.players.values()].sort((a, b) => b.score - a.score).map((p, i) => ({ name: p.name, score: p.score, rank: i + 1 }))
+const board = g => [...g.players.values()].sort((a, b) => b.score - a.score).map((p, i) => ({ name: p.name, score: p.score, rank: i + 1, streak: p.streak }))
 const names = g => [...g.players.values()].map(p => p.name)
 
 module.exports = function attachLive(server, verifyTeacher) {
   const io = new Server(server)
   const room = g => 'g' + g.pin
   const left = g => Math.max(1, Math.ceil((g.time * 1000 - (Date.now() - g.t0)) / 1000))
-  const qpayload = (g, p) => { const q = g.questions[g.i]; return { index: g.i, total: g.questions.length, q: q.q, options: q.options, time: left(g), answered: p ? p.choice != null : false } }
+  const qpayload = (g, p) => { const q = g.questions[g.i]; return { index: g.i, total: g.questions.length, q: q.q, options: q.options, time: left(g), answered: p ? p.choice != null : false, streak: p ? p.streak : 0 } }
 
   function reveal(g) {
     if (g.state !== 'question') return
@@ -17,10 +17,10 @@ module.exports = function attachLive(server, verifyTeacher) {
     g.state = 'reveal'
     const q = g.questions[g.i]
     const counts = [0, 0, 0, 0]
-    for (const p of g.players.values()) if (p.choice != null) counts[p.choice]++
+    for (const p of g.players.values()) { if (p.choice != null) counts[p.choice]++; else p.streak = 0 }
     const lb = board(g)
     for (const p of g.players.values()) {
-      p.last = { answered: p.choice != null, correct: p.choice === q.answer, points: p.gained, score: p.score, rank: lb.find(x => x.name === p.name).rank }
+      p.last = { answered: p.choice != null, correct: p.choice === q.answer, points: p.gained, score: p.score, streak: p.streak, bonus: p.bonus, rank: lb.find(x => x.name === p.name).rank }
       if (p.sid) io.to(p.sid).emit('result', p.last)
     }
     g.lastReveal = { answer: q.answer, explanation: q.explanation || '', counts, top: lb.slice(0, 5), last: g.i === g.questions.length - 1 }
@@ -30,7 +30,7 @@ module.exports = function attachLive(server, verifyTeacher) {
   function ask(g) {
     g.state = 'question'
     g.t0 = Date.now()
-    for (const p of g.players.values()) { p.choice = null; p.gained = 0; p.last = null }
+    for (const p of g.players.values()) { p.choice = null; p.gained = 0; p.bonus = 0; p.last = null }
     io.to(room(g)).emit('question', qpayload(g, null))
     g.timer = setTimeout(() => reveal(g), g.time * 1000 + 500)
   }
@@ -89,7 +89,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       if ([...g.players.values()].some(p => p.name.toLowerCase() === name.toLowerCase())) return ack({ ok: false, error: 'That name is taken.' })
       if (g.players.size >= 100) return ack({ ok: false, error: 'Game is full.' })
       const pid = crypto.randomBytes(8).toString('hex')
-      g.players.set(pid, { pid, sid: socket.id, name, score: 0, choice: null, gained: 0, last: null })
+      g.players.set(pid, { pid, sid: socket.id, name, score: 0, choice: null, gained: 0, streak: 0, bonus: 0, last: null })
       game = g; me = pid
       socket.join(room(g))
       io.to(g.host).emit('lobby', names(g))
@@ -114,9 +114,11 @@ module.exports = function attachLive(server, verifyTeacher) {
       p.choice = d.choice
       if (d.choice === game.questions[game.i].answer) {
         const frac = Math.min((Date.now() - game.t0) / 1000 / game.time, 1)
-        p.gained = Math.round(1000 * (1 - frac / 2))
+        p.streak++
+        p.bonus = Math.min(p.streak - 1, 5) * 100
+        p.gained = Math.round(1000 * (1 - frac / 2)) + p.bonus
         p.score += p.gained
-      }
+      } else p.streak = 0
       if (ack) ack(true)
       const all = [...game.players.values()]
       io.to(game.host).emit('answered', { count: all.filter(x => x.choice != null).length, total: all.length })
