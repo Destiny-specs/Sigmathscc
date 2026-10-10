@@ -2,8 +2,10 @@ const { Server } = require('socket.io')
 const crypto = require('crypto')
 const games = new Map()
 const newPin = () => { let p; do { p = String(100000 + Math.floor(Math.random() * 900000)) } while (games.has(p)); return p }
-const board = g => [...g.players.values()].sort((a, b) => b.score - a.score).map((p, i) => ({ name: p.name, score: p.score, rank: i + 1, streak: p.streak }))
+const board = g => [...g.players.values()].sort((a, b) => b.score - a.score).map((p, i) => ({ name: p.name, score: p.score, rank: i + 1, streak: p.streak, av: p.av }))
 const names = g => [...g.players.values()].map(p => p.name)
+const avs = g => [...g.players.values()].map(p => p.av || '')
+const cleanAv = v => { const a = String(v || '').split('.').map(Number); const lim = [13, 9, 8, 6, 10, 8]; return a.length === 6 && a.every((n, i) => Number.isInteger(n) && n >= 0 && n < lim[i]) ? a.join('.') : '' }
 const norm = v => String(v).toLowerCase().replace(/[\s,]/g, '')
 const matches = (v, acc) => acc.some(a => { const x = norm(a), y = norm(v); if (x === y) return true; const nx = Number(x), ny = Number(y); return x !== '' && y !== '' && Number.isFinite(nx) && Number.isFinite(ny) && Math.abs(nx - ny) < 1e-9 })
 const cleanQ = x => {
@@ -74,7 +76,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       g.host = socket.id; game = g; isHost = true
       socket.join(room(g))
       ack({ ok: true })
-      socket.emit('lobby', names(g))
+      socket.emit('lobby', names(g), avs(g))
       if (g.state === 'question') {
         socket.emit('question', qpayload(g, null))
         const all = [...g.players.values()]
@@ -90,7 +92,7 @@ module.exports = function attachLive(server, verifyTeacher) {
         if (p.name === (d && d.name)) {
           if (p.sid) io.to(p.sid).emit('ended', 'You were removed by the teacher.')
           game.players.delete(pid)
-          io.to(game.host).emit('lobby', names(game))
+          io.to(game.host).emit('lobby', names(game), avs(game))
           break
         }
       }
@@ -119,10 +121,10 @@ module.exports = function attachLive(server, verifyTeacher) {
       if ([...g.players.values()].some(p => p.name.toLowerCase() === name.toLowerCase())) return ack({ ok: false, error: 'That name is taken.' })
       if (g.players.size >= 100) return ack({ ok: false, error: 'Game is full.' })
       const pid = crypto.randomBytes(8).toString('hex')
-      g.players.set(pid, { pid, sid: socket.id, name, score: 0, choice: null, gained: 0, streak: 0, bonus: 0, last: null, pu: { double: 1, shield: 1, hint: 1 }, hinted: false, doubleOn: false, saved: false, shieldOn: false, ok: false })
+      g.players.set(pid, { pid, sid: socket.id, name, av: cleanAv(d.av), score: 0, choice: null, gained: 0, streak: 0, bonus: 0, last: null, pu: { double: 1, shield: 1, hint: 1 }, hinted: false, doubleOn: false, saved: false, shieldOn: false, ok: false })
       game = g; me = pid
       socket.join(room(g))
-      io.to(g.host).emit('lobby', names(g))
+      io.to(g.host).emit('lobby', names(g), avs(g))
       ack({ ok: true, name, pid, pin: g.pin })
     })
 
@@ -200,7 +202,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       }
       const p = me && g.players.get(me)
       if (!p || p.sid !== socket.id) return
-      if (g.state === 'lobby') { g.players.delete(me); io.to(g.host).emit('lobby', names(g)) } else p.sid = null
+      if (g.state === 'lobby') { g.players.delete(me); io.to(g.host).emit('lobby', names(g), avs(g)) } else p.sid = null
     })
   })
 
