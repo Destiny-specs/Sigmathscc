@@ -54,3 +54,12 @@ button.opt:active:not(:disabled){transform:scale(.97)}
 .p2 .blk{height:130px;background:linear-gradient(#e2e8f0,#64748b);animation-delay:.6s}
 .p3 .blk{height:95px;background:linear-gradient(#f0b070,#8a5a2b);animation-delay:.2s}
 @keyframes grow{from{transform:scaleY(0)}}
+
+#pw{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.pw{padding:10px 14px;font-size:14px}
+.pw.armed{box-shadow:0 0 18px var(--c2);outline:2px solid var(--c2)}
+.jackpot{text-align:center;font-weight:800;padding:10px;border-radius:12px;margin:8px 0;color:#0b0b1a;background:linear-gradient(90deg,var(--c2),var(--c0),var(--c2));background-size:200% 100%;animation:shine 2s linear infinite}
+@keyframes shine{to{background-position:200% 0}}
+
+.row.me{border-color:var(--good);border-left-color:var(--good);box-shadow:0 0 var(--g) var(--good)}
+.row.me span,.row.me b{color:var(--good);font-weight:800}

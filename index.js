@@ -1062,42 +1062,56 @@ app.post('/admin-broadcast', async (req, res) => {
 })
 
 const PORT = process.env.PORT || 3000
+const normA = v => String(v).toLowerCase().replace(/[\s,]/g, '')
+const sameA = (v, a) => { const p = normA(a), q = normA(v); if (p === q) return true; const np = Number(p), nq = Number(q); return p !== '' && q !== '' && Number.isFinite(np) && Number.isFinite(nq) && Math.abs(np - nq) < 1e-9 }
+
 app.post('/live/generate', async (req, res) => {
   try {
-    const { teacher_id, topic, grade, count } = req.body
+    const { teacher_id, topic, grade, count, qtype } = req.body
     const { data: u } = await supabase.from('users').select('role').eq('id', teacher_id).single()
     if (!u || (u.role !== 'teacher' && u.role !== 'admin')) return res.json({ success: false, message: 'Teachers only.' })
     if (!topic || !String(topic).trim()) return res.json({ success: false, message: 'Enter a topic.' })
     if (!process.env.GROQ_API_KEY) return res.json({ success: false, message: 'AI is not configured.' })
     if (!groq) groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
     const n = Math.min(Math.max(parseInt(count) || 5, 3), 15)
+    const model = process.env.GROQ_MODEL || 'openai/gpt-oss-120b'
+    const typeRule = qtype === 'mix' ? 'Use a mix: about half multiple choice, a quarter true/false, and a quarter short typed answers.' : 'Use only multiple choice questions.'
     const r = await groq.chat.completions.create({
-      model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
+      model,
       messages: [
-        { role: 'system', content: 'You write multiple-choice math quiz questions. Reply with ONLY a JSON array and no other text.' },
-        { role: 'user', content: `Write ${n} multiple-choice questions for ${String(grade).slice(0, 30)} students on this topic: ${String(topic).slice(0, 200)}. Each item must look like {"q":"...","options":["...","...","...","..."],"answer":0,"explanation":"one short sentence"} where answer is the index (0-3) of the single correct option. Write math in plain text like x^2 + 3x, with no LaTeX.` }
+        { role: 'system', content: 'You write math quiz questions. Reply with ONLY a JSON array and no other text.' },
+        { role: 'user', content: `Write ${n} questions for ${String(grade).slice(0, 30)} students on this topic: ${String(topic).slice(0, 200)}. ${typeRule} Formats: multiple choice {"type":"mc","q":"...","options":["...","...","...","..."],"answer":0,"explanation":"one short sentence","hint":"a short nudge that does not give away the answer"} where answer is the index (0-3) of the single correct option; true/false {"type":"tf","q":"a statement","options":["True","False"],"answer":0,"explanation":"...","hint":"..."}; typed answer {"type":"text","q":"...","accepted":["the answer","another accepted form"],"explanation":"...","hint":"..."} where the answer is a number or a very short expression. Write math in plain text like x^2 + 3x, with no LaTeX.` }
       ]
     })
     const text = r.choices[0].message.content || ''
     const m = text.match(/\[[\s\S]*\]/)
     const arr = JSON.parse(m ? m[0] : text)
-    const questions = arr.filter(x => x && typeof x.q === 'string' && Array.isArray(x.options) && x.options.length === 4 && Number.isInteger(x.answer) && x.answer >= 0 && x.answer <= 3)
-      .slice(0, n).map(x => ({ q: x.q, options: x.options.map(String), answer: x.answer, explanation: String(x.explanation || '') }))
+    const okq = x => x && typeof x.q === 'string' && (x.type === 'text' ? Array.isArray(x.accepted) && x.accepted.length > 0 : Array.isArray(x.options) && x.options.length === (x.type === 'tf' ? 2 : 4) && Number.isInteger(x.answer) && x.answer >= 0 && x.answer < x.options.length)
+    const shape = x => {
+      const t = x.type === 'text' ? 'text' : x.type === 'tf' ? 'tf' : 'mc'
+      const ans = t === 'text' ? String(x.accepted[0]) : String(x.options[x.answer])
+      const hint = String(x.hint || '')
+      const o = { type: t, q: x.q, explanation: String(x.explanation || ''), hint: ans.length >= 3 && hint.includes(ans) ? '' : hint }
+      if (t === 'text') o.accepted = x.accepted.map(String).slice(0, 6)
+      else { o.options = x.options.map(String); o.answer = x.answer }
+      return o
+    }
+    const questions = arr.filter(okq).slice(0, n).map(shape)
     if (!questions.length) return res.json({ success: false, message: 'AI returned no valid questions. Try again.' })
     let checked = questions
     let note = ''
     try {
       const v = await groq.chat.completions.create({
-        model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
+        model,
         messages: [
-          { role: 'system', content: 'You solve multiple-choice math questions. Reply with ONLY a JSON array of integers.' },
-          { role: 'user', content: 'Solve each question carefully on your own and give the index (0-3) of the correct option. Return one integer per question, in order.\n' + JSON.stringify(questions.map(x => ({ q: x.q, options: x.options }))) }
+          { role: 'system', content: 'You solve math quiz questions. Reply with ONLY a JSON array.' },
+          { role: 'user', content: 'Solve each question carefully on your own. For multiple choice and true/false give the 0-based index of the correct option. For typed answer give the final answer as a string. Return one value per question, in order.\n' + JSON.stringify(questions.map(x => ({ type: x.type, q: x.q, options: x.options }))) }
         ]
       })
       const vt = v.choices[0].message.content || ''
       const vm = vt.match(/\[[\s\S]*\]/)
       const idx = JSON.parse(vm ? vm[0] : vt)
-      checked = questions.filter((x, i) => idx[i] === x.answer)
+      checked = questions.filter((x, i) => x.type === 'text' ? x.accepted.some(a => sameA(idx[i], a)) : idx[i] === x.answer)
       const removed = questions.length - checked.length
       if (removed) note = removed + ' question(s) were removed because a second AI check disagreed with the answer key.'
     } catch (e) {
