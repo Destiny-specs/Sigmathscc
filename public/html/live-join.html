@@ -1,12 +1,12 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Join Live Quiz – SigMath</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"><link rel="stylesheet" href="/css/dark-mode.css"><link rel="stylesheet" href="/css/live.css"><style>.hide{display:none!important}</style></head><body><div class="wrap">
-<div id="join"><h1>🎮 Join a Live Quiz</h1><div class="card"><label>Game code</label><input id="pin" inputmode="numeric" maxlength="6" placeholder="6-digit code"><label>Your name</label><input id="name" maxlength="20"><button onclick="join()">Join</button><p id="err" style="color:#b91c1c"></p></div></div>
+<div id="join"><h1>🎮 Join a Live Quiz</h1><div class="card"><label>Game code</label><input id="pin" inputmode="numeric" maxlength="6" placeholder="6-digit code"><label>Your name</label><input id="name" maxlength="20"><small style="color:var(--muted)">No account needed. Use any name you like.</small><button onclick="join()">Join</button><p id="err" style="color:#b91c1c"></p></div></div>
 <div id="wait" class="hide" style="text-align:center"><div class="big" id="myav" style="font-size:72px"></div><div class="big">You're in!</div><p>Waiting for the teacher to start…</p></div>
 <div id="play" class="hide"><div class="row"><span id="cnt"></span><span id="timer"></span></div><div class="bar"><i id="barfill"></i></div><div id="stk" class="hot"></div><div id="jp" class="jackpot hide"></div><div class="big" id="qtext"></div><div class="opts" id="opts"></div><div id="pw"><button id="bDbl" class="pw" onclick="pdbl()"></button><button id="bHint" class="pw" onclick="phint()"></button><button id="bShd" class="pw" onclick="pshd()"></button></div><p id="hintbox"></p><p id="locked"></p></div>
 <div id="result" class="hide" style="text-align:center"><div id="rico"></div><div class="big" id="rtitle"></div><p id="rinfo"></p><div id="lb" style="text-align:left;margin:12px 0"></div><p>Waiting for the next question…</p></div>
 <div id="final" class="hide" style="text-align:center"><div class="big">Game over!</div><p id="fmsg"></p><a href="/dashboard.html" style="color:var(--accent)">Back to dashboard</a></div>
 </div><script src="/socket.io/socket.io.js"></script><script>
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
-const user=JSON.parse(localStorage.getItem('SigMath_user')||'null');if(user&&user.full_name)$('name').value=user.full_name
+const user=JSON.parse(localStorage.getItem('SigMath_user')||'null');if(user&&user.full_name)$('name').value=user.full_name;else $('name').value='Guest'+Math.floor(1000+Math.random()*9000)
 const qp=new URLSearchParams(location.search).get('pin');if(qp)$('pin').value=qp
 let socket,tick,me,pin,pid
 function show(id){['join','wait','play','result','final'].forEach(s=>$(s).classList.toggle('hide',s!==id))}
