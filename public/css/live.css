@@ -1,0 +1,39 @@
+:root{--bg:#eef3fb;--card:#fff;--text:#042C53;--muted:#64748b;--accent:#185FA5;--accent2:#7c3aed;--line:#dbe4f0;--warn:#b45309;--glow:transparent;--g:0px;--c0:#e21b3c;--c1:#1368ce;--c2:#d89e00;--c3:#26890c}
+body.dark-mode{--bg:#0f172a;--card:#1e293b;--text:#e0e7ff;--muted:#94a3b8;--accent:#7aa7ff;--line:#334155;--warn:#fde68a}
+body.game-mode{--accent:#7c3aed;--accent2:#db2777;--bg:#fef9e7;--line:#e9d5ff;font-family:'Courier New',monospace}
+body.game-mode.dark-mode{--bg:#0b0b1a;--card:#14142b;--text:#e0e8d8;--muted:#a5a3c8;--accent:#b44dff;--accent2:#08d9ff;--line:#4c2a7a;--glow:#b44dff;--g:22px;--warn:#ffd23f;--c0:#ff2e63;--c1:#08d9ff;--c2:#ffd23f;--c3:#39ff14;background-image:linear-gradient(90deg,rgba(180,77,255,.22) 1px,transparent 1px),linear-gradient(rgba(180,77,255,.18) 1px,transparent 1px);background-size:40px 40px;animation:grid 4s infinite alternate}
+@keyframes grid{to{background-size:44px 44px}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif}
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:24px}
+h1,.big{text-shadow:0 0 var(--g) var(--glow)}
+.big{font-size:28px;font-weight:800;margin:10px 0}
+.card{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 0 var(--g) rgba(180,77,255,.35);animation:rise .4s both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+input,select,textarea{width:100%;padding:10px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;font:inherit;margin:4px 0 10px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 var(--g) var(--glow)}
+button{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:0;border-radius:10px;padding:12px 20px;font:inherit;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 0 var(--g) var(--glow)}
+button:hover{transform:translateY(-2px) scale(1.04)}
+button.alt{background:var(--line);color:var(--text);box-shadow:none}
+button:disabled{opacity:.5;transform:none;cursor:default}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+.opt{--c:var(--c0);background:var(--c);color:#fff;border-radius:14px;padding:22px;font-size:clamp(16px,2.4vw,24px);font-weight:800;text-align:left;box-shadow:0 5px 0 rgba(0,0,0,.3),0 0 var(--g) var(--c);animation:pop .4s both;transition:transform .15s,box-shadow .15s,opacity .3s}
+.o1{--c:var(--c1)}.o2{--c:var(--c2)}.o3{--c:var(--c3)}
+body.game-mode.dark-mode .o1,body.game-mode.dark-mode .o2,body.game-mode.dark-mode .o3{color:#0b0b1a}
+.opt:nth-child(2){animation-delay:.07s}.opt:nth-child(3){animation-delay:.14s}.opt:nth-child(4){animation-delay:.21s}
+@keyframes pop{from{opacity:0;transform:scale(.8)}}
+button.opt:hover:not(:disabled){transform:scale(1.07);box-shadow:0 8px 0 rgba(0,0,0,.3),0 0 calc(var(--g) + 14px) var(--c)}
+button.opt:active:not(:disabled){transform:scale(.97)}
+.dim{opacity:.28;transform:scale(.96)}
+.correct{animation:pulse .7s 2;box-shadow:0 0 30px var(--c)}
+@keyframes pulse{50%{transform:scale(1.05)}}
+.urgent{color:#ff2e63;animation:pulse .5s infinite}
+.row{display:flex;justify-content:space-between;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;margin:6px 0;animation:slide .4s both}
+@keyframes slide{from{opacity:0;transform:translateX(-20px)}}
+.chip{display:inline-block;background:var(--card);border:1px solid var(--accent);color:var(--text);padding:6px 14px;border-radius:20px;margin:4px;box-shadow:0 0 calc(var(--g)/2) var(--glow);animation:pop .3s both}
+.pin{font-size:72px;font-weight:800;letter-spacing:8px;text-align:center;color:var(--accent);text-shadow:0 0 var(--g) var(--glow);animation:pulse 2s infinite}
+.hide{display:none}
+.shake{animation:shk .45s}
+@keyframes shk{20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@media(max-width:600px){.opts{grid-template-columns:1fr}.pin{font-size:48px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
