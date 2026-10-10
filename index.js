@@ -1075,18 +1075,18 @@ app.post('/live/generate', async (req, res) => {
     if (!groq) groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
     const n = Math.min(Math.max(parseInt(count) || 5, 3), 15)
     const model = process.env.GROQ_MODEL || 'openai/gpt-oss-120b'
-    const typeRule = qtype === 'mix' ? 'Use a mix: about half multiple choice, a quarter true/false, and a quarter short typed answers.' : 'Use only multiple choice questions.'
+    const typeRule = qtype === 'mix' ? 'Use a mix: about three quarters multiple choice and one quarter true/false.' : 'Use only multiple choice questions.'
     const r = await groq.chat.completions.create({
       model,
       messages: [
         { role: 'system', content: 'You write math quiz questions. Reply with ONLY a JSON array and no other text.' },
-        { role: 'user', content: `Write ${n} questions for ${String(grade).slice(0, 30)} students on this topic: ${String(topic).slice(0, 200)}. ${typeRule} Formats: multiple choice {"type":"mc","q":"...","options":["...","...","...","..."],"answer":0,"explanation":"one short sentence","hint":"a short nudge that does not give away the answer"} where answer is the index (0-3) of the single correct option; true/false {"type":"tf","q":"a statement","options":["True","False"],"answer":0,"explanation":"...","hint":"..."}; typed answer {"type":"text","q":"...","accepted":["the answer","another accepted form"],"explanation":"...","hint":"..."} where the answer is a number or a very short expression. Write math in plain text like x^2 + 3x, with no LaTeX.` }
+        { role: 'user', content: `Write ${n} questions for ${String(grade).slice(0, 30)} students on this topic: ${String(topic).slice(0, 200)}. ${typeRule} Formats: multiple choice {"type":"mc","q":"...","options":["...","...","...","..."],"answer":0,"explanation":"one short sentence","hint":"a short nudge that does not give away the answer"} where answer is the index (0-3) of the single correct option; true/false {"type":"tf","q":"a statement","options":["True","False"],"answer":0,"explanation":"...","hint":"..."}. Write math in plain text like x^2 + 3x, with no LaTeX.` }
       ]
     })
     const text = r.choices[0].message.content || ''
     const m = text.match(/\[[\s\S]*\]/)
     const arr = JSON.parse(m ? m[0] : text)
-    const okq = x => x && typeof x.q === 'string' && (x.type === 'text' ? Array.isArray(x.accepted) && x.accepted.length > 0 : Array.isArray(x.options) && x.options.length === (x.type === 'tf' ? 2 : 4) && Number.isInteger(x.answer) && x.answer >= 0 && x.answer < x.options.length)
+    const okq = x => x && x.type !== 'text' && typeof x.q === 'string' && (x.type === 'text' ? Array.isArray(x.accepted) && x.accepted.length > 0 : Array.isArray(x.options) && x.options.length === (x.type === 'tf' ? 2 : 4) && Number.isInteger(x.answer) && x.answer >= 0 && x.answer < x.options.length)
     const shape = x => {
       const t = x.type === 'text' ? 'text' : x.type === 'tf' ? 'tf' : 'mc'
       const ans = t === 'text' ? String(x.accepted[0]) : String(x.options[x.answer])
