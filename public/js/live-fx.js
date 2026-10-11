@@ -24,9 +24,9 @@ confetti(n=80,x=.5,y=.4){if(reduce)return;for(let i=0;i<n;i++){const a=Math.rand
 shake(){if(reduce)return;document.body.classList.remove('shake');void document.body.offsetWidth;document.body.classList.add('shake')},
 vibrate(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 }
-const I={bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',star:'<path d="M12 2l3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z"/>',shield:'<path d="M12 3l8 3v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/>',bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10c1 1 1 2 1 3h6c0-1 0-2 1-3a6 6 0 00-4-10z"/>',check:'<circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5L17 9"/>',cross:'<circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8"/>',clock:'<circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+const I={up:'<path d="M12 4l9 15H3z"/>',down:'<path d="M12 20L3 5h18z"/>',bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',star:'<path d="M12 2l3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z"/>',shield:'<path d="M12 3l8 3v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/>',bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10c1 1 1 2 1 3h6c0-1 0-2 1-3a6 6 0 00-4-10z"/>',check:'<circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5L17 9"/>',cross:'<circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8"/>',clock:'<circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
 flame:'<path d="M12 2c1 4 5 5 5 10a5 5 0 01-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/>',s0:'<path d="M12 3l10 18H2z"/>',s1:'<path d="M12 2l10 10-10 10L2 12z"/>',s2:'<circle cx="12" cy="12" r="10"/>',s3:'<path d="M3 3h18v18H3z"/>'}
-const FILL={bolt:1,star:1,flame:1,s0:1,s1:1,s2:1,s3:1}
+const FILL={up:1,down:1,bolt:1,star:1,flame:1,s0:1,s1:1,s2:1,s3:1}
 const AV=['🚀','👾','🤖','🦄','🐙','🦊','🐲','🛸','⚡','🧠','🎯','🔮']
 Object.assign(window.LiveFX,{
 icon(n,c){return '<svg class="ico '+(c||'')+'" viewBox="0 0 24 24" '+(FILL[n]?'fill="currentColor"':'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"')+'>'+I[n]+'</svg>'},
@@ -100,4 +100,13 @@ return '<svg class="face" viewBox="0 0 100 100" width="'+size+'" height="'+size+
 Object.assign(window.LiveFX,{face,valid,rand:()=>LIM.map(n=>Math.floor(Math.random()*n)).join('.'),
 who:(p,size)=>p&&valid(p.av)?face(p.av,size):window.LiveFX.avatar(p?p.name:''),
 AVL:[['Species',SP.map(x=>x[0])],['Color',['Default','Peach','Tan','Brown','Green','Blue','Purple','Pink','Yellow']],['Hair',HA.map(x=>x[0])],['Hair color',['Black','Brown','Blonde','Red','Blue','White']],['Hat',HT.map(x=>x[0])],['Accessory',AC.map(x=>x[0])]]})
+})()
+
+;(function(){
+Object.assign(window.LiveFX,{
+countdown(d){const L=window.LiveFX;L.countdownEnd();const el=document.createElement('div');el.id='cd';el.innerHTML='<div class="cd-q">Question '+(d.index+1)+' of '+d.total+'</div><div class="cd-n" id="cdn"></div><div class="cd-s">'+(d.jackpot?'FINAL JACKPOT: DOUBLE POINTS':'Get ready!')+'</div>';document.body.appendChild(el);let t=Math.ceil(d.ms/1000);const n=document.getElementById('cdn');const set=()=>{n.textContent=t;n.classList.remove('pulse');void n.offsetWidth;n.classList.add('pulse')};set();L._cd=setInterval(()=>{t--;if(t<1){clearInterval(L._cd);return}set()},1000);L._cdt=setTimeout(()=>L.countdownEnd(),d.ms+800)},
+countdownEnd(){const L=window.LiveFX;clearInterval(L._cd);clearTimeout(L._cdt);const e=document.getElementById('cd');if(e)e.remove()},
+delta(d){const L=window.LiveFX;return d>0?'<span class="good" style="margin-left:6px">'+L.icon('up')+d+'</span>':d<0?'<span class="bad" style="margin-left:6px">'+L.icon('down')+(-d)+'</span>':''},
+awards(list,esc){const L=window.LiveFX;return list.map(a=>'<div class="award"><div class="aw-ico">'+L.icon(a.icon,'bigico2')+'</div><div><b>'+a.title+'</b><br>'+L.who({name:a.name,av:a.av},30)+' '+esc(a.name)+'<br><small>'+esc(a.detail)+'</small></div></div>').join('')}
+})
 })()

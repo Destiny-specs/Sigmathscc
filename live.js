@@ -3,6 +3,18 @@ const crypto = require('crypto')
 const games = new Map()
 const newPin = () => { let p; do { p = String(100000 + Math.floor(Math.random() * 900000)) } while (games.has(p)); return p }
 const board = g => [...g.players.values()].sort((a, b) => b.score - a.score).map((p, i) => ({ name: p.name, score: p.score, rank: i + 1, streak: p.streak, av: p.av }))
+const awards = g => {
+  const ps = [...g.players.values()], n = g.questions.length, out = [], used = new Set()
+  const pick = (key, title, icon, score, min, detail) => {
+    const c = ps.filter(p => !used.has(p.pid) && score(p) >= min).sort((a, b) => score(b) - score(a))[0]
+    if (c) { used.add(c.pid); out.push({ key, title, icon, name: c.name, av: c.av, detail: detail(c) }) }
+  }
+  pick('streak', 'Streak Master', 'flame', p => p.maxStreak || 0, 3, p => p.maxStreak + ' in a row')
+  pick('speed', 'Speed Demon', 'bolt', p => (p.correct || 0) >= 2 ? 100000 - p.tsum / p.correct : -1, 0, p => (p.tsum / p.correct / 1000).toFixed(1) + 's average')
+  pick('comeback', 'Comeback Kid', 'up', p => (p.worst || 0) - (p.rank || 0), 2, p => 'climbed ' + ((p.worst || 0) - (p.rank || 0)) + ' places')
+  pick('brain', 'Brain', 'bulb', p => (p.correct || 0) / n, 0.6, p => Math.round(100 * (p.correct || 0) / n) + '% correct')
+  return out
+}
 const names = g => [...g.players.values()].map(p => p.name)
 const avs = g => [...g.players.values()].map(p => p.av || '')
 const cleanAv = v => { const a = String(v || '').split('.').map(Number); const lim = [13, 9, 8, 6, 10, 8]; return a.length === 6 && a.every((n, i) => Number.isInteger(n) && n >= 0 && n < lim[i]) ? a.join('.') : '' }
@@ -36,17 +48,39 @@ module.exports = function attachLive(server, verifyTeacher) {
     const counts = [0, 0, 0, 0]
     for (const p of g.players.values()) { if (p.choice != null && q.type !== 'text') counts[p.choice]++; if (!p.ok) miss(p) }
     const lb = board(g)
+    for (const e of lb) {
+      const p = [...g.players.values()].find(x => x.name === e.name)
+      e.delta = p.rank ? p.rank - e.rank : 0
+      p.delta = e.delta; p.rank = e.rank; p.worst = Math.max(p.worst || 0, e.rank)
+    }
+    const callouts = []
+    if (lb.length > 1 && g.leader && lb[0].name !== g.leader) callouts.push(lb[0].name + ' takes the lead!')
+    g.leader = lb[0] ? lb[0].name : null
+    const climber = lb.filter(e => e.delta >= 3).sort((a, b) => b.delta - a.delta)[0]
+    if (climber) callouts.push(climber.name + ' jumped up ' + climber.delta + ' places!')
+    if (lb.length > 1 && lb[0].score > 0 && lb[0].score - lb[1].score <= 150) callouts.push('Only ' + (lb[0].score - lb[1].score) + ' points between 1st and 2nd!')
+    const shout = callouts.slice(0, 2)
     for (const p of g.players.values()) {
-      p.last = { answered: p.choice != null, correct: p.ok, points: p.gained, score: p.score, streak: p.streak, bonus: p.bonus, saved: p.saved, doubled: p.doubleOn && p.ok, jackpot: isJackpot(g), pu: p.pu, top: lb.slice(0, 5), rank: lb.find(x => x.name === p.name).rank }
+      p.last = { answered: p.choice != null, correct: p.ok, points: p.gained, score: p.score, streak: p.streak, bonus: p.bonus, saved: p.saved, doubled: p.doubleOn && p.ok, jackpot: isJackpot(g), pu: p.pu, top: lb.slice(0, 5), rank: lb.find(x => x.name === p.name).rank, delta: p.delta, callouts: shout, first: g.first }
       if (p.sid) io.to(p.sid).emit('result', p.last)
     }
-    g.lastReveal = { type: q.type, answerText: q.type === 'text' ? q.accepted[0] : q.options[q.answer], correctCount: [...g.players.values()].filter(p => p.ok).length, total: g.players.size, answer: q.answer, explanation: q.explanation || '', counts, top: lb.slice(0, 5), last: g.i === g.questions.length - 1 }
+    g.lastReveal = { type: q.type, answerText: q.type === 'text' ? q.accepted[0] : q.options[q.answer], correctCount: [...g.players.values()].filter(p => p.ok).length, total: g.players.size, answer: q.answer, explanation: q.explanation || '', counts, top: lb.slice(0, 5), callouts: shout, first: g.first, last: g.i === g.questions.length - 1 }
     io.to(g.host).emit('reveal', g.lastReveal)
   }
 
+  const readyPayload = g => ({ index: g.i, total: g.questions.length, jackpot: isJackpot(g), ms: Math.max(300, 3000 - (Date.now() - (g.readyAt || Date.now()))) })
+
   function ask(g) {
+    g.state = 'ready'
+    g.readyAt = Date.now()
+    io.to(room(g)).emit('ready', readyPayload(g))
+    g.timer = setTimeout(() => startQ(g), 3000)
+  }
+
+  function startQ(g) {
     g.state = 'question'
     g.t0 = Date.now()
+    g.first = null
     for (const p of g.players.values()) { p.choice = null; p.gained = 0; p.bonus = 0; p.last = null; p.hinted = false; p.doubleOn = false; p.saved = false; p.shieldOn = false; p.ok = false }
     io.to(g.host).emit('question', qpayload(g, null))
     for (const p of g.players.values()) if (p.sid) io.to(p.sid).emit('question', qpayload(g, p))
@@ -82,6 +116,7 @@ module.exports = function attachLive(server, verifyTeacher) {
         const all = [...g.players.values()]
         socket.emit('answered', { count: all.filter(x => x.choice != null).length, total: all.length })
       } else if (g.state === 'reveal' && g.lastReveal) socket.emit('reveal', g.lastReveal)
+      else if (g.state === 'ready') socket.emit('ready', readyPayload(g))
     })
 
     socket.on('host:lock', d => { if (isHost) game.locked = !!(d && d.locked) })
@@ -106,7 +141,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       if (game.state !== 'reveal') return
       if (game.i >= game.questions.length - 1) {
         game.state = 'ended'
-        io.to(room(game)).emit('final', board(game))
+        io.to(room(game)).emit('final', board(game), awards(game))
         games.delete(game.pin)
       } else { game.i++; ask(game) }
     })
@@ -137,6 +172,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       ack({ ok: true, name: p.name })
       if (g.state === 'question') socket.emit('question', qpayload(g, p))
       else if (g.state === 'reveal' && p.last) socket.emit('result', p.last)
+      else if (g.state === 'ready') socket.emit('ready', readyPayload(g))
     })
 
     socket.on('player:answer', (d, ack) => {
@@ -158,6 +194,10 @@ module.exports = function attachLive(server, verifyTeacher) {
       if (correct) {
         const frac = Math.min((Date.now() - game.t0) / 1000 / game.time, 1)
         p.streak++
+        if (!game.first) game.first = { name: p.name, av: p.av, ms: Date.now() - game.t0 }
+        p.correct = (p.correct || 0) + 1
+        p.tsum = (p.tsum || 0) + (Date.now() - game.t0)
+        p.maxStreak = Math.max(p.maxStreak || 0, p.streak)
         p.bonus = Math.min(p.streak - 1, 5) * 100
         let pts = Math.round(1000 * (1 - frac / 2) * (p.hinted ? 0.7 : 1)) + p.bonus
         if (p.doubleOn) pts *= 2
@@ -167,7 +207,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       }
       if (ack) ack(true)
       const all = [...game.players.values()]
-      io.to(game.host).emit('answered', { count: all.filter(x => x.choice != null).length, total: all.length })
+      io.to(game.host).emit('answered', { count: all.filter(x => x.choice != null).length, total: all.length, name: p.name, av: p.av })
       if (all.every(x => x.choice != null)) reveal(game)
     })
 
