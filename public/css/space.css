@@ -1,0 +1,16 @@
+:root{--n1:#0a9fc4;--n2:#c2189a;--n3:#c99a00;--n4:#1a9a3a}
+body.dark-mode,body.game-mode.dark-mode{--n1:#19e6ff;--n2:#ff4fd8;--n3:#ffe14d;--n4:#5dff6a}
+body.dark-mode.dashboard-page,body.dark-mode.auth-page{background:#1a1f36}
+body.dark-mode .main-content{background:transparent!important}
+#spaceStars,#spaceFx{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none}
+#spaceStars{z-index:-1}
+#spaceFx{z-index:9999}
+#space{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;opacity:.4}
+body.dark-mode #space,body.game-mode #space{opacity:.85}
+.sp{position:absolute;width:var(--w,90px);height:var(--w,90px);fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 5px currentColor);animation:spdrift 13s ease-in-out infinite alternate}
+@keyframes spdrift{from{transform:translate(0,0) rotate(-4deg)}to{transform:translate(14px,-22px) rotate(6deg)}}
+.shoot{position:absolute;top:12%;left:-15%;width:130px;height:2px;background:linear-gradient(90deg,transparent,var(--n1));opacity:0;animation:spshoot 9s linear infinite}
+.shoot.s2{top:55%;animation-delay:-4.5s;background:linear-gradient(90deg,transparent,var(--n2))}
+@keyframes spshoot{0%{transform:translate(0,0) rotate(24deg);opacity:0}2%{opacity:1}12%{transform:translate(125vw,58vh) rotate(24deg);opacity:0}100%{opacity:0}}
+@media(max-width:700px){.sp{width:58px!important;height:58px!important}.sp.nm{display:none}}
+@media(prefers-reduced-motion:reduce){.sp,.shoot{animation:none!important}}
