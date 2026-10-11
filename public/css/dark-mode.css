@@ -719,3 +719,36 @@ body.dark-mode .topic-card .icon::after {
     right: 20px !important;
   }
 }
+
+/* ---------- SETTINGS PANEL THEMES (follows dark mode / game mode) ---------- */
+body.dark-mode #settingsPanel {
+  background: #1e293b !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
+}
+body.dark-mode #settingsPanel strong,
+body.dark-mode #settingsPanel .setting-row,
+body.dark-mode #closeSettingsBtn {
+  color: #e0e7ff !important;
+}
+body.dark-mode input:not(:checked) + .slider {
+  background-color: #475569;
+}
+body.game-mode #settingsPanel {
+  background: #fef9e7 !important;
+  border: 2px solid #b44dff !important;
+  font-family: 'Courier New', monospace;
+  box-shadow: 0 0 14px rgba(180, 77, 255, 0.45) !important;
+}
+body.game-mode input:checked + .slider {
+  background-color: #b44dff !important;
+}
+body.game-mode.dark-mode #settingsPanel {
+  background: #0b0b1a !important;
+  border: 2px solid #b44dff !important;
+  box-shadow: 0 0 18px rgba(180, 77, 255, 0.6), inset 0 0 10px rgba(180, 77, 255, 0.2) !important;
+}
+body.game-mode.dark-mode #settingsPanel strong,
+body.game-mode.dark-mode #settingsPanel .setting-row,
+body.game-mode.dark-mode #closeSettingsBtn {
+  color: #e0e8d8 !important;
+}

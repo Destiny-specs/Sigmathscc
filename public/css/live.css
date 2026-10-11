@@ -96,3 +96,6 @@ body.dark-mode #space{opacity:.9}
 #closeSettingsBtn:hover,#settingsGearBtn:hover{transform:none!important}
 #settingsGearBtn{padding:0!important}
 #settingsPanel,#settingsPanel *{text-shadow:none!important}
+
+body.game-mode #settingsGearBtn{background:#fef9e7!important;color:#042C53!important;border:2px solid #b44dff!important;box-shadow:0 0 12px rgba(180,77,255,.5)!important}
+body.game-mode.dark-mode #settingsGearBtn{background:#0b0b1a!important;color:#e0e8d8!important;border:2px solid #b44dff!important;box-shadow:0 0 15px rgba(180,77,255,.6),inset 0 0 8px rgba(180,77,255,.2)!important}
