@@ -133,7 +133,14 @@ module.exports = function attachLive(server, verifyTeacher) {
       }
     })
 
-    socket.on('host:start', () => { if (isHost && game.state === 'lobby' && game.players.size) ask(game) })
+    socket.on('host:start', (d, ack) => {
+      const reply = r => { if (typeof ack === 'function') ack(r) }
+      if (!isHost || !game) return reply({ ok: false, error: 'This game is no longer running (the server may have restarted). Create a new game.' })
+      if (game.state !== 'lobby') return reply({ ok: false, error: 'The game already started.' })
+      if (!game.players.size) return reply({ ok: false, error: 'Wait for at least one student to join.' })
+      ask(game)
+      reply({ ok: true })
+    })
 
     socket.on('host:next', () => {
       if (!isHost) return
