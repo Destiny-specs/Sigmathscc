@@ -90,3 +90,9 @@ body.dark-mode #space{opacity:.9}
 #cd::after{content:'';position:absolute;width:380px;height:380px;top:50%;left:50%;margin:-190px 0 0 -190px;border:2px solid var(--n2);border-radius:50%;box-shadow:0 0 22px var(--n2);animation:spin 14s linear infinite reverse;border-top-color:transparent;border-bottom-color:transparent}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:700px){.sp{width:58px!important;height:58px!important}.sp.nm{display:none}}
+
+/* keep the site's settings panel and gear button looking like the rest of the site */
+#closeSettingsBtn{padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;transform:none!important;color:#042C53!important;background:none!important;width:auto!important;font-weight:400!important}
+#closeSettingsBtn:hover,#settingsGearBtn:hover{transform:none!important}
+#settingsGearBtn{padding:0!important}
+#settingsPanel,#settingsPanel *{text-shadow:none!important}
