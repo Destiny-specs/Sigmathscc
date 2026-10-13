@@ -1,0 +1,103 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boss Battle - SigMath</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"><link rel="stylesheet" href="/css/dark-mode.css"><link rel="stylesheet" href="/css/live.css">
+<style>
+.hide{display:none!important}
+.back{color:var(--accent);text-decoration:none;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:8px 14px;font-size:13px}.chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.boss{display:flex;align-items:center;gap:14px}.boss .binfo{flex:1}.bface{width:96px;text-align:center}
+.hud{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.hud .bn{flex:1;min-width:200px}.hp{height:16px;background:rgba(128,128,160,.3);border-radius:99px;overflow:hidden;margin-top:4px}
+.hp i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ef4444,#f97316);transition:width .6s;border-radius:99px}
+.heart{width:30px;height:30px;fill:#ff4d6d;stroke:#fff;stroke-width:1;filter:drop-shadow(0 0 5px #ff4d6d);margin-right:2px}.heart.lost{fill:none;stroke:#888;filter:none;opacity:.6}
+#arena{position:relative;height:270px;margin:12px 0;border-radius:18px;border:1px solid var(--accent);background:rgba(10,10,30,.45);overflow:hidden;box-shadow:0 0 var(--g) var(--glow)}
+#arena::after{content:'';position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(transparent,rgba(124,58,237,.35))}
+#hero{position:absolute;left:5%;bottom:20px;z-index:2}#boss{position:absolute;right:5%;bottom:16px;z-index:2}
+#bossFace{animation:bfloat 3s ease-in-out infinite}#bossFace.rage{animation-duration:1.2s}.rage svg{filter:drop-shadow(0 0 14px #ff2e63) saturate(1.5)}
+#heroFace{animation:bfloat 2.4s ease-in-out infinite reverse}
+@keyframes bfloat{50%{transform:translateY(-10px)}}
+.proj{position:absolute;pointer-events:none;width:90px;z-index:5}.proj svg{width:100%;display:block;filter:drop-shadow(0 0 10px currentColor)}
+.spark{position:absolute;width:7px;height:7px;border-radius:50%;pointer-events:none;z-index:4}
+.ring{position:absolute;border:4px solid;border-radius:50%;pointer-events:none;z-index:4;transform:translate(-50%,-50%)}
+.dmg{position:absolute;font-size:34px;font-weight:900;color:#fff;text-shadow:0 0 10px #ff2e63,0 0 4px #000;pointer-events:none;z-index:6}
+#banner{position:absolute;left:0;right:0;top:12px;text-align:center;font-size:22px;font-weight:900;color:var(--c2);text-shadow:0 0 12px var(--c2);pointer-events:none;z-index:7}
+#combo{min-height:26px;font-weight:800;text-align:center}
+#flash{position:fixed;inset:0;background:#ff2e63;opacity:0;pointer-events:none;z-index:90}
+#qtext{font-size:clamp(18px,3vw,26px);font-weight:800;margin:8px 0}
+#fb{min-height:44px;font-size:14px}
+.stars{font-size:46px;letter-spacing:6px;color:var(--c2);text-shadow:0 0 14px var(--c2)}
+.miss{margin:6px 0;font-size:14px;text-align:left;padding:8px 12px;border-left:4px solid var(--bad);background:var(--card);border-radius:8px}
+</style></head><body><div class="wrap">
+<a class="back" href="/games.html">&larr; Back to Games</a>
+<div id="setup"><h1>Boss Battle</h1><p>Every right answer shoots a fireball at the boss. Chain 3 in a row for a MEGA fireball. A wrong answer, or running out of time, lets the boss strike back. You have 3 hearts!</p>
+<div class="card"><b>Pick a topic</b><div id="topics" class="chips"></div></div>
+<div class="card" style="display:flex;align-items:center;gap:14px"><div id="myhero"></div><div><b>Your hero</b><br><small>This is the character you made in the live quiz. <a href="/live-join.html" style="color:var(--accent)">Change your hero</a></small></div></div>
+<div id="bosses"></div></div>
+<div id="battle" class="hide">
+<div class="card hud"><div id="hearts"></div><div class="bn"><b id="bname"></b> <span id="bhp"></span><div class="hp"><i id="hpfill"></i></div></div></div>
+<div id="arena"><div id="banner"></div><div id="hero"><div id="heroFace"></div></div><div id="boss"><div id="bossFace"></div></div></div>
+<div id="combo"></div><div class="bar"><i id="tfill"></i></div>
+<div class="rstep" id="qn" style="font-size:12px;opacity:.7"></div><div id="qtext"></div><div class="opts" id="opts"></div><div id="fb"></div></div>
+<div id="end" class="hide card" style="text-align:center"></div>
+</div><div id="flash"></div>
+<script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/question-gen.js"></script><script src="/js/progress.js"></script>
+<script>
+const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms)),esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+const user=JSON.parse(localStorage.getItem('SigMath_user')||'null');if(!user)location.href='/'
+const BOSSES=[{id:'slime',name:'Slime King',av:'10.0.0.0.3.0',hp:5,d:1,t:20,tag:'Easy'},{id:'zombie',name:'Zombie Lord',av:'11.0.0.0.2.0',hp:7,d:1,t:18,tag:'Easy+'},{id:'robot',name:'Robo Overlord',av:'3.0.0.0.0.2',hp:9,d:2,t:15,tag:'Medium'},{id:'alien',name:'Cosmic Wizard',av:'2.6.0.0.4.0',hp:11,d:2,t:15,tag:'Medium+'},{id:'dragon',name:'Dragon Emperor',av:'1.0.0.0.3.0',hp:14,d:3,t:12,tag:'Hard'}]
+let AV=localStorage.getItem('liveAv')||'',topic=localStorage.getItem('sm_boss_topic')||'mixed',S=null
+const small=()=>innerWidth<600
+function show(id){['setup','battle','end'].forEach(s=>$(s).classList.toggle('hide',s!==id))}
+function setup(){if(!LiveFX.valid(AV)){AV=LiveFX.rand();localStorage.setItem('liveAv',AV)}
+$('myhero').innerHTML=LiveFX.face(AV,70)
+$('topics').innerHTML=['mixed'].concat(QG.topics).map(t=>'<button class="alt chip'+(t===topic?' on':'')+'" data-t="'+t+'">'+(t==='mixed'?'Mixed topics':QG.title[t])+'</button>').join('')
+const B=Progress.get('boss')
+$('bosses').innerHTML=BOSSES.map((b,i)=>{const p=B[b.id];return '<div class="card boss"><div class="bface">'+LiveFX.face(b.av,90)+'</div><div class="binfo"><b>'+b.name+'</b><br><small>'+b.tag+' \u00b7 '+b.hp+' HP \u00b7 '+b.t+'s per question</small><br>'+(p&&p.wins?'<span class="good">Defeated \u00b7 '+'\u2605'.repeat(p.best)+'</span>':'<small>Not defeated yet</small>')+'</div><button onclick="fight('+i+')">Fight!</button></div>'}).join('')}
+$('topics').onclick=e=>{const b=e.target.closest('.chip');if(b){topic=b.dataset.t;localStorage.setItem('sm_boss_topic',topic);setup()}}
+function fight(i){const b=BOSSES[i];S={b,hp:b.hp,hearts:3,streak:0,missed:[],asked:0,correct:0,busy:false,last:'',tm:0}
+$('heroFace').innerHTML=LiveFX.face(AV,small()?84:110);$('bossFace').innerHTML=LiveFX.face(b.av,small()?120:170);$('bossFace').classList.remove('rage');$('hero').style.opacity=1;$('boss').style.opacity=1
+show('battle');LiveFX.sfx('go');hud();next()}
+function hud(){const b=S.b;$('bname').textContent=b.name;$('bhp').textContent=S.hp+' / '+b.hp+' HP';$('hpfill').style.width=(100*S.hp/b.hp)+'%';$('bossFace').classList.toggle('rage',S.hp<=b.hp*.3&&S.hp>0)
+$('hearts').innerHTML=[0,1,2].map(i=>'<svg class="heart'+(i<S.hearts?'':' lost')+'" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>').join('')
+$('combo').innerHTML=S.streak>=2?LiveFX.icon('flame','hot')+' Combo x'+S.streak+(S.streak>=3?' - MEGA fireballs!':''):''}
+function next(){S.busy=false;let q,n=0;do{q=QG.make(topic,S.b.d)}while(q.q===S.last&&n++<6);S.last=q.q;S.q=q;S.asked++
+$('qn').textContent='Question '+S.asked;$('qtext').textContent=q.q;$('opts').innerHTML=q.options.map((o,i)=>'<button class="opt o'+i+'" onclick="answer('+i+')">'+LiveFX.icon('s'+i,'shape')+esc(o)+'</button>').join('');$('fb').innerHTML=''
+LiveFX.bar($('tfill'),S.b.t);$('tfill').style.animationPlayState='running';clearTimeout(S.tm);S.tm=setTimeout(()=>answer(-1),S.b.t*1000);hud()}
+async function answer(i){if(!S||S.busy)return;S.busy=true;clearTimeout(S.tm);$('tfill').style.animationPlayState='paused'
+const q=S.q,ok=i===q.answer;[...document.querySelectorAll('#opts .opt')].forEach((b,k)=>{b.disabled=true;b.classList.add(k===q.answer?'correct':'dim')})
+if(ok){S.correct++;S.streak++;const mega=S.streak>=3;$('fb').innerHTML='<b class="good">Correct!</b> '+esc(q.explanation);await attack(mega,mega?2:1)}
+else{S.streak=0;S.missed.push(q);$('fb').innerHTML='<b class="bad">'+(i<0?"Time's up!":'Not quite.')+'</b> '+esc(q.explanation);await bossAttack()}
+hud();if(S.hp<=0)return end(true);if(S.hearts<=0)return end(false);await sleep(ok?450:1600);next()}
+const fireSvg=m=>'<svg viewBox="0 0 90 40" style="color:'+(m?'#7df9ff':'#ff9a1f')+'"><defs><radialGradient id="fg'+(m?1:0)+'" cx=".75" cy=".5" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="'+(m?'#7df9ff':'#ffd23f')+'"/><stop offset="1" stop-color="'+(m?'#2563eb':'#ef4444')+'"/></radialGradient></defs><path d="M2 20Q26 4 56 8Q86 10 88 20Q86 30 56 32Q26 36 2 20z" fill="url(#fg'+(m?1:0)+')"/><circle cx="68" cy="20" r="11" fill="#fff" opacity=".85"/></svg>'
+const orbSvg='<svg viewBox="0 0 50 50" style="color:#e879f9"><defs><radialGradient id="og"><stop offset="0" stop-color="#f0abfc"/><stop offset=".5" stop-color="#a21caf"/><stop offset="1" stop-color="#2e1065"/></radialGradient></defs><circle cx="25" cy="25" r="20" fill="url(#og)"/><circle cx="25" cy="25" r="24" fill="none" stroke="#e879f9" stroke-width="2" opacity=".6"/></svg>'
+const AR=()=>$('arena')
+function spark(x,y,c){const s=document.createElement('i');s.className='spark';s.style.cssText='left:'+x+'px;top:'+y+'px;background:'+c+';box-shadow:0 0 8px '+c;AR().appendChild(s);s.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.2) translateY(14px)'}],{duration:500}).onfinish=()=>s.remove()}
+function proj(from,to,svg,dur,color,w){return new Promise(res=>{const a=AR().getBoundingClientRect(),f=from.getBoundingClientRect(),t=to.getBoundingClientRect(),x0=f.left+f.width/2-a.left,y0=f.top+f.height/2-a.top,x1=t.left+t.width/2-a.left,y1=t.top+t.height/2-a.top,el=document.createElement('div');el.className='proj';if(w)el.style.width=w+'px';el.innerHTML=svg;el.style.left=x0+'px';el.style.top=y0+'px';AR().appendChild(el)
+const ang=Math.atan2(y1-y0,x1-x0)*180/Math.PI,dx=x1-x0,dy=y1-y0,an=el.animate([{transform:'translate(-50%,-50%) rotate('+ang+'deg) scale(.4)'},{transform:'translate(calc(-50% + '+dx*.5+'px),calc(-50% + '+(dy*.5-34)+'px)) rotate('+ang+'deg) scale(1.15)',offset:.5},{transform:'translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px)) rotate('+ang+'deg) scale(1)'}],{duration:dur,easing:'ease-in'})
+const iv=setInterval(()=>{const r=el.getBoundingClientRect();spark(r.left+r.width/2-a.left+(Math.random()*10-5),r.top+r.height/2-a.top+(Math.random()*10-5),color)},28)
+an.onfinish=()=>{clearInterval(iv);el.remove();res({x:x1,y:y1})}})}
+function impact(x,y,color,txt,big){const r=document.createElement('i');r.className='ring';r.style.cssText='left:'+x+'px;top:'+y+'px;border-color:'+color+';box-shadow:0 0 18px '+color;AR().appendChild(r);r.animate([{width:'10px',height:'10px',opacity:1},{width:(big?190:130)+'px',height:(big?190:130)+'px',opacity:0}],{duration:600}).onfinish=()=>r.remove()
+for(let k=0;k<(big?20:12);k++){const s=document.createElement('i');s.className='spark';s.style.cssText='left:'+x+'px;top:'+y+'px;background:'+color+';box-shadow:0 0 8px '+color;AR().appendChild(s);const an=k/(big?20:12)*6.283,d=50+Math.random()*(big?80:50);s.animate([{transform:'translate(0,0)',opacity:1},{transform:'translate('+Math.cos(an)*d+'px,'+Math.sin(an)*d+'px) scale(.3)',opacity:0}],{duration:650}).onfinish=()=>s.remove()}
+const t=document.createElement('div');t.className='dmg';t.textContent=txt;t.style.cssText='left:'+(x-16)+'px;top:'+(y-40)+'px';AR().appendChild(t);t.animate([{transform:'translateY(0) scale(.6)',opacity:1},{transform:'translateY(-50px) scale(1.3)',opacity:0}],{duration:1000}).onfinish=()=>t.remove()
+const a=AR().getBoundingClientRect();LiveFX.confetti(big?60:22,(a.left+x)/innerWidth,(a.top+y)/innerHeight)}
+function banner(t){const b=$('banner');b.textContent=t;b.animate([{transform:'scale(.5)',opacity:0},{transform:'scale(1.15)',opacity:1,offset:.3},{transform:'scale(1)',opacity:1,offset:.8},{opacity:0}],{duration:1100})}
+async function attack(mega,dmg){const hero=$('hero'),boss=$('boss');banner(mega?'MEGA FIREBALL x'+S.streak+'!':'Fireball!');LiveFX.sfx('fire')
+hero.animate([{transform:'translateX(0)'},{transform:'translateX(30px) scale(1.08)'},{transform:'translateX(0)'}],{duration:380})
+const pt=await proj(hero,boss,fireSvg(mega),mega?680:520,mega?'#7df9ff':'#ff9a1f',mega?130:90)
+LiveFX.sfx('boom');impact(pt.x,pt.y,mega?'#7df9ff':'#ff7a1f','-'+dmg,mega);S.hp=Math.max(0,S.hp-dmg);hud()
+boss.animate([{filter:'brightness(3)',transform:'translateX(0)'},{filter:'brightness(1.8)',transform:'translateX(14px)'},{filter:'brightness(1)',transform:'translateX(-10px)'},{filter:'none',transform:'translateX(0)'}],{duration:480})
+if(mega){LiveFX.shake();LiveFX.vibrate([60,30,60])}else LiveFX.vibrate(30);await sleep(520)}
+async function bossAttack(){const hero=$('hero'),boss=$('boss');banner('The boss strikes!');LiveFX.sfx('whoosh')
+boss.animate([{transform:'translateX(0)'},{transform:'translateX(-34px) scale(1.08)'},{transform:'translateX(0)'}],{duration:380})
+const pt=await proj(boss,hero,orbSvg,560,'#e879f9',64)
+LiveFX.sfx('hit');S.hearts--;impact(pt.x,pt.y,'#e879f9','-1 HP',false);hud()
+hero.animate([{transform:'translateX(0)'},{transform:'translateX(-14px)'},{transform:'translateX(12px)'},{transform:'translateX(-8px)'},{transform:'translateX(0)'}],{duration:450})
+$('flash').animate([{opacity:.45},{opacity:0}],{duration:500});LiveFX.shake();LiveFX.vibrate(220);await sleep(560)}
+async function end(win){clearTimeout(S.tm);const b=S.b,stars=win?Math.max(1,S.hearts):0
+if(win){LiveFX.sfx('boom');$('boss').animate([{transform:'scale(1)',opacity:1},{transform:'scale(1.4) rotate(8deg)',opacity:.9,offset:.4},{transform:'scale(2) rotate(-12deg)',opacity:0}],{duration:950,fill:'forwards'});LiveFX.confetti(220,.7,.5);LiveFX.shake();await sleep(1100);LiveFX.sfx('fanfare');LiveFX.confetti(200,.5,.3)}
+else{LiveFX.sfx('bad');$('hero').animate([{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(40px)'}],{duration:700,fill:'forwards'});await sleep(900)}
+const P=Progress.get('boss'),o=P[b.id]||{wins:0,best:0,attempts:0};o.attempts++;if(win){o.wins++;o.best=Math.max(o.best,stars)}P[b.id]=o;Progress.set('boss',P)
+$('end').innerHTML='<h1>'+(win?'Victory!':'Defeated...')+'</h1><div style="margin:8px 0">'+LiveFX.face(b.av,win?90:110)+'</div>'+(win?'<div class="stars">'+'\u2605'.repeat(stars)+'</div><p>You defeated <b>'+b.name+'</b> with '+S.hearts+' heart'+(S.hearts===1?'':'s')+' left!</p>':'<p><b>'+b.name+'</b> survived with '+S.hp+' HP left. Try again!</p>')+'<p>'+S.correct+' of '+(S.asked-(win||S.busy?0:0))+' answered correctly.</p>'+(S.missed.length?'<h3>Review what you missed</h3>'+S.missed.slice(0,5).map(q=>'<div class="miss"><b>'+esc(q.q)+'</b><br>Answer: '+esc(q.options[q.answer])+'. '+esc(q.explanation)+'</div>').join(''):'<p class="good">No mistakes. Perfect run!</p>')+'<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px"><button onclick="fight('+BOSSES.indexOf(b)+')">Fight again</button><button class="alt" onclick="setup();show(\'setup\')">Choose a boss</button></div>';show('end')}
+Progress.onSync(()=>{if(!$('setup').classList.contains('hide'))setup()})
+setup()
+</script></body></html>

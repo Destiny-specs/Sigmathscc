@@ -1062,6 +1062,26 @@ app.post('/admin-broadcast', async (req, res) => {
 })
 
 const PORT = process.env.PORT || 3000
+app.get('/progress/all', async (req, res) => {
+  try {
+    const uid = String(req.query.user_id || '')
+    if (!uid) return res.json({ success: false })
+    const { data, error } = await supabase.from('user_progress').select('key,data,updated_at').eq('user_id', uid)
+    if (error) throw error
+    res.json({ success: true, rows: data || [] })
+  } catch (e) { res.json({ success: false }) }
+})
+
+app.post('/progress/save', async (req, res) => {
+  try {
+    const { user_id, key, data } = req.body || {}
+    if (!user_id || !key || !data || typeof data !== 'object' || JSON.stringify(data).length > 60000) return res.json({ success: false })
+    const { error } = await supabase.from('user_progress').upsert({ user_id: String(user_id), key: String(key).slice(0, 40), data, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' })
+    if (error) throw error
+    res.json({ success: true })
+  } catch (e) { res.json({ success: false }) }
+})
+
 const normA = v => String(v).toLowerCase().replace(/[\s,]/g, '')
 const sameA = (v, a) => { const p = normA(a), q = normA(v); if (p === q) return true; const np = Number(p), nq = Number(q); return p !== '' && q !== '' && Number.isFinite(np) && Number.isFinite(nq) && Math.abs(np - nq) < 1e-9 }
 

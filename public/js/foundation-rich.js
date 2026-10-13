@@ -66,8 +66,9 @@ C('What is the range of 12, 7, 20, 5?',['8','15','20','44'],1,'Largest minus sma
 }
 if(typeof document==='undefined'){module.exports={RICH}}else{
 const $=id=>document.getElementById(id)
-const getP=()=>{try{return JSON.parse(localStorage.getItem('sm_fp_'+user.id))||{}}catch(e){return {}}}
-const setP=p=>{try{localStorage.setItem('sm_fp_'+user.id,JSON.stringify(p))}catch(e){}}
+const getP=()=>Progress.get('fp')
+const setP=p=>Progress.set('fp',p)
+try{const o=JSON.parse(localStorage.getItem('sm_fp_'+user.id)||'null');if(o&&!Object.keys(Progress.get('fp')).length)Progress.set('fp',o)}catch(e){}
 const RANKS=['Space Cadet','Rocket Pilot','Star Navigator','Mission Commander','Galaxy Master']
 const rankOf=n=>n>=11?4:n>=8?3:n>=5?2:n>=2?1:0
 const oldOpen=window.openLesson
@@ -76,9 +77,9 @@ window.renderLessons=function(){
 const grid=$('lessonGrid'),P=getP(),total=foundationLessons.length,done=foundationLessons.filter(l=>P[l.id]&&P[l.id].done).length
 const nextId=(foundationLessons.find(l=>!(P[l.id]&&P[l.id].done))||{}).id,pct=Math.round(100*done/total)
 grid.innerHTML='<div class="path-head"><div class="rank">Your rank</div><h2>'+RANKS[rankOf(done)]+'</h2><div class="pbar"><i style="width:'+pct+'%"></i><span class="rocket" style="left:'+Math.max(3,pct)+'%">\ud83d\ude80</span></div><div>'+done+' of '+total+' lessons complete</div></div>'
-foundationLessons.forEach((l,i)=>{const p=P[l.id]||{},c=document.createElement('div')
+const Q=Progress.get('quiz');foundationLessons.forEach((l,i)=>{const p=P[l.id]||{},qz=Q[l.id],c=document.createElement('div')
 c.className='lesson-card'+(p.done?' done':l.id===nextId?' next':'')
-c.innerHTML='<span class="num">'+(i+1)+'</span><div class="icon">'+l.icon+'</div><div class="info"><h3>'+l.title+'</h3><p>'+l.desc+'</p></div><span class="badge-difficulty">'+l.difficulty+'</span><span class="status'+(l.id===nextId&&!p.done?' next':'')+'">'+(p.done?'\u2b50'.repeat(p.stars||1):l.id===nextId?'\u25b6 Start here':'')+'</span>'
+c.innerHTML='<span class="num">'+(i+1)+'</span><div class="icon">'+l.icon+'</div><div class="info"><h3>'+l.title+'</h3><p>'+l.desc+(qz?' \u00b7 Quiz best '+qz.best+'%':'')+'</p></div><span class="badge-difficulty">'+l.difficulty+'</span><span class="status'+(l.id===nextId&&!p.done?' next':'')+'">'+(p.done?'\u2b50'.repeat(p.stars||1):l.id===nextId?'\u25b6 Start here':'')+'</span>'
 c.addEventListener('click',()=>window.openLesson(l.id));grid.appendChild(c)})}
 window.openLesson=function(id){if(!RICH[id])return oldOpen(id);const meta=foundationLessons.find(l=>l.id===id);currentLessonId=id;currentLessonTitle=meta.title;R={id,L:RICH[id],i:0,first:0,tried:{},ok:{},exk:{}};$('modalTitle').textContent=meta.icon+' '+meta.title;$('lessonModal').style.display='flex';draw()}
 function showEx(){const s=R.L.steps[R.i],k=R.exk[R.i]||0;$('exl').innerHTML=s.s.slice(0,k).map(t=>'<li>'+t+'</li>').join('');$('nx').textContent=k<s.s.length?'Show next step':'Next'}
@@ -102,4 +103,5 @@ const P=getP(),old=P[R.id]||{};P[R.id]={done:true,stars:Math.max(old.stars||0,st
 $('modalContent').innerHTML='<div class="rv"><div class="rbar"><i style="width:100%"></i></div><div class="done"><h3>Lesson complete!</h3><div class="stars">'+'\u2b50'.repeat(stars)+'</div><p>You got '+R.first+' of '+checks+' checks right on the first try.</p><div class="links"><a href="/flashcards.html?topic='+R.id+'">Practice with flashcards</a><a href="/quizzes/foundation.html?topic='+R.id+'">Take the quiz</a><a href="#" onclick="closeModal();return false">Back to the path</a></div></div></div>'
 if(window.SpaceFX)SpaceFX.confetti(160,.5,.35);window.renderLessons()}
 window.renderLessons()
+Progress.onSync(()=>window.renderLessons())
 }
