@@ -14,16 +14,16 @@ const col=()=>getComputedStyle(document.body).getPropertyValue('--accent').trim(
 function loop(t){
 b.clearRect(0,0,W,H);f.clearRect(0,0,W,H)
 b.fillStyle=col();b.globalAlpha=.13
-for(const s of sy){s.y-=s.v;s.x+=Math.sin(t/2000+s.d)*.3;if(s.y<-60){s.y=H+40;s.x=Math.random()*W}b.font=s.z+'px Courier New';b.fillText(s.s,s.x,s.y)}
-for(const s of stars){b.globalAlpha=.2+.55*Math.abs(Math.sin(t/900+s.p));b.fillStyle=col();b.beginPath();b.arc(s.x*W,s.y*H,s.r,0,6.3);b.fill()}
+for(const s of (window.LiveFX&&window.LiveFX.low?[]:sy)){s.y-=s.v;s.x+=Math.sin(t/2000+s.d)*.3;if(s.y<-60){s.y=H+40;s.x=Math.random()*W}b.font=s.z+'px Courier New';b.fillText(s.s,s.x,s.y)}
+for(const s of (window.LiveFX&&window.LiveFX.low?[]:stars)){b.globalAlpha=.2+.55*Math.abs(Math.sin(t/900+s.p));b.fillStyle=col();b.beginPath();b.arc(s.x*W,s.y*H,s.r,0,6.3);b.fill()}
 b.globalAlpha=1
 bits=bits.filter(p=>p.l>0)
 for(const p of bits){p.x+=p.vx;p.y+=p.vy;p.vy+=.18;p.vx*=.99;p.r+=p.vr;p.l--;f.save();f.globalAlpha=Math.min(1,p.l/30);f.translate(p.x,p.y);f.rotate(p.r);f.fillStyle=p.c;f.fillRect(-4,-2,8,4);f.restore()}
 requestAnimationFrame(loop)}
 requestAnimationFrame(loop)
 window.LiveFX={
-confetti(n=80,x=.5,y=.4){if(reduce)return;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=3+Math.random()*7;bits.push({x:x*W,y:y*H,vx:Math.cos(a)*v,vy:Math.sin(a)*v-4,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:P[i%P.length],l:70+Math.random()*50})}},
-shake(){if(reduce)return;document.body.classList.remove('shake');void document.body.offsetWidth;document.body.classList.add('shake')},
+confetti(n=80,x=.5,y=.4){if(reduce)return;if(window.LiveFX&&window.LiveFX.low)n=Math.ceil(n/4);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=3+Math.random()*7;bits.push({x:x*W,y:y*H,vx:Math.cos(a)*v,vy:Math.sin(a)*v-4,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:P[i%P.length],l:70+Math.random()*50})}},
+shake(){if(reduce||(window.LiveFX&&window.LiveFX.low))return;document.body.classList.remove('shake');void document.body.offsetWidth;document.body.classList.add('shake')},
 vibrate(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 }
 const I={sound:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9q3 3 0 6M18.5 6.5q6 5.5 0 11"/>',mute:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/>',up:'<path d="M12 4l9 15H3z"/>',down:'<path d="M12 20L3 5h18z"/>',bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',star:'<path d="M12 2l3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z"/>',shield:'<path d="M12 3l8 3v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/>',bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 00-4 10c1 1 1 2 1 3h6c0-1 0-2 1-3a6 6 0 00-4-10z"/>',check:'<circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5L17 9"/>',cross:'<circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8"/>',clock:'<circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
@@ -128,17 +128,25 @@ whoosh:()=>tone(300,0,.28,'sine',.07,1400),
 fire:()=>tone(240,0,.4,'sawtooth',.06,1100),
 boom:()=>{tone(130,0,.45,'square',.09,35);tone(90,.04,.5,'sawtooth',.07,30)},
 hit:()=>tone(160,0,.22,'square',.07,70),
+phase:()=>{tone(110,0,.6,'sawtooth',.09,55);tone(220,.1,.5,'square',.05,110)},
+lose:()=>[392,349,311,262].forEach((x,i)=>tone(x,i*.2,.3,'triangle',.1)),
+crack:()=>tone(900,0,.08,'square',.06,200),
 good:()=>[523,659,784,1047].forEach((x,i)=>tone(x,i*.07,.2,'triangle',.12)),
 bad:()=>tone(190,0,.32,'sawtooth',.08,90),
 streak:()=>[784,988,1175,1568].forEach((x,i)=>tone(x,i*.06,.16,'square',.06)),
 fanfare:()=>[523,523,523,784,659,784,1047].forEach((x,i)=>tone(x,i*.14,.3,'triangle',.12))}
 const L=window.LiveFX
+L.low=localStorage.getItem('lowfx')==='1';document.body.classList.toggle('lowfx',L.low)
 L.sfx=n=>{if(!on())return;try{S[n]&&S[n]()}catch(e){}}
 const btn=document.createElement('button')
 btn.className='snd alt';btn.title='Sound on/off'
 const paint=()=>{btn.innerHTML=L.icon(on()?'sound':'mute')}
 btn.onclick=()=>{localStorage.setItem('soundOn',on()?'false':'true');paint();if(on())L.sfx('click')}
 paint();document.body.appendChild(btn)
+const lb=document.createElement('button');lb.className='snd alt';lb.style.right='66px';lb.style.fontSize='11px';lb.title='Low effects mode (for slow computers)'
+const lpaint=()=>{lb.textContent=L.low?'FX off':'FX on';lb.style.opacity=L.low?.7:1}
+lb.onclick=()=>{L.low=!L.low;localStorage.setItem('lowfx',L.low?'1':'0');document.body.classList.toggle('lowfx',L.low);lpaint()}
+lpaint();document.body.appendChild(lb)
 // ---- space theme: neon outline art ----
 const sp=(st,body,c)=>'<svg class="sp'+(c?' '+c:'')+'" viewBox="0 0 100 100" style="'+st+'">'+body+'</svg>'
 document.body.insertAdjacentHTML('afterbegin','<div id="space">'+

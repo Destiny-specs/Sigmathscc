@@ -13,8 +13,21 @@ const awards = g => {
   pick('speed', 'Speed Demon', 'bolt', p => (p.correct || 0) >= 2 ? 100000 - p.tsum / p.correct : -1, 0, p => (p.tsum / p.correct / 1000).toFixed(1) + 's average')
   pick('comeback', 'Comeback Kid', 'up', p => (p.worst || 0) - (p.rank || 0), 2, p => 'climbed ' + ((p.worst || 0) - (p.rank || 0)) + ' places')
   pick('brain', 'Brain', 'bulb', p => (p.correct || 0) / n, 0.6, p => Math.round(100 * (p.correct || 0) / n) + '% correct')
+  if (g.mode === 'boss') {
+    if (g.lastHit && g.result === 'win') out.unshift({ key: 'lasthit', title: 'Last Hit', icon: 'star', name: g.lastHit.name, av: g.lastHit.av, detail: 'dealt the final blow (' + g.lastHit.dmg + ' damage)' })
+    if (g.biggest) out.unshift({ key: 'biggest', title: 'Biggest Hit', icon: 'flame', name: g.biggest.name, av: g.biggest.av, detail: g.biggest.dmg + ' damage in one hit' })
+  }
   return out
 }
+const BOSSES = [
+  { id: 'slime', name: 'Slime King', av: '10.0.0.0.3.0' },
+  { id: 'zombie', name: 'Zombie Lord', av: '11.0.0.0.2.0' },
+  { id: 'robot', name: 'Robo Overlord', av: '3.0.0.0.0.2' },
+  { id: 'alien', name: 'Cosmic Wizard', av: '2.6.0.0.4.0' },
+  { id: 'dragon', name: 'Dragon Emperor', av: '1.0.0.0.3.0' }
+]
+const phaseOf = b => b.hp > b.max * 0.66 ? 1 : b.hp > b.max * 0.33 ? 2 : 3
+const bossState = g => g.mode === 'boss' && g.boss ? { name: g.boss.name, av: g.boss.av, hp: Math.max(0, g.boss.hp), max: g.boss.max, hearts: g.hearts, phase: phaseOf(g.boss) } : null
 const names = g => [...g.players.values()].map(p => p.name)
 const avs = g => [...g.players.values()].map(p => p.av || '')
 const cleanAv = v => { const a = String(v || '').split('.').map(Number); const lim = [13, 9, 8, 6, 10, 8]; return a.length === 6 && a.every((n, i) => Number.isInteger(n) && n >= 0 && n < lim[i]) ? a.join('.') : '' }
@@ -38,7 +51,7 @@ module.exports = function attachLive(server, verifyTeacher) {
   const left = g => Math.max(1, Math.ceil((g.time * 1000 - (Date.now() - g.t0)) / 1000))
   const isJackpot = g => g.questions.length >= 3 && g.i === g.questions.length - 1
   const miss = p => { if (p.shieldOn && p.streak > 0) p.saved = true; else p.streak = 0 }
-  const qpayload = (g, p) => { const q = g.questions[g.i]; return { index: g.i, total: g.questions.length, q: q.q, type: q.type, options: q.options || [], time: left(g), answered: p ? p.choice != null : false, streak: p ? p.streak : 0, jackpot: isJackpot(g), pu: p ? p.pu : null, dbl: p ? p.doubleOn : false, shd: p ? p.shieldOn : false, hasHint: !!q.hint, hinted: p ? p.hinted : false, hint: p && p.hinted ? q.hint : '' } }
+  const qpayload = (g, p) => { const q = g.questions[g.i]; return { index: g.i, total: g.questions.length, q: q.q, type: q.type, options: q.options || [], time: left(g), answered: p ? p.choice != null : false, streak: p ? p.streak : 0, jackpot: isJackpot(g), boss: bossState(g), pu: p ? p.pu : null, dbl: p ? p.doubleOn : false, shd: p ? p.shieldOn : false, hasHint: !!q.hint, hinted: p ? p.hinted : false, hint: p && p.hinted ? q.hint : '' } }
 
   function reveal(g) {
     if (g.state !== 'question') return
@@ -60,15 +73,32 @@ module.exports = function attachLive(server, verifyTeacher) {
     if (climber) callouts.push(climber.name + ' jumped up ' + climber.delta + ' places!')
     if (lb.length > 1 && lb[0].score > 0 && lb[0].score - lb[1].score <= 150) callouts.push('Only ' + (lb[0].score - lb[1].score) + ' points between 1st and 2nd!')
     const shout = callouts.slice(0, 2)
+    let bossInfo = null
+    if (g.mode === 'boss') {
+      const ps = [...g.players.values()]
+      const hits = ps.filter(p => p.ok && p.gained > 0).sort((a, b) => (a.at || 0) - (b.at || 0))
+      let total = 0
+      const before = phaseOf(g.boss)
+      for (const p of hits) {
+        total += p.gained
+        if (!g.biggest || p.gained > g.biggest.dmg) g.biggest = { name: p.name, av: p.av, dmg: p.gained }
+        if (g.boss.hp > 0 && g.boss.hp - p.gained <= 0) g.lastHit = { name: p.name, av: p.av, dmg: p.gained }
+        g.boss.hp -= p.gained
+      }
+      const struck = g.boss.hp > 0 && ps.filter(p => p.ok).length < ps.length / 2
+      if (struck) g.hearts--
+      g.result = g.boss.hp <= 0 ? 'win' : g.hearts <= 0 ? 'lose' : (g.i >= g.questions.length - 1 ? 'lose' : null)
+      bossInfo = { ...bossState(g), phaseUp: g.boss.hp > 0 && phaseOf(g.boss) > before ? phaseOf(g.boss) : 0, struck, total, result: g.result, lastHit: g.lastHit, hits: hits.slice(0, 10).map(p => ({ name: p.name, av: p.av, dmg: p.gained })), more: Math.max(0, hits.length - 10) }
+    }
     for (const p of g.players.values()) {
-      p.last = { answered: p.choice != null, correct: p.ok, points: p.gained, score: p.score, streak: p.streak, bonus: p.bonus, saved: p.saved, doubled: p.doubleOn && p.ok, jackpot: isJackpot(g), pu: p.pu, top: lb.slice(0, 5), rank: lb.find(x => x.name === p.name).rank, delta: p.delta, callouts: shout, first: g.first }
+      p.last = { answered: p.choice != null, correct: p.ok, points: p.gained, score: p.score, streak: p.streak, bonus: p.bonus, saved: p.saved, doubled: p.doubleOn && p.ok, jackpot: isJackpot(g), pu: p.pu, boss: bossInfo, dmg: p.gained, top: lb.slice(0, 5), rank: lb.find(x => x.name === p.name).rank, delta: p.delta, callouts: shout, first: g.first }
       if (p.sid) io.to(p.sid).emit('result', p.last)
     }
-    g.lastReveal = { type: q.type, answerText: q.type === 'text' ? q.accepted[0] : q.options[q.answer], correctCount: [...g.players.values()].filter(p => p.ok).length, total: g.players.size, answer: q.answer, explanation: q.explanation || '', counts, top: lb.slice(0, 5), callouts: shout, first: g.first, last: g.i === g.questions.length - 1 }
+    g.lastReveal = { type: q.type, answerText: q.type === 'text' ? q.accepted[0] : q.options[q.answer], correctCount: [...g.players.values()].filter(p => p.ok).length, total: g.players.size, boss: bossInfo, answer: q.answer, explanation: q.explanation || '', counts, top: lb.slice(0, 5), callouts: shout, first: g.first, last: g.i === g.questions.length - 1 }
     io.to(g.host).emit('reveal', g.lastReveal)
   }
 
-  const readyPayload = g => ({ index: g.i, total: g.questions.length, jackpot: isJackpot(g), ms: Math.max(300, 3000 - (Date.now() - (g.readyAt || Date.now()))) })
+  const readyPayload = g => ({ index: g.i, total: g.questions.length, jackpot: isJackpot(g), boss: bossState(g), ms: Math.max(300, 3000 - (Date.now() - (g.readyAt || Date.now()))) })
 
   function ask(g) {
     g.state = 'ready'
@@ -95,7 +125,7 @@ module.exports = function attachLive(server, verifyTeacher) {
         if (!(await verifyTeacher(d && d.teacher_id))) return ack({ ok: false, error: 'Teachers only.' })
         const qs = (d.questions || []).slice(0, 30).map(cleanQ).filter(Boolean)
         if (!qs.length) return ack({ ok: false, error: 'No valid questions.' })
-        game = { pin: newPin(), host: socket.id, teacher: d.teacher_id, questions: qs, time: Math.min(60, Math.max(5, +d.time || 20)), players: new Map(), state: 'lobby', i: 0, created: Date.now() }
+        game = { pin: newPin(), host: socket.id, teacher: d.teacher_id, questions: qs, time: Math.min(60, Math.max(5, +d.time || 20)), players: new Map(), state: 'lobby', i: 0, created: Date.now(), mode: d.mode === 'boss' ? 'boss' : 'classic', diff: ['easy', 'normal', 'hard'].includes(d.diff) ? d.diff : 'normal' }
         games.set(game.pin, game)
         isHost = true
         socket.join(room(game))
@@ -138,6 +168,16 @@ module.exports = function attachLive(server, verifyTeacher) {
       if (!isHost || !game) return reply({ ok: false, error: 'This game is no longer running (the server may have restarted). Create a new game.' })
       if (game.state !== 'lobby') return reply({ ok: false, error: 'The game already started.' })
       if (!game.players.size) return reply({ ok: false, error: 'Wait for at least one student to join.' })
+      if (game.mode === 'boss') {
+        const tg = { easy: 0.5, normal: 0.7, hard: 0.9 }[game.diff]
+        const b = BOSSES[Math.floor(Math.random() * BOSSES.length)]
+        const max = Math.max(500, Math.round(game.players.size * game.questions.length * 750 * tg / 100) * 100)
+        game.boss = { ...b, max, hp: max }
+        game.hearts = 3
+        game.result = null
+        game.lastHit = null
+        game.biggest = null
+      }
       ask(game)
       reply({ ok: true })
     })
@@ -146,9 +186,9 @@ module.exports = function attachLive(server, verifyTeacher) {
       if (!isHost) return
       if (game.state === 'question') return reveal(game)
       if (game.state !== 'reveal') return
-      if (game.i >= game.questions.length - 1) {
+      if (game.i >= game.questions.length - 1 || game.result) {
         game.state = 'ended'
-        io.to(room(game)).emit('final', board(game), awards(game))
+        io.to(room(game)).emit('final', board(game), awards(game), game.mode === 'boss' ? { ...bossState(game), result: game.result || (game.boss && game.boss.hp <= 0 ? 'win' : 'lose'), lastHit: game.lastHit, biggest: game.biggest } : null)
         games.delete(game.pin)
       } else { game.i++; ask(game) }
     })
@@ -198,6 +238,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       }
       p.choice = val
       p.ok = correct
+      p.at = Date.now() - game.t0
       if (correct) {
         const frac = Math.min((Date.now() - game.t0) / 1000 / game.time, 1)
         p.streak++
