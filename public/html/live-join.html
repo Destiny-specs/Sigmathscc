@@ -40,4 +40,4 @@ function drawMaker(){const a=AV.split('.').map(Number);$('mk').innerHTML='<div s
 function avStep(i,d){const a=AV.split('.').map(Number),n=LiveFX.AVL[i][1].length;a[i]=(a[i]+d+n)%n;AV=a.join('.');drawMaker()}
 window.addEventListener('load',buildMaker)
 const saved=JSON.parse(sessionStorage.getItem('liveSession')||'null');if(saved){pin=saved.pin;pid=saved.pid;me=saved.name;connect();show('wait')}
-</script><script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-fx.js"></script></body></html>
+</script><script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script></body></html>

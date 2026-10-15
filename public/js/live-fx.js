@@ -118,6 +118,7 @@ let ctx=null
 const on=()=>localStorage.getItem('soundOn')!=='false'
 const ac=()=>{if(!ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;ctx=new C()}if(ctx.state==='suspended')ctx.resume();return ctx}
 function tone(fr,t0,d,type,vol,slide){const c=ac();if(!c)return;const o=c.createOscillator(),g=c.createGain(),T=c.currentTime+t0;o.type=type||'sine';o.frequency.setValueAtTime(fr,T);if(slide)o.frequency.exponentialRampToValueAtTime(slide,T+d);g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(vol||.12,T+.02);g.gain.exponentialRampToValueAtTime(.0001,T+d);o.connect(g);g.connect(c.destination);o.start(T);o.stop(T+d+.05)}
+function noise(d,f0,f1,vol,type){const c=ac();if(!c)return;const len=Math.floor(c.sampleRate*d),buf=c.createBuffer(1,len,c.sampleRate),a=buf.getChannelData(0);for(let i=0;i<len;i++)a[i]=Math.random()*2-1;const s=c.createBufferSource();s.buffer=buf;const fl=c.createBiquadFilter();fl.type=type||'bandpass';fl.frequency.setValueAtTime(f0,c.currentTime);fl.frequency.exponentialRampToValueAtTime(f1,c.currentTime+d);const g=c.createGain();g.gain.setValueAtTime(vol,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);s.connect(fl);fl.connect(g);g.connect(c.destination);s.start()}
 const S={
 tick:()=>tone(880,0,.08,'square',.05),
 go:()=>{tone(523,0,.12,'triangle',.12);tone(784,.1,.22,'triangle',.12)},
@@ -134,7 +135,19 @@ crack:()=>tone(900,0,.08,'square',.06,200),
 good:()=>[523,659,784,1047].forEach((x,i)=>tone(x,i*.07,.2,'triangle',.12)),
 bad:()=>tone(190,0,.32,'sawtooth',.08,90),
 streak:()=>[784,988,1175,1568].forEach((x,i)=>tone(x,i*.06,.16,'square',.06)),
-fanfare:()=>[523,523,523,784,659,784,1047].forEach((x,i)=>tone(x,i*.14,.3,'triangle',.12))}
+fanfare:()=>[523,523,523,784,659,784,1047].forEach((x,i)=>tone(x,i*.14,.3,'triangle',.12)),
+fire:()=>{noise(.35,500,3000,.1,'bandpass');tone(220,0,.3,'sawtooth',.035,900)},
+boom:()=>{noise(.5,1100,70,.2,'lowpass');tone(95,0,.45,'sine',.2,34)},
+megaboom:()=>{noise(.9,1500,50,.28,'lowpass');tone(80,0,.8,'sine',.26,26);tone(160,.05,.5,'sawtooth',.06,40)},
+hit:()=>{noise(.18,2500,300,.12,'bandpass');tone(150,0,.2,'square',.07,60)},
+roar:()=>{const c=ac();if(!c)return;const o=c.createOscillator(),l=c.createOscillator(),lg=c.createGain(),g=c.createGain(),T=c.currentTime;o.type='sawtooth';o.frequency.setValueAtTime(100,T);o.frequency.exponentialRampToValueAtTime(52,T+.9);l.frequency.value=22;lg.gain.value=14;l.connect(lg);lg.connect(o.frequency);g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(.13,T+.08);g.gain.exponentialRampToValueAtTime(.0001,T+.95);o.connect(g);g.connect(c.destination);o.start(T);l.start(T);o.stop(T+1);l.stop(T+1);noise(.9,700,160,.08,'lowpass')},
+charge:()=>{tone(180,0,.6,'sine',.07,1000);noise(.6,300,3500,.05,'bandpass')},
+laser:()=>{tone(1500,0,.5,'sawtooth',.07,140);noise(.5,4000,600,.06,'highpass')},
+glob:()=>{noise(.3,900,180,.14,'lowpass');tone(320,0,.25,'sine',.08,110)},
+skull:()=>{tone(520,0,.5,'triangle',.07,240);tone(530,0,.5,'triangle',.05,250);noise(.4,1200,300,.04,'bandpass')},
+meteor:()=>{tone(1800,0,.55,'sine',.05,300);noise(.5,3000,400,.06,'bandpass')},
+breath:()=>{noise(.9,500,1600,.14,'lowpass');tone(110,0,.8,'sawtooth',.05,70)},
+shatter:()=>{noise(.3,5000,2000,.12,'highpass');[1400,1900,2300].forEach((x,i)=>tone(x,i*.03,.1,'square',.04))}}
 const L=window.LiveFX
 L.low=localStorage.getItem('lowfx')==='1';document.body.classList.toggle('lowfx',L.low)
 L.sfx=n=>{if(!on())return;try{S[n]&&S[n]()}catch(e){}}

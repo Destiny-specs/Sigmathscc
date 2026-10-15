@@ -27,7 +27,7 @@ const BOSSES = [
   { id: 'dragon', name: 'Dragon Emperor', av: '1.0.0.0.3.0' }
 ]
 const phaseOf = b => b.hp > b.max * 0.66 ? 1 : b.hp > b.max * 0.33 ? 2 : 3
-const bossState = g => g.mode === 'boss' && g.boss ? { name: g.boss.name, av: g.boss.av, hp: Math.max(0, g.boss.hp), max: g.boss.max, hearts: g.hearts, phase: phaseOf(g.boss) } : null
+const bossState = g => g.mode === 'boss' && g.boss ? { id: g.boss.id, name: g.boss.name, av: g.boss.av, hp: Math.max(0, g.boss.hp), max: g.boss.max, hearts: g.hearts, phase: phaseOf(g.boss) } : null
 const names = g => [...g.players.values()].map(p => p.name)
 const avs = g => [...g.players.values()].map(p => p.av || '')
 const cleanAv = v => { const a = String(v || '').split('.').map(Number); const lim = [13, 9, 8, 6, 10, 8]; return a.length === 6 && a.every((n, i) => Number.isInteger(n) && n >= 0 && n < lim[i]) ? a.join('.') : '' }
