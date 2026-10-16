@@ -118,7 +118,8 @@ let ctx=null
 const on=()=>localStorage.getItem('soundOn')!=='false'
 const ac=()=>{if(!ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;ctx=new C()}if(ctx.state==='suspended')ctx.resume();return ctx}
 function tone(fr,t0,d,type,vol,slide){const c=ac();if(!c)return;const o=c.createOscillator(),g=c.createGain(),T=c.currentTime+t0;o.type=type||'sine';o.frequency.setValueAtTime(fr,T);if(slide)o.frequency.exponentialRampToValueAtTime(slide,T+d);g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(vol||.12,T+.02);g.gain.exponentialRampToValueAtTime(.0001,T+d);o.connect(g);g.connect(c.destination);o.start(T);o.stop(T+d+.05)}
-function noise(d,f0,f1,vol,type){const c=ac();if(!c)return;const len=Math.floor(c.sampleRate*d),buf=c.createBuffer(1,len,c.sampleRate),a=buf.getChannelData(0);for(let i=0;i<len;i++)a[i]=Math.random()*2-1;const s=c.createBufferSource();s.buffer=buf;const fl=c.createBiquadFilter();fl.type=type||'bandpass';fl.frequency.setValueAtTime(f0,c.currentTime);fl.frequency.exponentialRampToValueAtTime(f1,c.currentTime+d);const g=c.createGain();g.gain.setValueAtTime(vol,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);s.connect(fl);fl.connect(g);g.connect(c.destination);s.start()}
+let NB=null
+function noise(d,f0,f1,vol,type,dl){const c=ac();if(!c)return;if(!NB){NB=c.createBuffer(1,c.sampleRate*2,c.sampleRate);const a=NB.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1}const T=c.currentTime+(dl||0),s=c.createBufferSource();s.buffer=NB;const fl=c.createBiquadFilter();fl.type=type||'bandpass';fl.frequency.setValueAtTime(f0,T);fl.frequency.exponentialRampToValueAtTime(f1,T+d);const g=c.createGain();g.gain.setValueAtTime(vol,T);g.gain.exponentialRampToValueAtTime(.0001,T+d);s.connect(fl);fl.connect(g);g.connect(c.destination);s.start(T,Math.random()*1.5);s.stop(T+d+.05)}
 const S={
 tick:()=>tone(880,0,.08,'square',.05),
 go:()=>{tone(523,0,.12,'triangle',.12);tone(784,.1,.22,'triangle',.12)},
@@ -160,6 +161,30 @@ const lb=document.createElement('button');lb.className='snd alt';lb.style.right=
 const lpaint=()=>{lb.textContent=L.low?'FX off':'FX on';lb.style.opacity=L.low?.7:1}
 lb.onclick=()=>{L.low=!L.low;localStorage.setItem('lowfx',L.low?'1':'0');document.body.classList.toggle('lowfx',L.low);lpaint()}
 lpaint();document.body.appendChild(lb)
+// ---- boss music: a looping synthesized battle theme per boss, faster and fuller in each phase ----
+const SC={
+slime:{bpm:118,root:196,bass:[0,0,7,0,5,5,7,0],arp:[0,2,4,2,7,4,2,0],lead:'triangle',bassT:'sine',pad:4},
+zombie:{bpm:96,root:164.8,bass:[0,0,0,5,0,0,3,6],arp:[0,3,6,3,7,3,6,3],lead:'sawtooth',bassT:'triangle',pad:3},
+robot:{bpm:132,root:174.6,bass:[0,0,3,0,5,0,3,7],arp:[0,7,3,10,5,7,3,0],lead:'square',bassT:'sawtooth',pad:7},
+alien:{bpm:108,root:220,bass:[0,0,8,0,7,7,3,0],arp:[0,3,7,12,8,7,3,2],lead:'sine',bassT:'sine',pad:7},
+dragon:{bpm:142,root:146.8,bass:[0,0,0,3,0,0,5,3],arp:[0,3,7,12,10,7,5,3],lead:'sawtooth',bassT:'sawtooth',pad:7}}
+const M={t:null,id:null,want:null,ph:1,step:0,next:0}
+const mon=()=>localStorage.getItem('musicOn')!=='0'
+function mStep(s,when,sd){const c=ac(),sc=SC[M.id],dl=Math.max(0,when-c.currentTime),ph=M.ph,fq=n=>sc.root*Math.pow(2,n/12),bar=Math.floor(s/8),i=s%8
+if(i%4===0||(ph>=2&&i%2===0))tone(130,dl,.16,'sine',.11,42)
+if(i===2||i===6)noise(.14,2200,900,.05,'bandpass',dl)
+if(ph>=2)noise(.04,7000,7000,.016,'highpass',dl)
+tone(fq(sc.bass[i])/2,dl,sd*.95,sc.bassT,.05)
+if(ph>=2||i%2===1)tone(fq(sc.arp[(i+(bar%2)*2)%8])*2,dl,sd*.8,sc.lead,ph>=3?.032:.024)
+if(i===0&&bar%2===0)tone(fq(sc.pad)*2,dl,sd*7,'triangle',.016)
+if(ph>=3&&i===4)tone(fq(sc.arp[2])*4,dl,sd*2,'triangle',.016)}
+function mTick(){const c=ac();if(!c||!M.id)return;const sc=SC[M.id];if(!on()||!mon()){M.next=c.currentTime+.05;return}while(M.next<c.currentTime+.18){const sd=30/(sc.bpm*(1+.08*(M.ph-1)));mStep(M.step,M.next,sd);M.next+=sd;M.step++}}
+L.music={start(id){M.want=id;if(!SC[id])return;clearInterval(M.t);M.id=id;M.ph=1;M.step=0;const c=ac();if(!c)return;M.next=c.currentTime+.05;M.t=setInterval(mTick,40)},stop(){clearInterval(M.t);M.t=null;M.id=null;M.want=null},phase(n){M.ph=n},playing:()=>!!M.id}
+const mb=document.createElement('button');mb.className='snd alt';mb.style.right='118px';mb.style.fontSize='11px';mb.title='Boss music on/off'
+const mpaint=()=>{mb.textContent='Music';mb.classList.toggle('off',!mon())}
+mb.onclick=()=>{localStorage.setItem('musicOn',mon()?'0':'1');mpaint()}
+mpaint();document.body.appendChild(mb)
+
 // ---- space theme: neon outline art ----
 const sp=(st,body,c)=>'<svg class="sp'+(c?' '+c:'')+'" viewBox="0 0 100 100" style="'+st+'">'+body+'</svg>'
 document.body.insertAdjacentHTML('afterbegin','<div id="space">'+

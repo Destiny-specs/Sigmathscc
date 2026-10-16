@@ -56,7 +56,7 @@ $('bosses').innerHTML=BOSSES.map((b,i)=>{const p=B[b.id];return '<div class="car
 $('topics').onclick=e=>{const b=e.target.closest('.chip');if(b){topic=b.dataset.t;localStorage.setItem('sm_boss_topic',topic);setup()}}
 function fight(i){const b=BOSSES[i];S={b,hp:b.hp,hearts:3,streak:0,missed:[],asked:0,correct:0,busy:false,last:'',tm:0}
 $('heroFace').innerHTML=LiveFX.face(AV,small()?84:110);$('bossFace').innerHTML=BossArt.svg(b.id,small()?130:180);$('bossFace').classList.remove('rage');$('hero').getAnimations().forEach(a=>a.cancel());$('boss').getAnimations().forEach(a=>a.cancel());$('hero').style.opacity=1;$('boss').style.opacity=1;$('arena').className='th-'+BossArt.info[b.id].theme;$('bossFace').style.setProperty('--bc',BossArt.info[b.id].color)
-show('battle');LiveFX.sfx('roar');hud();next()}
+show('battle');LiveFX.sfx('roar');LiveFX.music.start(b.id);hud();next()}
 function hud(){const b=S.b;$('bname').textContent=b.name;$('bhp').textContent=S.hp+' / '+b.hp+' HP';$('hpfill').style.width=(100*S.hp/b.hp)+'%';$('bossFace').classList.toggle('rage',S.hp<=b.hp*.3&&S.hp>0)
 $('hearts').innerHTML=[0,1,2].map(i=>'<svg class="heart'+(i<S.hearts?'':' lost')+'" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>').join('')
 $('combo').innerHTML=S.streak>=2?LiveFX.icon('flame','hot')+' Combo x'+S.streak+(S.streak>=3?' - MEGA fireballs!':''):''}
@@ -84,7 +84,7 @@ function banner(t){const b=$('banner');b.textContent=t;b.animate([{transform:'sc
 async function attack(mega,dmg){const hero=$('hero'),boss=$('boss');banner(mega?'MEGA FIREBALL x'+S.streak+'!':'Fireball!');LiveFX.sfx('fire')
 hero.animate([{transform:'translateX(0)'},{transform:'translateX(30px) scale(1.08)'},{transform:'translateX(0)'}],{duration:380})
 const pt=await proj(hero,boss,BossFX.fire(mega),mega?680:520,mega?'#7df9ff':'#ff9a1f',mega?130:90)
-LiveFX.sfx('boom');impact(pt.x,pt.y,mega?'#7df9ff':'#ff7a1f','-'+dmg,mega);S.hp=Math.max(0,S.hp-dmg);hud()
+LiveFX.sfx('boom');impact(pt.x,pt.y,mega?'#7df9ff':'#ff7a1f','-'+dmg,mega);S.hp=Math.max(0,S.hp-dmg);LiveFX.music.phase(S.hp<=S.b.hp*.33?3:S.hp<=S.b.hp*.66?2:1);hud()
 boss.animate([{filter:'brightness(3)',transform:'translateX(0)'},{filter:'brightness(1.8)',transform:'translateX(14px)'},{filter:'brightness(1)',transform:'translateX(-10px)'},{filter:'none',transform:'translateX(0)'}],{duration:480})
 if(mega){LiveFX.shake();LiveFX.vibrate([60,30,60])}else LiveFX.vibrate(30);await sleep(520)}
 async function bossAttack(){const hero=$('hero'),boss=$('boss');banner('The boss strikes!');LiveFX.sfx('whoosh')
@@ -93,7 +93,7 @@ const pt=await _fx.bossAttack(S.b.id,boss,hero)
 LiveFX.sfx('hit');S.hearts--;impact(pt.x,pt.y,BossArt.info[S.b.id].color,'-1 HP',false);hud()
 hero.animate([{transform:'translateX(0)'},{transform:'translateX(-14px)'},{transform:'translateX(12px)'},{transform:'translateX(-8px)'},{transform:'translateX(0)'}],{duration:450})
 $('flash').animate([{opacity:.45},{opacity:0}],{duration:500});LiveFX.shake();LiveFX.vibrate(220);await sleep(560)}
-async function end(win){clearTimeout(S.tm);const b=S.b,stars=win?Math.max(1,S.hearts):0
+async function end(win){clearTimeout(S.tm);LiveFX.music.stop();const b=S.b,stars=win?Math.max(1,S.hearts):0
 if(win){LiveFX.sfx('boom');$('boss').animate([{transform:'scale(1)',opacity:1},{transform:'scale(1.4) rotate(8deg)',opacity:.9,offset:.4},{transform:'scale(2) rotate(-12deg)',opacity:0}],{duration:950,fill:'forwards'});LiveFX.confetti(220,.7,.5);LiveFX.shake();await sleep(1100);LiveFX.sfx('fanfare');LiveFX.confetti(200,.5,.3)}
 else{LiveFX.sfx('bad');$('hero').animate([{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(40px)'}],{duration:700,fill:'forwards'});await sleep(900)}
 const P=Progress.get('boss'),o=P[b.id]||{wins:0,best:0,attempts:0};o.attempts++;if(win){o.wins++;o.best=Math.max(o.best,stars)}P[b.id]=o;Progress.set('boss',P)

@@ -26,7 +26,7 @@ function setHp(hp,max){const w=Math.round(100*hp/max)+'%';$('bfill').style.width
 function bossHud(b,intro,keepHearts){const p=$('bossPanel');if(!b){p.classList.add('hide');return}p.classList.remove('hide');$('bnm').textContent=b.name;const f=$('bface'),ar=$('barena')
 if(f.dataset.id!==b.id){f.dataset.id=b.id;f.innerHTML=BossArt.svg(b.id,170);f.style.setProperty('--bc',BI(b.id).color||'#fff');ar.className='th-'+(BI(b.id).theme||'cosmos')}
 setHp(b.hp,b.max);bossShown=b.hp;if(!keepHearts)$('bhearts').innerHTML=BossFX.hearts(b.hearts);f.classList.toggle('ph2',b.phase===2);f.classList.toggle('rage',b.phase===3&&b.hp>0)
-if(intro&&!bossIntroDone){bossIntroDone=true;setTimeout(()=>bossIntro(b),120)}}
+if(intro&&!bossIntroDone){bossIntroDone=true;setTimeout(()=>bossIntro(b),120);LiveFX.music.start(b.id)}}
 async function bossIntro(b){const f=$('bface'),ar=$('barena'),fx=ar._fx||(ar._fx=BossFX.mk(ar)),inf=BI(b.id)
 f.animate([{transform:'translateY(-190px) scale(1.5)',opacity:0},{transform:'translateY(0) scale(1)',opacity:1,offset:.6},{transform:'translateY(6px) scale(1.06,.94)',offset:.78},{transform:'translateY(0) scale(1)',opacity:1}],{duration:950,easing:'cubic-bezier(.5,0,.8,.5)'})
 fx.banner($('bbanner'),(inf.name||'').toUpperCase());await sleep(600);LiveFX.sfx('boom');fx.shake(10)
@@ -39,11 +39,12 @@ const els=[...document.querySelectorAll('#crew .crewm')]
 if(hits.length){if(mega)fx.banner(ban,'MEGA VOLLEY!');els.forEach(e=>e.classList.add('charge'));LiveFX.sfx('charge');await sleep(380)}
 let hp=bossShown!=null?bossShown:b.hp+b.total
 await Promise.all(hits.map((x,i)=>(async()=>{await sleep(i*150);LiveFX.sfx('fire');const pt=await fx.proj(els[i],face,BossFX.fire(mega),mega?780:640,mega?'#7df9ff':'#ff9a1f',mega?130:90);if(i<3||i%2===0)LiveFX.sfx(mega?'megaboom':'boom');fx.impact(pt.x,pt.y,mega?'#7df9ff':'#ff7a1f','-'+x.dmg,mega);fx.hitstop(face,55);face.classList.add('hurt');face.animate([{transform:'translateX(0) rotate(0)'},{transform:'translateX(16px) rotate(3deg)'},{transform:'translateX(-8px) rotate(-2deg)'},{transform:'translateX(0)'}],{duration:340});setTimeout(()=>face.classList.remove('hurt'),340);hp=Math.max(0,hp-x.dmg);setHp(hp,b.max)})()))
-bossHud(b,false,true)
+bossHud(b,false,true);LiveFX.music.phase(b.phase)
 if(b.more&&!low)fx.banner(ban,'+'+b.more+' more fireballs!')
 if(b.phaseUp){await sleep(700);fx.banner(ban,b.phaseUp===3?'FINAL PHASE! The boss is enraged!':'PHASE 2! The boss is angry!');LiveFX.sfx('phase');LiveFX.sfx('roar');face.animate([{transform:'scale(1)'},{transform:'scale(1.35)'},{transform:'scale(1)'}],{duration:700});fx.shake(10);await sleep(900)}
 if(b.struck){await sleep(300);fx.banner(ban,'The boss strikes!');face.classList.add('windup');fx.windup(face,inf.color||'#e879f9');LiveFX.sfx('charge');await sleep(650);face.classList.remove('windup');face.animate([{transform:'translateX(0) scale(1)'},{transform:'translateX(-34px) scale(1.12)'},{transform:'translateX(0) scale(1)'}],{duration:420});LiveFX.sfx('roar');const pt=await fx.bossAttack(b.id,face,$('crew'));LiveFX.sfx('hit');setTimeout(()=>LiveFX.sfx('shatter'),120);fx.impact(pt.x,pt.y,inf.color||'#e879f9','-1 heart',false);fx.shake(12);const fl=$('bossFlash');if(fl&&!low)fl.animate([{opacity:.4},{opacity:0}],{duration:500})}
 $('bhearts').innerHTML=BossFX.hearts(b.hearts)
+if(b.result)LiveFX.music.stop()
 if(b.result==='win'){await sleep(250);fx.banner(ban,'BOSS DEFEATED!');LiveFX.sfx('roar');face.classList.add('dying');await sleep(900);face.classList.remove('dying');LiveFX.sfx('megaboom');LiveFX.confetti(220,.6,.4);fx.shake(14);await fx.explode(face)}
 else if(b.result==='lose'){fx.banner(ban,b.hearts<=0?'The class was defeated...':'The boss survived!');LiveFX.sfx('lose');face.animate([{transform:'scale(1)'},{transform:'scale(1.15) rotate(-2deg)'},{transform:'scale(1)'}],{duration:800})}
 if(b.result)$('nextBtn').textContent='See results'}
@@ -56,6 +57,6 @@ socket.on('question',d=>{LiveFX.countdownEnd();bossHud(d.boss,true);$('popins').
 socket.on('answered',d=>{$('ans').textContent=d.count+'/'+d.total+' answered';if(d.name)LiveFX.sfx('click');if(d.name)$('popins').insertAdjacentHTML('beforeend','<span class="popin" title="'+esc(d.name)+'">'+LiveFX.who({name:d.name,av:d.av},36)+'</span>')})
 socket.on('reveal',d=>{clearInterval(tick);window.LiveFX&&LiveFX.confetti(35,.5,.3);LiveFX.sfx('whoosh');$('barfill').style.animationPlayState='paused';if(d.type!=='text')[...$('opts').children].forEach((el,i)=>{if(i!==d.answer)el.classList.add('dim');else el.classList.add('correct');el.querySelector('.cnt').textContent=d.counts[i]+' students'});$('expl').innerHTML='<p>'+(d.type==='text'?'Correct answer: <b>'+esc(d.answerText)+'</b> - '+d.correctCount+' of '+d.total+' got it right<br>':'')+esc(d.explanation)+'</p>';$('board').innerHTML=sh(d)+'<h3>Top players</h3>'+d.top.map(p=>'<div class="row"><span>'+p.rank+'. '+LiveFX.who(p,26)+' '+esc(p.name)+(p.streak>=3?' '+LiveFX.icon('flame','hot'):'')+LiveFX.delta(p.delta)+'</span><b>'+p.score+'</b></div>').join('');$('nextBtn').textContent=d.last?'Finish':'Next question'})
 socket.on('reveal',d=>{if(d.boss)bossReveal(d)})
-socket.on('final',(lb,aw,boss)=>{clearInterval(tick);window.LiveFX&&LiveFX.confetti(220,.5,.3);LiveFX.sfx('fanfare');$('podium').innerHTML=(boss?bossEnd(boss):'')+LiveFX.podium(lb,esc)+((aw||[]).length?'<h2>Awards</h2>'+LiveFX.awards(aw,esc):'');show('final')})}
+socket.on('final',(lb,aw,boss)=>{LiveFX.music.stop();clearInterval(tick);window.LiveFX&&LiveFX.confetti(220,.5,.3);LiveFX.sfx('fanfare');$('podium').innerHTML=(boss?bossEnd(boss):'')+LiveFX.podium(lb,esc)+((aw||[]).length?'<h2>Awards</h2>'+LiveFX.awards(aw,esc):'');show('final')})}
 loadLessons()
 </script><script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script></body></html>

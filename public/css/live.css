@@ -130,7 +130,7 @@ body.lowfx #space,body.lowfx .shoot,body.lowfx #cd::before,body.lowfx #cd::after
 
 /* ================= BOSS ART 2.0 ================= */
 .bossart{overflow:visible;display:block}
-.bossart *{transform-box:fill-box}
+.bossart .eye,.bossart .sq,.bossart .crown,.bossart .mouth,.bossart .cape,.bossart .robe,.bossart .armL,.bossart .armR,.bossart .jaw,.bossart .hat,.bossart .core,.bossart .jet,.bossart .scan,.bossart .st,.bossart .sm,.bossart .bub,.bossart .mist,.bossart .ember,.bossart .tw,.bossart .bulb{transform-box:fill-box}
 @keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
 .bossart .eye{transform-origin:center;animation:blink 4.5s infinite}
 @keyframes floaty{50%{transform:translateY(-8px)}}
@@ -235,3 +235,5 @@ body.lowfx #space,body.lowfx .shoot,body.lowfx #cd::before,body.lowfx #cd::after
 .th-volcano .sky::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,rgba(255,200,100,.9) 0 1.5px,transparent 2.5px) 0 0/70px 90px;animation:embersr 7s linear infinite}
 @keyframes embersr{to{background-position:30px -180px}}
 body.lowfx .sky::after,body.lowfx .far::before,body.lowfx .far::after,body.lowfx .bossart *{animation:none!important}
+
+.snd.off{opacity:.45;text-decoration:line-through}
