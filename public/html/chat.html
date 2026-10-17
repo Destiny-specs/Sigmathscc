@@ -21,12 +21,8 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
   
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const supabaseUrl = 'https://twrhlvxahohgifnxpfgz.supabase.co';
-    const supabaseKey = 'sb_publishable_Ltg6excwVaIdUHODhkvgbA_u1qCTILT';
-    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-  </script>
+    <script>
+</script>
   
   <style>
     .chat-container {
@@ -488,46 +484,20 @@
     }
   }
 
+  let pollTimer = null, lastSig = ''
   function setupRealtime() {
-    if (!classCode) return;
-    if (realtimeChannel) {
-      supabaseClient.removeChannel(realtimeChannel);
-    }
-    
-    realtimeChannel = supabaseClient
-      .channel('messages-channel')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `class_code=eq.${classCode}`
-      }, (payload) => {
-        const newMsg = payload.new;
-        if (newMsg.sender_id !== currentUserId) {
-          const container = document.getElementById('chatMessages');
-          const emptyState = container.querySelector('.empty-state');
-          if (emptyState) emptyState.remove();
-          const div = document.createElement('div');
-          div.className = 'msg received';
-          div.dataset.id = newMsg.id
-          const time = formatPHTime(newMsg.created_at)
-          const muteBtn = (isTeacher || isAdmin)
-            ? `<button class="delete-btn mute-btn" onclick="toggleMute('${newMsg.sender_id}', '${escapeHtml(newMsg.sender_name).replace(/'/g, "\\'")}')" title="Mute/Unmute ${escapeHtml(newMsg.sender_name)}"><i class="ti ti-volume"></i></button>`
-            : ''
-          div.innerHTML = `
-            <div class="sender">${escapeHtml(newMsg.sender_name)}</div>
-            ${escapeHtml(newMsg.message)}
-            <div class="time">${time}</div>
-            ${(isTeacher || isAdmin) ? `<button class="delete-btn" onclick="deleteMessage('${newMsg.id}')"><i class="ti ti-trash"></i></button>` : ''}
-            ${muteBtn}
-          `
-          container.appendChild(div)
-          container.scrollTop = container.scrollHeight
-        }
-      })
-      .subscribe((status, err) => {
-        console.log('Realtime subscription status:', status, err || '');
-      });
+    if (!classCode) return
+    clearInterval(pollTimer)
+    pollTimer = setInterval(async () => {
+      if (document.hidden) return
+      try {
+        const res = await fetch(`/messages?class_code=${classCode}&limit=100`)
+        const data = await res.json()
+        if (!Array.isArray(data)) return
+        const sig = data.length + ':' + (data[0] && data[0].id)
+        if (sig !== lastSig) { lastSig = sig; renderMessages(data.reverse()) }
+      } catch (e) {}
+    }, 3000)
   }
 
   document.getElementById('chatForm').addEventListener('submit', (e) => {
