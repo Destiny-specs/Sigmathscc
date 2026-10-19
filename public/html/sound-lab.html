@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sound Lab - SigMath</title>
+<link rel="stylesheet" href="/css/dark-mode.css"><link rel="stylesheet" href="/css/live.css">
+<style>
+body{background:#0b0b1a;color:#e8e8ff;font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 80px;position:relative;z-index:2}
+h1{margin:0 0 4px}h2{margin:28px 0 10px;color:#b44dff}p{opacity:.8;margin:6px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.row b{min-width:150px}
+button.b{background:#1d1038;color:#fff;border:2px solid #b44dff;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:700;cursor:pointer}
+button.b:hover{background:#b44dff}
+button.b.stop{border-color:#ff4d6d}button.b.stop:hover{background:#ff4d6d}
+#now{margin-top:10px;font-weight:700;color:#7df9ff;min-height:22px}
+</style></head><body>
+<div class="wrap">
+<h1>Sound Lab</h1>
+<p>Tap a button to hear it. The three small buttons at the bottom-right of the screen turn sound, low-effects and music on or off. If you hear nothing, check that sound and music are both on.</p>
+<h2>Boss themes</h2>
+<p>Each theme has 3 phases. Phase 1 is menacing, phase 2 adds the full band, phase 3 is the all-out final fight.</p>
+<div id="themes"></div>
+<div class="row"><button class="b stop" id="stop">Stop music</button></div>
+<div id="now"></div>
+<h2>Sound effects</h2>
+<div id="fx" class="row"></div>
+</div>
+<script src="/js/live-fx.js"></script>
+<script>
+const BOSSES=[['slime','Slime King'],['zombie','Zombie Lord'],['robot','Robo Overlord'],['alien','Cosmic Wizard'],['dragon','Dragon Emperor']]
+const FX=[['entrance','Boss entrance'],['roar','Boss roar'],['boom','Hit (boom)'],['megaboom','Mega volley (megaboom)'],['hit','Hit (small)'],['fire','Fireball'],['charge','Charge up'],['phase','Phase change'],['bossdeath','Boss dies'],['shatter','Heart breaks'],['lose','Class loses'],['fanfare','Victory fanfare'],['glob','Slime attack'],['skull','Zombie attack'],['laser','Robot attack'],['meteor','Wizard attack'],['breath','Dragon attack'],['good','Correct answer'],['bad','Wrong answer'],['streak','Streak'],['go','Countdown go'],['tick','Countdown tick'],['join','Player joins'],['click','Click'],['time','Timer warning'],['whoosh','Whoosh'],['crack','Crack']]
+const $=id=>document.getElementById(id);let auto=[]
+const say=t=>{$('now').textContent=t}
+const clr=()=>{auto.forEach(clearTimeout);auto=[]}
+function play(id,name,ph){clr();LiveFX.music.start(id);if(ph>1)LiveFX.music.phase(ph);say('Playing: '+name+' - phase '+ph)}
+BOSSES.forEach(([id,name])=>{const r=document.createElement('div');r.className='row';r.innerHTML='<b>'+name+'</b>';
+[1,2,3].forEach(ph=>{const b=document.createElement('button');b.className='b';b.textContent='Phase '+ph;b.onclick=()=>play(id,name,ph);r.appendChild(b)})
+const a=document.createElement('button');a.className='b';a.textContent='Full fight (1 > 2 > 3)';a.onclick=()=>{play(id,name,1);auto.push(setTimeout(()=>{LiveFX.music.phase(2);LiveFX.sfx('phase');LiveFX.sfx('roar');say('Playing: '+name+' - phase 2')},16000));auto.push(setTimeout(()=>{LiveFX.music.phase(3);LiveFX.sfx('phase');LiveFX.sfx('roar');say('Playing: '+name+' - phase 3 (final)')},34000))};r.appendChild(a)
+$('themes').appendChild(r)})
+$('stop').onclick=()=>{clr();LiveFX.music.stop();say('Stopped')}
+FX.forEach(([n,l])=>{const b=document.createElement('button');b.className='b';b.textContent=l;b.onclick=()=>LiveFX.sfx(n);$('fx').appendChild(b)})
+</script></body></html>
