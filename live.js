@@ -68,7 +68,7 @@ const cleanQ = x => {
 }
 
 module.exports = function attachLive(server, verifyTeacher) {
-  const io = new Server(server)
+  const io = new Server(server, { pingInterval: 10000, pingTimeout: 40000 })
   const room = g => 'g' + g.pin
   const left = g => Math.max(1, Math.ceil((g.time * 1000 - (Date.now() - g.t0)) / 1000))
   const isJackpot = g => g.questions.length >= 3 && g.i === g.questions.length - 1
@@ -177,6 +177,8 @@ module.exports = function attachLive(server, verifyTeacher) {
       else if (g.state === 'ready') socket.emit('ready', readyPayload(g))
     })
 
+    socket.on('host:sync', () => { if (isHost && game && game.state === 'lobby') socket.emit('lobby', names(game), avs(game)) })
+
     socket.on('host:lock', d => { if (isHost) game.locked = !!(d && d.locked) })
 
     socket.on('host:kick', d => {
@@ -244,9 +246,11 @@ module.exports = function attachLive(server, verifyTeacher) {
       const g = games.get(String((d && d.pin) || ''))
       const p = g && g.players.get(d.pid)
       if (!p) return ack({ ok: false })
+      clearTimeout(p.dropTimer)
       p.sid = socket.id; game = g; me = p.pid
       socket.join(room(g))
       ack({ ok: true, name: p.name })
+      if (g.state === 'lobby') io.to(g.host).emit('lobby', names(g), avs(g))
       if (g.state === 'question') socket.emit('question', qpayload(g, p))
       else if (g.state === 'reveal' && p.last) socket.emit('result', p.last)
       else if (g.state === 'ready') socket.emit('ready', readyPayload(g))
@@ -287,7 +291,8 @@ module.exports = function attachLive(server, verifyTeacher) {
       if (ack) ack(true)
       const all = [...game.players.values()]
       io.to(game.host).emit('answered', { count: all.filter(x => x.choice != null).length, total: all.length, name: p.name, av: p.av })
-      if (all.every(x => x.choice != null)) reveal(game)
+      const online = all.filter(x => x.sid)
+      if (online.length && online.every(x => x.choice != null)) reveal(game)
     })
 
     socket.on('player:power', (d, ack) => {
@@ -321,7 +326,14 @@ module.exports = function attachLive(server, verifyTeacher) {
       }
       const p = me && g.players.get(me)
       if (!p || p.sid !== socket.id) return
-      if (g.state === 'lobby') { g.players.delete(me); io.to(g.host).emit('lobby', names(g), avs(g)) } else p.sid = null
+      p.sid = null
+      if (g.state === 'lobby') {
+        // keep the student in the lobby for a while so a short connection drop does not remove them
+        clearTimeout(p.dropTimer)
+        p.dropTimer = setTimeout(() => {
+          if (g.players.get(p.pid) === p && !p.sid && g.state === 'lobby') { g.players.delete(p.pid); io.to(g.host).emit('lobby', names(g), avs(g)) }
+        }, 120000)
+      }
     })
   })
 

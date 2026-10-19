@@ -1146,6 +1146,8 @@ app.post('/live/generate', async (req, res) => {
   }
 })
 
+process.on('uncaughtException', e => console.error('Uncaught exception (server kept running):', e))
+process.on('unhandledRejection', e => console.error('Unhandled rejection (server kept running):', e))
 const server = require('http').createServer(app)
 require('./live')(server, async id => {
   if (!id) return false
