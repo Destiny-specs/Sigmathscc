@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fight Lab - SigMath</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"><link rel="stylesheet" href="/css/dark-mode.css"><link rel="stylesheet" href="/css/live.css"><link rel="stylesheet" href="/css/boss-battle.css">
+<style>
+body{background:#0b0b1a;color:#e8e8ff;font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 14px 80px;position:relative;z-index:2}
+h1{margin:0 0 2px}h2{margin:18px 0 8px;color:#b44dff;font-size:17px}p{opacity:.8;margin:4px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+button.b{background:#1d1038;color:#fff;border:2px solid #b44dff;border-radius:10px;padding:8px 13px;font-size:14px;font-weight:700;cursor:pointer}
+button.b:hover{background:#b44dff}button.b.on{background:#b44dff}
+button.b:disabled{opacity:.45;cursor:wait}
+#msg{min-height:20px;color:#7df9ff;font-weight:700}
+</style></head><body>
+<div class="wrap">
+<h1>Fight Lab</h1>
+<p>Watch the new boss fights without running a live quiz. Pick a boss, then press an attack. Use the buttons at the bottom-right of the screen for sound, low-effects and music.</p>
+<h2>1. Pick a boss</h2><div class="row" id="bosses"></div>
+<div id="bossPanel"><div class="card bhud"><div id="bhearts"></div><div class="bn"><b id="bnm"></b> <span id="bhp"></span><div class="hp"><b class="ghost" id="bghost"></b><i id="bfill"></i></div></div></div>
+<div id="barena"><div id="bcam"><div class="sky"></div><div class="far"></div><div class="ground"></div><div id="crew"></div><div id="bface"></div></div><div id="bbanner"></div><div id="bpow"></div></div></div>
+<button id="nextBtn" style="display:none"></button><div id="bossFlash"></div>
+<h2>2. Class attacks</h2><div class="row" id="atk"></div>
+<h2>3. What the boss does</h2><div class="row" id="evt"></div>
+<h2>4. What a student sees on their phone</h2><div class="row" id="ph"></div>
+<div id="msg"></div>
+</div>
+<script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script><script src="/js/boss-battle.js"></script>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+const MAX=10000;let cur='dragon',hp=MAX,hearts=3,shown=null,busy=false
+const av=s=>s+'.0.0.0.0.0'
+const heroes=(n,crit)=>Array.from({length:n},(_,i)=>({name:'Hero '+(i+1),av:av(i%13),dmg:400+((i*173)%500),crit:!!crit&&i%3===0}))
+function setHp(h,m){shown=h;const w=Math.round(100*h/m)+'%';$('bfill').style.width=w;$('bghost').style.width=w;$('bhp').textContent=Math.max(0,Math.round(h))+' / '+m+' HP'}
+function hud(b){$('bnm').textContent=b.name;const f=$('bface'),inf=BossArt.info[b.id];if(f.dataset.id!==b.id){f.dataset.id=b.id;f.innerHTML=BossArt.svg(b.id,300);f.style.setProperty('--bc',inf.color);$('barena').className='th-'+inf.theme}
+setHp(b.hp,b.max);f.classList.toggle('ph2',b.phase===2);f.classList.toggle('rage',b.phase===3&&b.hp>0);$('bhearts').innerHTML=BossFX.hearts(b.hearts)}
+const H={$:$,esc:esc,shown:()=>shown,setHp:setHp,hud:hud}
+const phaseOf=h=>h>MAX*.66?1:h>MAX*.33?2:3
+function state(over){return Object.assign({id:cur,name:BossArt.info[cur].name,hp:hp,max:MAX,hearts:hearts,phase:phaseOf(hp),phaseUp:0,struck:false,total:0,result:null,lastHit:null,special:null,aura:0,cs:0,jackpot:false,hits:[],more:0},over)}
+async function play(label,mk){if(busy)return;busy=true;document.querySelectorAll('button.b').forEach(x=>x.disabled=true);$('msg').textContent='Playing: '+label
+const hitsArr=mk.hits||[],total=hitsArr.reduce((a,h)=>a+h.dmg,0)*(mk.mult||1),before=hp
+let after=mk.kill?0:Math.max(1,hp-total);if(mk.phaseTo)after=Math.min(after,MAX*(mk.phaseTo===3?.3:.6))
+const win=after<=0,b0=state({hp:after,total:before-after,hits:hitsArr,special:mk.special||null,aura:mk.aura||0,cs:mk.cs||0,jackpot:!!mk.jackpot,struck:!!mk.struck,hearts:mk.struck?Math.max(1,hearts-1):hearts,phaseUp:mk.phaseTo&&phaseOf(after)>phaseOf(before)?phaseOf(after):0,result:win?'win':null,lastHit:win&&hitsArr.length?{name:hitsArr[hitsArr.length-1].name}:null,phase:phaseOf(after)})
+shown=before;hud(state({hp:before}));await BossBattle.run({boss:b0},H)
+hp=win?MAX:after;hearts=mk.struck?Math.max(1,hearts-1):hearts;if(win){await new Promise(r=>setTimeout(r,1200));hp=MAX;hearts=3;BossBattle.reset();$('bface').dataset.id=''}
+hud(state());$('bface').classList.remove('dying');$('bface').style.opacity='';$('msg').textContent='';document.querySelectorAll('button.b').forEach(x=>x.disabled=false);busy=false}
+function btn(wrap,t,f){const b=document.createElement('button');b.className='b';b.textContent=t;b.onclick=f;$(wrap).appendChild(b);return b}
+Object.keys(BossArt.info).forEach(id=>{const b=btn('bosses',BossArt.info[id].name,()=>{if(busy)return;cur=id;hp=MAX;hearts=3;BossBattle.reset();hud(state());document.querySelectorAll('#bosses .b').forEach(x=>x.classList.remove('on'));b.classList.add('on')});if(id===cur)b.classList.add('on')})
+btn('atk','Normal volley (3 heroes)',()=>play('normal volley',{hits:heroes(3)}))
+btn('atk','Big volley (10 heroes)',()=>play('big volley',{hits:heroes(10)}))
+btn('atk','Volley with crits',()=>play('crits',{hits:heroes(6,true)}))
+btn('atk','MEGA BEAM',()=>play('mega beam',{hits:heroes(7),special:'beam',cs:1}))
+btn('atk','GIANT ORB',()=>play('giant orb',{hits:heroes(9),special:'orb',cs:3,aura:1}))
+btn('atk','Power-up aura level 3',()=>play('aura level 3',{hits:heroes(5),aura:3,cs:6}))
+btn('atk','Final blow (slow-mo + zoom)',()=>play('final blow',{hits:heroes(4),kill:true}))
+btn('atk','Mega beam finishes the boss',()=>play('beam finale',{hits:heroes(7),special:'beam',cs:1,kill:true}))
+btn('atk','Giant orb finishes the boss',()=>play('orb finale',{hits:heroes(8),special:'orb',cs:3,kill:true,jackpot:true}))
+btn('evt','Phase change',()=>play('phase change',{hits:heroes(4),phaseTo:hp>MAX*.66?2:3}))
+btn('evt','Boss strikes back',()=>play('boss strike',{hits:heroes(2),struck:true}))
+btn('evt','Reset boss',()=>{if(busy)return;hp=MAX;hearts=3;BossBattle.reset();hud(state())})
+btn('ph','Phone: attack',()=>BossBattle.phone({dmg:850,crit:false,boss:state()},av(3)))
+btn('ph','Phone: critical hit',()=>BossBattle.phone({dmg:1280,crit:true,boss:state()},av(1)))
+btn('ph','Phone: mega beam',()=>BossBattle.phone({dmg:900,crit:false,boss:state({special:'beam'})},av(5)))
+btn('ph','Phone: giant orb',()=>BossBattle.phone({dmg:900,crit:true,boss:state({special:'orb'})},av(12)))
+hud(state())
+</script></body></html>

@@ -26,8 +26,30 @@ const BOSSES = [
   { id: 'alien', name: 'Cosmic Wizard', av: '2.6.0.0.4.0' },
   { id: 'dragon', name: 'Dragon Emperor', av: '1.0.0.0.3.0' }
 ]
+const LOOT = {
+  slime: ['Slime Crown', 'Gooey Gem', 'Jiggle Trophy', 'Swamp Shield', 'Royal Goo Star'],
+  zombie: ['Grave Crown', 'Cursed Gem', 'Bone Trophy', 'Necro Shield', 'Ghost Star'],
+  robot: ['Chrome Crown', 'Power Core', 'Circuit Trophy', 'Steel Shield', 'Golden Bolt Star'],
+  alien: ['Star Crown', 'Comet Shard', 'Galaxy Trophy', 'Moon Shield', 'Void Star'],
+  dragon: ['Flame Crown', 'Ember Gem', 'Emperor Trophy', 'Scale Shield', 'Phoenix Star']
+}
+const RAR_W = [55, 28, 13, 4]
+const rollRar = min => { let r = Math.random() * 100, i = 0; while (i < 3 && (r -= RAR_W[i]) >= 0) i++; return Math.max(i, min || 0) }
+function lootFor(g, result) {
+  if (result !== 'win' || !g.boss) return null
+  const names = LOOT[g.boss.id] || LOOT.dragon
+  const by = {}, list = []
+  for (const p of g.players.values()) {
+    const min = g.lastHit && g.lastHit.name === p.name ? 3 : g.biggest && g.biggest.name === p.name ? 2 : 0
+    const k = Math.floor(Math.random() * names.length)
+    const it = { n: names[k], r: rollRar(min), k }
+    by[p.name] = it
+    list.push({ who: p.name, av: p.av, ...it })
+  }
+  return { by, drops: list.sort((a, b) => b.r - a.r).slice(0, 3) }
+}
 const phaseOf = b => b.hp > b.max * 0.66 ? 1 : b.hp > b.max * 0.33 ? 2 : 3
-const bossState = g => g.mode === 'boss' && g.boss ? { id: g.boss.id, name: g.boss.name, av: g.boss.av, hp: Math.max(0, g.boss.hp), max: g.boss.max, hearts: g.hearts, phase: phaseOf(g.boss) } : null
+const bossState = g => g.mode === 'boss' && g.boss ? { id: g.boss.id, name: g.boss.name, av: g.boss.av, hp: Math.max(0, g.boss.hp), max: g.boss.max, hearts: g.hearts, phase: phaseOf(g.boss), cs: g.cs || 0 } : null
 const names = g => [...g.players.values()].map(p => p.name)
 const avs = g => [...g.players.values()].map(p => p.av || '')
 const cleanAv = v => { const a = String(v || '').split('.').map(Number); const lim = [13, 9, 8, 6, 10, 8]; return a.length === 6 && a.every((n, i) => Number.isInteger(n) && n >= 0 && n < lim[i]) ? a.join('.') : '' }
@@ -73,6 +95,7 @@ module.exports = function attachLive(server, verifyTeacher) {
     if (climber) callouts.push(climber.name + ' jumped up ' + climber.delta + ' places!')
     if (lb.length > 1 && lb[0].score > 0 && lb[0].score - lb[1].score <= 150) callouts.push('Only ' + (lb[0].score - lb[1].score) + ' points between 1st and 2nd!')
     const shout = callouts.slice(0, 2)
+    const dmgOf = p => g.mode === 'boss' && p.crit ? Math.round(p.gained * 1.5) : p.gained
     let bossInfo = null
     if (g.mode === 'boss') {
       const ps = [...g.players.values()]
@@ -80,18 +103,23 @@ module.exports = function attachLive(server, verifyTeacher) {
       let total = 0
       const before = phaseOf(g.boss)
       for (const p of hits) {
-        total += p.gained
-        if (!g.biggest || p.gained > g.biggest.dmg) g.biggest = { name: p.name, av: p.av, dmg: p.gained }
-        if (g.boss.hp > 0 && g.boss.hp - p.gained <= 0) g.lastHit = { name: p.name, av: p.av, dmg: p.gained }
-        g.boss.hp -= p.gained
+        const dm = dmgOf(p)
+        total += dm
+        if (!g.biggest || dm > g.biggest.dmg) g.biggest = { name: p.name, av: p.av, dmg: dm }
+        if (g.boss.hp > 0 && g.boss.hp - dm <= 0) g.lastHit = { name: p.name, av: p.av, dmg: dm }
+        g.boss.hp -= dm
       }
-      const struck = g.boss.hp > 0 && ps.filter(p => p.ok).length < ps.length / 2
+      const okN = ps.filter(p => p.ok).length
+      const major = ps.length >= 2 && okN / ps.length >= 0.6
+      g.cs = major ? (g.cs || 0) + 1 : 0
+      const special = okN === 0 ? null : isJackpot(g) ? 'orb' : (g.cs >= 3 && g.cs % 3 === 0) ? 'orb' : major ? 'beam' : null
+      const struck = g.boss.hp > 0 && okN < ps.length / 2
       if (struck) g.hearts--
       g.result = g.boss.hp <= 0 ? 'win' : g.hearts <= 0 ? 'lose' : (g.i >= g.questions.length - 1 ? 'lose' : null)
-      bossInfo = { ...bossState(g), phaseUp: g.boss.hp > 0 && phaseOf(g.boss) > before ? phaseOf(g.boss) : 0, struck, total, result: g.result, lastHit: g.lastHit, hits: hits.slice(0, 10).map(p => ({ name: p.name, av: p.av, dmg: p.gained })), more: Math.max(0, hits.length - 10) }
+      bossInfo = { ...bossState(g), phaseUp: g.boss.hp > 0 && phaseOf(g.boss) > before ? phaseOf(g.boss) : 0, struck, total, result: g.result, lastHit: g.lastHit, special, jackpot: isJackpot(g), aura: Math.min(3, Math.floor(g.cs / 2)), crits: hits.filter(p => p.crit).length, hits: hits.slice(0, 10).map(p => ({ name: p.name, av: p.av, dmg: dmgOf(p), crit: !!p.crit })), more: Math.max(0, hits.length - 10) }
     }
     for (const p of g.players.values()) {
-      p.last = { answered: p.choice != null, correct: p.ok, points: p.gained, score: p.score, streak: p.streak, bonus: p.bonus, saved: p.saved, doubled: p.doubleOn && p.ok, jackpot: isJackpot(g), pu: p.pu, boss: bossInfo, dmg: p.gained, top: lb.slice(0, 5), rank: lb.find(x => x.name === p.name).rank, delta: p.delta, callouts: shout, first: g.first }
+      p.last = { answered: p.choice != null, correct: p.ok, points: p.gained, score: p.score, streak: p.streak, bonus: p.bonus, saved: p.saved, doubled: p.doubleOn && p.ok, jackpot: isJackpot(g), pu: p.pu, boss: bossInfo, dmg: dmgOf(p), crit: !!p.crit, top: lb.slice(0, 5), rank: lb.find(x => x.name === p.name).rank, delta: p.delta, callouts: shout, first: g.first }
       if (p.sid) io.to(p.sid).emit('result', p.last)
     }
     g.lastReveal = { type: q.type, answerText: q.type === 'text' ? q.accepted[0] : q.options[q.answer], correctCount: [...g.players.values()].filter(p => p.ok).length, total: g.players.size, boss: bossInfo, answer: q.answer, explanation: q.explanation || '', counts, top: lb.slice(0, 5), callouts: shout, first: g.first, last: g.i === g.questions.length - 1 }
@@ -111,7 +139,7 @@ module.exports = function attachLive(server, verifyTeacher) {
     g.state = 'question'
     g.t0 = Date.now()
     g.first = null
-    for (const p of g.players.values()) { p.choice = null; p.gained = 0; p.bonus = 0; p.last = null; p.hinted = false; p.doubleOn = false; p.saved = false; p.shieldOn = false; p.ok = false }
+    for (const p of g.players.values()) { p.choice = null; p.gained = 0; p.bonus = 0; p.last = null; p.hinted = false; p.doubleOn = false; p.saved = false; p.shieldOn = false; p.ok = false; p.crit = false }
     io.to(g.host).emit('question', qpayload(g, null))
     for (const p of g.players.values()) if (p.sid) io.to(p.sid).emit('question', qpayload(g, p))
     g.timer = setTimeout(() => reveal(g), g.time * 1000 + 500)
@@ -177,6 +205,7 @@ module.exports = function attachLive(server, verifyTeacher) {
         game.result = null
         game.lastHit = null
         game.biggest = null
+        game.cs = 0
       }
       ask(game)
       reply({ ok: true })
@@ -188,7 +217,8 @@ module.exports = function attachLive(server, verifyTeacher) {
       if (game.state !== 'reveal') return
       if (game.i >= game.questions.length - 1 || game.result) {
         game.state = 'ended'
-        io.to(room(game)).emit('final', board(game), awards(game), game.mode === 'boss' ? { ...bossState(game), result: game.result || (game.boss && game.boss.hp <= 0 ? 'win' : 'lose'), lastHit: game.lastHit, biggest: game.biggest } : null)
+        const fres = game.mode === 'boss' ? (game.result || (game.boss && game.boss.hp <= 0 ? 'win' : 'lose')) : null
+        io.to(room(game)).emit('final', board(game), awards(game), game.mode === 'boss' ? { ...bossState(game), result: fres, lastHit: game.lastHit, biggest: game.biggest, loot: lootFor(game, fres) } : null)
         games.delete(game.pin)
       } else { game.i++; ask(game) }
     })
@@ -251,6 +281,7 @@ module.exports = function attachLive(server, verifyTeacher) {
         if (p.doubleOn) pts *= 2
         if (isJackpot(game)) pts *= 2
         p.gained = pts
+        p.crit = frac <= 0.25
         p.score += pts
       }
       if (ack) ack(true)
