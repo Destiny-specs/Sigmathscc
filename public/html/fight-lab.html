@@ -27,7 +27,7 @@ button.b:disabled{opacity:.45;cursor:wait}
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
 const MAX=10000;let cur='dragon',hp=MAX,hearts=3,shown=null,busy=false
 const av=s=>s+'.0.0.0.0.0'
-const heroes=(n,crit)=>Array.from({length:n},(_,i)=>({name:'Hero '+(i+1),av:av(i%13),dmg:400+((i*173)%500),crit:!!crit&&i%3===0}))
+const heroes=(n,crit)=>Array.from({length:n},(_,i)=>({name:'Hero '+(i+1),av:LiveFX.set(LiveFX.set(LiveFX.rand(),0,i%13),10,(i%9)+1),dmg:400+((i*173)%500),crit:!!crit&&i%3===0}))
 function setHp(h,m){shown=h;const w=Math.round(100*h/m)+'%';$('bfill').style.width=w;$('bghost').style.width=w;$('bhp').textContent=Math.max(0,Math.round(h))+' / '+m+' HP'}
 function hud(b){$('bnm').textContent=b.name;const f=$('bface'),inf=BossArt.info[b.id];if(f.dataset.id!==b.id){f.dataset.id=b.id;f.innerHTML=BossArt.svg(b.id,300);f.style.setProperty('--bc',inf.color);$('barena').className='th-'+inf.theme}
 setHp(b.hp,b.max);f.classList.toggle('ph2',b.phase===2);f.classList.toggle('rage',b.phase===3&&b.hp>0);$('bhearts').innerHTML=BossFX.hearts(b.hearts)}
@@ -55,8 +55,8 @@ btn('atk','Giant orb finishes the boss',()=>play('orb finale',{hits:heroes(8),sp
 btn('evt','Phase change',()=>play('phase change',{hits:heroes(4),phaseTo:hp>MAX*.66?2:3}))
 btn('evt','Boss strikes back',()=>play('boss strike',{hits:heroes(2),struck:true}))
 btn('evt','Reset boss',()=>{if(busy)return;hp=MAX;hearts=3;BossBattle.reset();hud(state())})
-btn('ph','Phone: attack',()=>BossBattle.phone({dmg:850,crit:false,boss:state()},av(3)))
-btn('ph','Phone: critical hit',()=>BossBattle.phone({dmg:1280,crit:true,boss:state()},av(1)))
+btn('ph','Phone: attack',()=>BossBattle.phone({dmg:850,crit:false,boss:state()},LiveFX.set(av(3),10,2)))
+btn('ph','Phone: critical hit',()=>BossBattle.phone({dmg:1280,crit:true,boss:state()},LiveFX.set(av(1),10,1)))
 btn('ph','Phone: mega beam',()=>BossBattle.phone({dmg:900,crit:false,boss:state({special:'beam'})},av(5)))
 btn('ph','Phone: giant orb',()=>BossBattle.phone({dmg:900,crit:true,boss:state({special:'orb'})},av(12)))
 hud(state())

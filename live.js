@@ -52,7 +52,8 @@ const phaseOf = b => b.hp > b.max * 0.66 ? 1 : b.hp > b.max * 0.33 ? 2 : 3
 const bossState = g => g.mode === 'boss' && g.boss ? { id: g.boss.id, name: g.boss.name, av: g.boss.av, hp: Math.max(0, g.boss.hp), max: g.boss.max, hearts: g.hearts, phase: phaseOf(g.boss), cs: g.cs || 0 } : null
 const names = g => [...g.players.values()].map(p => p.name)
 const avs = g => [...g.players.values()].map(p => p.av || '')
-const cleanAv = v => { const a = String(v || '').split('.').map(Number); const lim = [13, 9, 8, 6, 10, 8]; return a.length === 6 && a.every((n, i) => Number.isInteger(n) && n >= 0 && n < lim[i]) ? a.join('.') : '' }
+const AV_LIM = [13, 9, 8, 6, 10, 8, 11, 9, 12, 8, 10, 11, 11, 8]
+const cleanAv = v => { const a = String(v || '').split('.').map(Number); return (a.length === 6 || a.length === 14) && a.every((n, i) => Number.isInteger(n) && n >= 0 && n < AV_LIM[i]) ? a.join('.') : '' }
 const norm = v => String(v).toLowerCase().replace(/[\s,]/g, '')
 const matches = (v, acc) => acc.some(a => { const x = norm(a), y = norm(v); if (x === y) return true; const nx = Number(x), ny = Number(y); return x !== '' && y !== '' && Number.isFinite(nx) && Number.isFinite(ny) && Math.abs(nx - ny) < 1e-9 })
 const cleanQ = x => {

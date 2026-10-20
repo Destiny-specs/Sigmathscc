@@ -1,0 +1,36 @@
+/* ===== Avatar Studio ===== */
+.avm{--avm-line:#5b3fa8;--avm-bg:#1a1236;--avm-hi:#ffd23f;color:#fff;text-align:left}
+.avm button{font-family:inherit}
+.avm-top{position:sticky;top:0;z-index:6;display:flex;gap:12px;align-items:center;padding:10px;margin:0 0 8px;border-radius:16px;background:linear-gradient(180deg,#2a1d57,#1a1236);border:2px solid var(--avm-line);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.avm-prev{flex:0 0 150px;width:150px;height:150px;display:flex;align-items:center;justify-content:center}
+.avm-prev.pop{animation:avpop .35s cubic-bezier(.2,1.7,.4,1)}
+.avm-prev svg{animation:avidle 2.6s ease-in-out infinite}
+@keyframes avpop{0%{transform:scale(.82)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes avidle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.avm-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.avm-btns{display:flex;flex-wrap:wrap;gap:6px}
+.avb{background:#3a2a78;color:#fff;border:2px solid var(--avm-line);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:800;cursor:pointer}
+.avb:hover{background:#5b3fa8}
+.avm-slots>span{font-size:12px;opacity:.8;display:block;margin-bottom:4px}
+#avmSlots{display:flex;gap:8px}
+.avsl{position:relative;display:inline-block}
+.avslot{width:50px;height:50px;border-radius:12px;border:2px solid var(--avm-line);background:#2a1d57;color:#fff;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900}
+.avslot.empty{opacity:.7;border-style:dashed}
+.avslot:hover{border-color:var(--avm-hi)}
+.avx{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:none;background:#ef476f;color:#fff;font-size:11px;line-height:18px;font-weight:900;cursor:pointer;padding:0}
+.avm-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
+.avt{flex:0 0 auto;background:#2a1d57;color:#d9ccff;border:2px solid var(--avm-line);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.avt.on{background:var(--avm-hi);color:#2a1d57;border-color:var(--avm-hi)}
+.avm-pane{background:#1a1236;border:2px solid var(--avm-line);border-radius:16px;padding:6px 10px 12px}
+.avsec h4{margin:12px 0 6px;font-size:14px;color:var(--avm-hi);letter-spacing:.4px}
+.avh{display:block;opacity:.75;margin:-2px 0 6px}
+.avgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px}
+.avgrid.colors{grid-template-columns:repeat(auto-fill,minmax(40px,1fr))}
+.avc{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 4px;border-radius:12px;border:2px solid transparent;background:#2a1d57;color:#fff;cursor:pointer;min-width:0}
+.avc:hover{background:#3a2a78}
+.avc.sel{border-color:var(--avm-hi);background:#46338f;box-shadow:0 0 12px rgba(255,210,63,.55)}
+.avc svg{display:block;max-width:100%;height:auto}
+.avc span{font-size:10px;font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
+.avsw{width:38px;height:38px;border-radius:50%;border:3px solid #fff3;cursor:pointer;padding:0}
+.avsw.sel{border-color:var(--avm-hi);box-shadow:0 0 12px rgba(255,210,63,.7);transform:scale(1.12)}
+@media (max-width:420px){.avm-prev{flex-basis:118px;width:118px;height:118px}.avm-prev svg{width:118px;height:118px}.avgrid{grid-template-columns:repeat(4,1fr)}.avgrid.colors{grid-template-columns:repeat(6,1fr)}}
