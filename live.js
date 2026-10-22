@@ -20,18 +20,18 @@ const awards = g => {
   return out
 }
 const BOSSES = [
-  { id: 'slime', name: 'Slime King', av: '10.0.0.0.3.0' },
+  { id: 'slime', name: 'Swamp Hydra', av: '10.0.0.0.3.0' },
   { id: 'zombie', name: 'Zombie Lord', av: '11.0.0.0.2.0' },
   { id: 'robot', name: 'Robo Overlord', av: '3.0.0.0.0.2' },
   { id: 'alien', name: 'Cosmic Wizard', av: '2.6.0.0.4.0' },
-  { id: 'dragon', name: 'Dragon Emperor', av: '1.0.0.0.3.0' }
+  { id: 'dragon', name: 'Demon Lord', av: '1.0.0.0.3.0' }
 ]
 const LOOT = {
-  slime: ['Slime Crown', 'Gooey Gem', 'Jiggle Trophy', 'Swamp Shield', 'Royal Goo Star'],
+  slime: ['Hydra Crown', 'Venom Gem', 'Swamp Trophy', 'Scale Shield', 'Hydra Fang Star'],
   zombie: ['Grave Crown', 'Cursed Gem', 'Bone Trophy', 'Necro Shield', 'Ghost Star'],
   robot: ['Chrome Crown', 'Power Core', 'Circuit Trophy', 'Steel Shield', 'Golden Bolt Star'],
   alien: ['Star Crown', 'Comet Shard', 'Galaxy Trophy', 'Moon Shield', 'Void Star'],
-  dragon: ['Flame Crown', 'Ember Gem', 'Emperor Trophy', 'Scale Shield', 'Phoenix Star']
+  dragon: ['Demon Crown', 'Hellfire Gem', 'Infernal Trophy', 'Horned Shield', 'Demon Star']
 }
 const RAR_W = [55, 28, 13, 4]
 const rollRar = min => { let r = Math.random() * 100, i = 0; while (i < 3 && (r -= RAR_W[i]) >= 0) i++; return Math.max(i, min || 0) }

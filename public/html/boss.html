@@ -44,7 +44,7 @@
 <script>
 const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms)),esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
 const user=JSON.parse(localStorage.getItem('SigMath_user')||'null');if(!user)location.href='/'
-const BOSSES=[{id:'slime',name:'Slime King',av:'10.0.0.0.3.0',hp:5,d:1,t:20,tag:'Easy'},{id:'zombie',name:'Zombie Lord',av:'11.0.0.0.2.0',hp:7,d:1,t:18,tag:'Easy+'},{id:'robot',name:'Robo Overlord',av:'3.0.0.0.0.2',hp:9,d:2,t:15,tag:'Medium'},{id:'alien',name:'Cosmic Wizard',av:'2.6.0.0.4.0',hp:11,d:2,t:15,tag:'Medium+'},{id:'dragon',name:'Dragon Emperor',av:'1.0.0.0.3.0',hp:14,d:3,t:12,tag:'Hard'}]
+const BOSSES=[{id:'slime',name:'Swamp Hydra',av:'10.0.0.0.3.0',hp:5,d:1,t:20,tag:'Easy'},{id:'zombie',name:'Zombie Lord',av:'11.0.0.0.2.0',hp:7,d:1,t:18,tag:'Easy+'},{id:'robot',name:'Robo Overlord',av:'3.0.0.0.0.2',hp:9,d:2,t:15,tag:'Medium'},{id:'alien',name:'Cosmic Wizard',av:'2.6.0.0.4.0',hp:11,d:2,t:15,tag:'Medium+'},{id:'dragon',name:'Demon Lord',av:'1.0.0.0.3.0',hp:14,d:3,t:12,tag:'Hard'}]
 let AV=localStorage.getItem('liveAv')||'',topic=localStorage.getItem('sm_boss_topic')||'mixed',S=null
 const small=()=>innerWidth<600
 function show(id){['setup','battle','end'].forEach(s=>$(s).classList.toggle('hide',s!==id))}

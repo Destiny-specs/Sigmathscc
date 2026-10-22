@@ -335,12 +335,12 @@ lpaint();document.body.appendChild(lb)
 // patterns are 16 steps per bar ('x' = hit). bass chars are semitones above the chord root: 0 root, 3 minor 3rd, 5 fifth, 7 flat 7th, 8 octave.
 const CH={m:[0,3,7],M:[0,4,7],d:[0,3,6]},BM={'0':0,'1':1,'3':3,'4':4,'5':7,'6':6,'7':10,'8':12}
 const SC={
-slime:{bpm:124,root:196,prog:[[0,'m'],[8,'M'],[5,'m'],[7,'M']],
+slime:{bpm:104,root:155.6,prog:[[0,'m'],[5,'m'],[0,'m'],[7,'M']],
 k:['x.......x.......','x...x...x...x...','x..xx..xx..xx.x.'],s:['................','....x.......x...','....x..x....x.xx'],h:['................','..x...x...x...x.','x.x.x.x.x.x.x.x.'],
-bass:'0..0..5.0..0.5.7',bt:'sawtooth',bo:{lp:700,lpEnd:160,q:5},bv:.085,bl:1.4,
-st:['x.......x.......','x...x...x...x...'],stt:'square',arp:'0.2.1.2.0.2.3.2.',ap:2,at:'triangle',
-ld:'pluck',lt:'triangle',lv:.06,
-mel:[[0,0,2],[2,3,2],[4,7,2],[6,3,2],[8,0,2],[10,3,2],[12,7,4],[16,3,2],[18,7,2],[20,8,2],[22,7,2],[24,3,2],[26,0,2],[28,3,4],[32,5,2],[34,8,2],[36,12,2],[38,8,2],[40,5,2],[42,8,2],[44,12,4],[48,11,2],[50,14,2],[52,11,2],[54,7,2],[56,10,2],[58,11,2],[60,14,2],[62,11,2]]},
+bass:'0..0..0.5..0.7..',bt:'sawtooth',bo:{lp:600,lpEnd:150,q:4},bv:.09,bl:1.6,
+st:['x.......x.......','x...x...x...x...'],stt:'sawtooth',arp:'0.2.1.2.0.2.3.2.',ap:2,at:'sawtooth',
+ld:'brass',lt:'sawtooth',lv:.05,
+mel:[[0,7,2],[2,6,2],[4,7,2],[6,10,2],[8,7,4],[12,6,2],[14,3,2],[16,12,2],[18,10,2],[20,8,2],[22,10,2],[24,12,4],[28,10,2],[30,8,2],[32,7,2],[34,6,2],[36,7,2],[38,10,2],[40,14,4],[44,12,2],[46,10,2],[48,14,2],[50,13,2],[52,11,2],[54,10,2],[56,11,4],[60,13,2],[62,14,2]]},
 zombie:{bpm:88,root:164.8,prog:[[0,'m'],[1,'M'],[0,'m'],[6,'d']],
 k:['x..x............','x..x....x..x....','x..x..x.x..x..x.'],s:['................','........x.......','....x.......x...'],h:['................','..x...x...x...x.','x.x.x.x.x.x.x.x.'],
 bass:'0.......0.....1.',bt:'triangle',bv:.1,bl:6,
@@ -390,7 +390,7 @@ if(sc.arp&&ph>=sc.ap&&!lt){const a=sc.arp[i];if(a!=='.'){const x=+a===3?12:tn[+a
 const ms=s%64,ml=sc.mel;for(let j=0;j<ml.length;j++){const n=ml[j];if(n[0]===ms){const fr=fz(sc.root,n[1]+(sc.lo==null?12:sc.lo)),v=(sc.lv||.05)*(ph===1?.6:1);lead(sc,T,fr,sd*n[2]*.92,v);if(ph>=3&&!lt)lead(sc,T,fr*2,sd*n[2]*.8,v*.4)}}
 // each boss's own flavour
 switch(M.id){
-case'slime':if(i===6||i===14)osc('sine',200,T,.22,.07,{slide:480,atk:.005,echo:.2});if(ph>=3&&i%4===2)bell(T,fz(R,24),.2,.03);break
+case'slime':if(i===6||i===14)nz(T,.3,2500,7000,.06,'bandpass',{q:.8,send:.2});if(ph>=3&&i%4===2)bell(T,fz(R,24),.2,.03);break
 case'zombie':if(i===0&&bar%2===0)bell(T,fz(sc.root,-12),sd*14,.12)
 if(i===0&&bar===0){const dd=sd*64;osc('sine',sc.root/2,T,dd,.06,{atk:2,send:.5});if(!lt)osc('square',sc.root/2*1.0595,T,dd,.012,{atk:2,lp:300,send:.4})}
 if(ph>=3)osc('sawtooth',fz(R,tn[2]+24),T,sd*.9,.012,{atk:.005,lp:2600});break

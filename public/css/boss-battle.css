@@ -105,3 +105,7 @@
 .crewm.rim{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 12px #4be8ff)}
 .bb-orb{box-shadow:0 0 40px #7df9ff,0 0 90px rgba(255,120,170,.5)}
 .bb-dark{background:rgba(2,8,28,.68)}
+/* swamp hydra: the three necks sway */
+.bossart .sw0{transform-origin:100px 166px;animation:hsway 3.6s ease-in-out infinite}
+.bossart .sw1{transform-origin:76px 160px;animation:hsway 3.1s ease-in-out infinite;animation-delay:-1.2s}
+@keyframes hsway{0%,100%{transform:rotate(-2.2deg)}50%{transform:rotate(2.2deg)}}
