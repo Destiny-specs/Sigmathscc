@@ -48,6 +48,7 @@ function lootFor(g, result) {
   }
   return { by, drops: list.sort((a, b) => b.r - a.r).slice(0, 3) }
 }
+const bossPick = g => g.mode === 'boss' ? { id: g.bossId || null, name: g.bossId ? (BOSSES.find(x => x.id === g.bossId) || {}).name || null : null } : null
 const phaseOf = b => b.hp > b.max * 0.66 ? 1 : b.hp > b.max * 0.33 ? 2 : 3
 const bossState = g => g.mode === 'boss' && g.boss ? { id: g.boss.id, name: g.boss.name, av: g.boss.av, hp: Math.max(0, g.boss.hp), max: g.boss.max, hearts: g.hearts, phase: phaseOf(g.boss), cs: g.cs || 0 } : null
 const names = g => [...g.players.values()].map(p => p.name)
@@ -155,6 +156,7 @@ module.exports = function attachLive(server, verifyTeacher) {
         const qs = (d.questions || []).slice(0, 30).map(cleanQ).filter(Boolean)
         if (!qs.length) return ack({ ok: false, error: 'No valid questions.' })
         game = { pin: newPin(), host: socket.id, teacher: d.teacher_id, questions: qs, time: Math.min(60, Math.max(5, +d.time || 20)), players: new Map(), state: 'lobby', i: 0, created: Date.now(), mode: d.mode === 'boss' ? 'boss' : 'classic', diff: ['easy', 'normal', 'hard'].includes(d.diff) ? d.diff : 'normal' }
+        game.bossId = BOSSES.some(b => b.id === (d && d.bossId)) ? d.bossId : null
         games.set(game.pin, game)
         isHost = true
         socket.join(room(game))
@@ -178,7 +180,16 @@ module.exports = function attachLive(server, verifyTeacher) {
       else if (g.state === 'ready') socket.emit('ready', readyPayload(g))
     })
 
-    socket.on('host:sync', () => { if (isHost && game && game.state === 'lobby') socket.emit('lobby', names(game), avs(game)) })
+    socket.on('host:sync', () => { if (isHost && game && game.state === 'lobby') { socket.emit('lobby', names(game), avs(game)); if (game.mode === 'boss') socket.emit('bossPick', bossPick(game)) } })
+
+    // the teacher can change which boss the class will fight while everyone is still in the lobby
+    socket.on('host:setBoss', (d, ack) => {
+      const reply = r => { if (typeof ack === 'function') ack(r) }
+      if (!isHost || !game || game.mode !== 'boss' || game.state !== 'lobby') return reply({ ok: false })
+      game.bossId = BOSSES.some(b => b.id === (d && d.id)) ? d.id : null
+      io.to(room(game)).emit('bossPick', bossPick(game))
+      reply({ ok: true })
+    })
 
     socket.on('host:lock', d => { if (isHost) game.locked = !!(d && d.locked) })
 
@@ -201,7 +212,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       if (!game.players.size) return reply({ ok: false, error: 'Wait for at least one student to join.' })
       if (game.mode === 'boss') {
         const tg = { easy: 0.5, normal: 0.7, hard: 0.9 }[game.diff]
-        const b = BOSSES[Math.floor(Math.random() * BOSSES.length)]
+        const b = BOSSES.find(x => x.id === game.bossId) || BOSSES[Math.floor(Math.random() * BOSSES.length)]
         const max = Math.max(500, Math.round(game.players.size * game.questions.length * 750 * tg / 100) * 100)
         game.boss = { ...b, max, hp: max }
         game.hearts = 3
@@ -240,7 +251,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       game = g; me = pid
       socket.join(room(g))
       io.to(g.host).emit('lobby', names(g), avs(g))
-      ack({ ok: true, name, pid, pin: g.pin })
+      ack({ ok: true, name, pid, pin: g.pin, bossPick: bossPick(g) })
     })
 
     socket.on('player:rejoin', (d, ack) => {
@@ -250,7 +261,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       clearTimeout(p.dropTimer)
       p.sid = socket.id; game = g; me = p.pid
       socket.join(room(g))
-      ack({ ok: true, name: p.name })
+      ack({ ok: true, name: p.name, bossPick: bossPick(g) })
       if (g.state === 'lobby') io.to(g.host).emit('lobby', names(g), avs(g))
       if (g.state === 'question') socket.emit('question', qpayload(g, p))
       else if (g.state === 'reveal' && p.last) socket.emit('result', p.last)

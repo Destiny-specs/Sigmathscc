@@ -83,3 +83,25 @@
 .pwr{margin-top:6px;font-size:12px;font-weight:800}
 .pwr .pip{display:inline-block;width:11px;height:11px;border-radius:50%;margin:0 2px -1px;background:#2b2250;border:2px solid #7c3aed}
 .pwr .pip.on{background:radial-gradient(circle,#fff,#7df9ff 60%,#7c3aed);box-shadow:0 0 8px #7df9ff;border-color:#7df9ff}
+
+/* boss picker (teacher) and "today's boss" (lobby + phones) */
+.bpick{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0}
+.bpc{background:#1d1038;border:2px solid #5b3fa8;border-radius:14px;padding:6px 8px;color:#fff;cursor:pointer;width:112px;text-align:center;font-weight:800;font-size:13px;font-family:inherit}
+.bpc:hover{background:#2c1b5a}
+.bpc svg{display:block;margin:0 auto 4px;width:84px;height:84px}
+.bpc.sel{border-color:#ffd23f;box-shadow:0 0 16px rgba(255,210,63,.75);background:#3a2a78}
+.bpc .q{display:flex;align-items:center;justify-content:center;width:84px;height:84px;margin:0 auto 4px;font-size:46px;font-weight:900;color:#b44dff}
+.bpick.small .bpc{width:78px;padding:4px;font-size:11px}
+.bpick.small .bpc svg,.bpick.small .bpc .q{width:54px;height:54px;font-size:30px}
+.lb{text-align:center;margin:6px 0 2px}
+.lbm svg{width:min(250px,42vw);height:auto;filter:drop-shadow(0 0 16px var(--bc,#b44dff))}
+.lbn{font-size:28px;font-weight:900;margin-top:2px}
+.lbs{opacity:.8;font-size:14px}
+.wmys{width:150px;height:150px;margin:0 auto;border-radius:22px;border:3px dashed #b44dff;display:flex;align-items:center;justify-content:center;font-size:80px;font-weight:900;color:#b44dff}
+.wbc{margin-top:12px;text-align:center}.wbc svg{display:block;margin:0 auto 4px}.wbc b{display:block;font-size:22px}.wbc small{opacity:.8}
+
+/* anime-style mega beam */
+.bb-beam2{transform-origin:0 50%;z-index:6;pointer-events:none}
+.crewm.rim{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 12px #4be8ff)}
+.bb-orb{box-shadow:0 0 40px #7df9ff,0 0 90px rgba(255,120,170,.5)}
+.bb-dark{background:rgba(2,8,28,.68)}
