@@ -11,13 +11,16 @@ h1{margin:0 0 4px}p{opacity:.85;margin:4px 0 12px}
 </style></head><body>
 <div class="wrap">
 <h1>Avatar Studio</h1>
-<p>Design your hero! Your avatar is saved on this device automatically and is used in live quizzes and boss fights.</p>
+<p id="note">Design your hero! Your avatar is saved on this device automatically and is used in live quizzes and boss fights.</p>
 <div id="saved"></div>
 <div id="mk"></div>
 <div class="go"><a href="/live-join.html">Join a live quiz</a><a href="/boss.html">Boss battle</a></div>
 </div>
-<script src="/js/live-fx.js"></script><script src="/js/avatar-maker.js"></script>
+<script src="/js/live-fx.js"></script><script src="/js/progress.js"></script><script src="/js/avatar-sync.js"></script><script src="/js/avatar-maker.js"></script>
 <script>
 let t=null
-AvatarMaker.mount(document.getElementById('mk'),{av:localStorage.getItem('liveAv')||'',onChange:a=>{localStorage.setItem('liveAv',a);const s=document.getElementById('saved');s.textContent='Saved!';clearTimeout(t);t=setTimeout(()=>s.textContent='',1400)}})
+const MK=AvatarMaker.mount(document.getElementById('mk'),{av:localStorage.getItem('liveAv')||'',onChange:a=>{localStorage.setItem('liveAv',a);const s=document.getElementById('saved');s.textContent='Saved!';clearTimeout(t);t=setTimeout(()=>s.textContent='',1400)}})
+let u=null;try{u=JSON.parse(localStorage.getItem('SigMath_user'))}catch(e){}
+document.getElementById('note').textContent=u&&u.id?'Design your hero! Your avatar, saved looks and boss loot are saved to your account, so they follow you to any device.':'Design your hero! Your avatar is saved on this device. Log in to keep it on every device.'
+AvSync.onApplied(function(ch){if(!ch)return;const a=localStorage.getItem('liveAv');if(LiveFX.valid(a))MK.set(a)})
 </script></body></html>

@@ -40,7 +40,7 @@
 <div class="rstep" id="qn" style="font-size:12px;opacity:.7"></div><div id="qtext"></div><div class="opts" id="opts"></div><div id="fb"></div></div>
 <div id="end" class="hide card" style="text-align:center"></div>
 </div><div id="flash"></div>
-<script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script><script src="/js/question-gen.js"></script><script src="/js/progress.js"></script>
+<script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script><script src="/js/question-gen.js"></script><script src="/js/progress.js"></script><script src="/js/avatar-sync.js"></script>
 <script>
 const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms)),esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
 const user=JSON.parse(localStorage.getItem('SigMath_user')||'null');if(!user)location.href='/'
@@ -48,7 +48,8 @@ const BOSSES=[{id:'slime',name:'Swamp Hydra',av:'10.0.0.0.3.0',hp:5,d:1,t:20,tag
 let AV=localStorage.getItem('liveAv')||'',topic=localStorage.getItem('sm_boss_topic')||'mixed',S=null
 const small=()=>innerWidth<600
 function show(id){['setup','battle','end'].forEach(s=>$(s).classList.toggle('hide',s!==id))}
-function setup(){if(!LiveFX.valid(AV)){AV=LiveFX.rand();localStorage.setItem('liveAv',AV)}
+function setup(){const sv=localStorage.getItem('liveAv');if(LiveFX.valid(sv))AV=sv
+if(!LiveFX.valid(AV)){AV=LiveFX.rand();localStorage.setItem('liveAv',AV)}
 $('myhero').innerHTML=LiveFX.face(AV,70)
 $('topics').innerHTML=['mixed'].concat(QG.topics).map(t=>'<button class="alt chip'+(t===topic?' on':'')+'" data-t="'+t+'">'+(t==='mixed'?'Mixed topics':QG.title[t])+'</button>').join('')
 const B=Progress.get('boss')

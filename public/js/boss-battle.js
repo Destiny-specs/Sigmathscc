@@ -233,7 +233,7 @@ e.animate(kf,{duration:700,easing:'ease-in',fill:'forwards'});setTimeout(()=>{e.
 // ---- loot ----
 function lootCard(it,who,esc,av){const c=RC[it.r];return '<div class="loot r'+it.r+'" style="--lc:'+c+'">'+lootSvg(it.k,c)+'<b>'+esc(it.n)+'</b><small>'+RN[it.r]+'</small>'+(who?'<div style="font-size:12px;margin-top:3px">'+esc(who)+'</div>':'')+'</div>'}
 function lootHost(b,esc){const l=b.loot;if(!l||!l.drops||!l.drops.length)return '';return '<h3>Boss loot!</h3><div class="lootrow">'+l.drops.map(d=>lootCard(d,d.who,esc)).join('')+'</div><p style="opacity:.8">Everyone found treasure. The best drops are shown here.</p>'}
-function lootPhone(b,me,esc){const it=b&&b.loot&&b.loot.by&&b.loot.by[me];if(!it)return '';try{const k='liveLoot',a=JSON.parse(localStorage.getItem(k)||'[]');a.push({n:it.n,r:it.r,k:it.k,boss:b.name});localStorage.setItem(k,JSON.stringify(a.slice(-60)))}catch(e){}
+function lootPhone(b,me,esc){const it=b&&b.loot&&b.loot.by&&b.loot.by[me];if(!it)return '';try{const k='liveLoot',a=JSON.parse(localStorage.getItem(k)||'[]');a.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),t:Date.now(),n:it.n,r:it.r,k:it.k,boss:b.name});localStorage.setItem(k,JSON.stringify(a.slice(-60)));if(window.AvSync)AvSync.saveLoot()}catch(e){}
 let total=0;try{total=JSON.parse(localStorage.getItem('liveLoot')||'[]').length}catch(e){}
 return '<h3>You found treasure!</h3><div class="lootrow">'+lootCard(it,'',esc)+'</div><p style="opacity:.8">Trophy case: '+total+' item'+(total===1?'':'s')+'</p>'}
 return{run,cancel,reset,phone,phoneCancel,meter,pow,lootHost,lootPhone,_beam:beamEl}

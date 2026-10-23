@@ -31,7 +31,7 @@ else{const tmp=F.set(cur,sec.i,v);cells+='<button type="button" class="avc'+sel+
 const hint=sec.i===9&&a[8]===0?'<small class="avh">Pick an outfit first</small>':''
 return '<div class="avsec"><h4>'+esc(sec.t)+'</h4>'+hint+'<div class="avgrid'+(sec.k==='color'?' colors':'')+'">'+cells+'</div></div>'}).join('')}
 const paintAll=()=>{paintPrev();paintTabs();paintPane();paintSlots()}
-const emit=()=>{if(o.onChange)o.onChange(cur)}
+let ready=false;const emit=()=>{if(o.onChange)o.onChange(cur);if(ready&&window.AvSync)AvSync.save()}
 const apply=(av,keep)=>{if(!F.valid(av))return;av=F.norm(av).join('.');if(av===cur)return;if(!keep){hist.push(cur);if(hist.length>40)hist.shift()}cur=av;paintPrev();paintPane();emit()}
 const api={get:()=>cur,set:av=>{if(F.valid(av)){cur=F.norm(av).join('.');paintAll()}},
 pick:(i,v)=>apply(F.set(cur,i,v)),
@@ -39,9 +39,9 @@ tab:n=>{if(n>=0&&n<TABS.length){tab=n;paintTabs();paintPane()}},
 rand:()=>apply(F.rand()),
 undo:()=>{if(hist.length){cur=hist.pop();paintPrev();paintPane();emit()}},
 reset:()=>apply('0.0.0.0.0.0.0.0.0.0.0.0.0.0'),
-saveSlot:i=>{const s=slots();s[i]=cur;try{localStorage.setItem(SLOTS,JSON.stringify(s))}catch(e){}paintSlots()},
+saveSlot:i=>{const s=slots();s[i]=cur;try{localStorage.setItem(SLOTS,JSON.stringify(s))}catch(e){}paintSlots();if(window.AvSync)AvSync.save()},
 loadSlot:i=>{const s=slots();if(s[i])apply(s[i])},
-clearSlot:i=>{const s=slots();s[i]='';try{localStorage.setItem(SLOTS,JSON.stringify(s))}catch(e){}paintSlots()}}
+clearSlot:i=>{const s=slots();s[i]='';try{localStorage.setItem(SLOTS,JSON.stringify(s))}catch(e){}paintSlots();if(window.AvSync)AvSync.save()}}
 root.addEventListener('click',e=>{const t=e.target&&e.target.closest?e.target.closest('button'):null;if(!t||!root.contains(t))return
 const d=t.dataset||{}
 if(d.v!==undefined&&d.i!==undefined)api.pick(+d.i,+d.v)
@@ -49,7 +49,7 @@ else if(d.tab!==undefined)api.tab(+d.tab)
 else if(d.act==='rand')api.rand();else if(d.act==='undo')api.undo();else if(d.act==='reset')api.reset()
 else if(d.clr!==undefined)api.clearSlot(+d.clr)
 else if(d.slot!==undefined){const s=slots();s[+d.slot]?api.loadSlot(+d.slot):api.saveSlot(+d.slot)}})
-paintAll();emit()
+paintAll();emit();ready=true
 return api}
 return{mount,TABS}
 })()
