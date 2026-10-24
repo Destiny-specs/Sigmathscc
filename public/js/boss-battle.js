@@ -80,11 +80,13 @@ setTimeout(()=>{if(X.my!==epoch)return;sfx('good');fly(from,tgt,shotSvg('plasma'
 async function shoot(X,el,h,big){const sp=spOf(h.av),from=ctr(el),bc=ctr(X.face),to={x:bc.x+rnd(-34,10),y:bc.y+rnd(-44,34)},crit=!!h.crit,sc=(crit?1.5:1)*(big?1.7:1)
 sfx(sp.sfx);if(crit&&!big)sfx('streak');X.curAv=h.av;petAssist(X,el,to)
 el.animate([{transform:'translateX(0)'},{transform:'translateX(14px)'},{transform:'translateX(0)'}],{duration:260})
-if(sp.k==='claw'){await X.Z(160);clawFx(to,crit?'#ffe066':sp.c);await X.Z(200)}
+const AX=window.AttackFX&&AttackFX.mk(C.cam,{cls:'bb-tmp',low:lowfx,sfx:sfx,slow:()=>SLOW}),col=crit?'#ffd23f':sp.c
+if(AX)await AX.attack(sp.k,from,to,{c:col,c2:sp.c2,crit:crit,big:!!big,art:shotSvg(sp.k,col,sp.c2),ghost:X.hits.length<=5})
+else if(sp.k==='claw'){await X.Z(160);clawFx(to,crit?'#ffe066':sp.c);await X.Z(200)}
 else await fly(from,to,shotSvg(sp.k,crit?'#ffd23f':sp.c,sp.c2),(sp.k==='slash'?110:84)*sc,(sp.k==='slash'?64:52)*sc,big?1000:rnd(700,950),sp.k==='bolt'?0:rnd(20,70),sp.k==='slash'?-160:0)
 if(X.my!==epoch)throw CANCEL
-impact(to.x,to.y,crit?'#ffe066':sp.c,crit||big);dmgText(to.x,to.y-20,(crit?'CRIT! ':'')+'-'+h.dmg,crit,crit?40:30);sfx(crit||big?'megaboom':'boom');if(crit){shakeArena(9)}
-hurt(X.face)}
+if(AX){if((crit||big)&&window.BossScene)BossScene.hit(C.arena,big?3.2:2.2,col)}else impact(to.x,to.y,crit?'#ffe066':sp.c,crit||big);dmgText(to.x,to.y-20,(crit?'CRIT! ':'')+'-'+h.dmg,crit,crit?40:30);sfx(crit||big?'megaboom':'boom');if(crit){shakeArena(9)}
+if(AX)AX.react(X.face,big?1.8:crit?1.3:1);else hurt(X.face)}
 const finalIdx=(hits,b)=>{const n=b.lastHit?hits.findIndex(h=>h.name===b.lastHit.name):-1;return n>=0?n:hits.length-1}
 async function drain(X,from,to,ms){const n=Math.max(1,Math.round(ms/70));for(let i=1;i<=n;i++){await X.Z(ms/n);X.H.setHp(from+(to-from)*(i/n),X.b.max)}}
 async function countUp(X,x,y,total,ms,size){const e=mk('bb-dmg crit',{left:x+'px',top:y+'px',fontSize:size+'px'});e.textContent='0';const n=Math.max(1,Math.round(ms/60));for(let i=1;i<=n;i++){await X.Z(ms/n);e.textContent='-'+Math.round(total*i/n)}e.animate([{opacity:1},{opacity:0}],{duration:900,delay:500,fill:'forwards'});drop(e,1500)}
@@ -226,9 +228,11 @@ if(orb){g.animate([{transform:'translate(-50%,-50%) scale(7)',opacity:1},{transf
 else{const L=Math.hypot(dx,dy),ang=Math.atan2(dy,dx),bm=el('left:'+from.x+'px;top:'+(from.y-48)+'px;width:'+L+'px;height:96px;transform-origin:0 50%;transform:rotate('+ang+'rad)');bm.innerHTML=beamEl(L,48);(ov._ivs=ov._ivs||[]).push(setInterval(()=>{bm.innerHTML=beamEl(L,48)},100));bm.animate([{transform:'rotate('+ang+'rad) scaleX(0)'},{transform:'rotate('+ang+'rad) scaleX(1)'}],{duration:260,fill:'forwards'});bm.animate([{opacity:1},{opacity:0}],{duration:500,delay:900,fill:'forwards'})}
 const fl=el('inset:0;background:#fff');fl.animate([{opacity:.85},{opacity:0}],{duration:500,fill:'forwards'});setTimeout(hit,300)},850);done(2800)}
 else{if(pet)setTimeout(()=>{if(pov!==ov)return;const e2=el('left:0;top:0;width:34px;height:24px',shotSvg('plasma',pet.c,'#fff')),f2={x:from.x+34,y:from.y+22},t2={x:to.x-20,y:to.y+24},kf=[];for(let i=0;i<=8;i++){const t=i/8;kf.push({transform:'translate('+(f2.x+(t2.x-f2.x)*t-17)+'px,'+(f2.y+(t2.y-f2.y)*t-50*Math.sin(Math.PI*t)-12)+'px) scale('+(.7+.4*t)+')'})}e2.animate(kf,{duration:600,easing:'ease-in',fill:'forwards'});setTimeout(()=>e2.remove(),620)},250);sfx(sp.sfx);const S=shotSvg(sp.k,r.crit?'#ffd23f':sp.c,sp.c2),w=(sp.k==='slash'?90:70)*(r.crit?1.5:1),h=(sp.k==='slash'?54:44)*(r.crit?1.5:1)
+const AXp=window.AttackFX&&AttackFX.mk(ov,{low:lowfx,sfx:sfx,k:.72})
+if(AXp){AXp.attack(sp.k,from,to,{c:r.crit?'#ffd23f':sp.c,c2:sp.c2,crit:!!r.crit,art:S,ms:620}).then(()=>{if(pov===ov){sfx(r.crit?'megaboom':'boom');hit()}}).catch(()=>{});done(3400)}else{
 const e=el('left:0;top:0;width:'+w+'px;height:'+h+'px',S),ang=Math.atan2(to.y-from.y,to.x-from.x)*180/Math.PI,kf=[]
 for(let i=0;i<=10;i++){const t=i/10;kf.push({transform:'translate('+(from.x+(to.x-from.x)*t-w/2)+'px,'+(from.y+(to.y-from.y)*t-70*Math.sin(Math.PI*t)-h/2)+'px) rotate('+ang+'deg) scale('+(.7+.5*t)+')'})}
-e.animate(kf,{duration:700,easing:'ease-in',fill:'forwards'});setTimeout(()=>{e.remove();if(pov===ov){sfx(r.crit?'megaboom':'boom');hit()}},700);done(2000)}}
+e.animate(kf,{duration:700,easing:'ease-in',fill:'forwards'});setTimeout(()=>{e.remove();if(pov===ov){sfx(r.crit?'megaboom':'boom');hit()}},700);done(2000)}}}
 
 // ---- loot ----
 function lootCard(it,who,esc,av){const c=RC[it.r];return '<div class="loot r'+it.r+'" style="--lc:'+c+'">'+lootSvg(it.k,c)+'<b>'+esc(it.n)+'</b><small>'+RN[it.r]+'</small>'+(who?'<div style="font-size:12px;margin-top:3px">'+esc(who)+'</div>':'')+'</div>'}
