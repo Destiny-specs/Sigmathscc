@@ -109,3 +109,21 @@
 .bossart .sw0{transform-origin:100px 166px;animation:hsway 3.6s ease-in-out infinite}
 .bossart .sw1{transform-origin:76px 160px;animation:hsway 3.1s ease-in-out infinite;animation-delay:-1.2s}
 @keyframes hsway{0%,100%{transform:rotate(-2.2deg)}50%{transform:rotate(2.2deg)}}
+
+/* ===== v29 MENACE: glowing eyes, pulsing dark aura, breathing / twitching / lunging idle ===== */
+.bossart .bsaura{transform-box:view-box;transform-origin:100px 112px;animation:bsaura var(--bad,2.6s) ease-in-out infinite}
+@keyframes bsaura{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1.09);opacity:1}}
+.bossart .bsr{opacity:0;transition:opacity .6s}
+#bface.rage .bsr,#bossFace.rage .bsr{opacity:1}
+.bossart .eg{transform-box:fill-box;transform-origin:center;animation:begl var(--egd,2.4s) ease-in-out infinite}
+@keyframes begl{0%,100%{opacity:.6;transform:scale(.9)}58%{opacity:1;transform:scale(1.15)}62%{opacity:.45;transform:scale(.88)}66%{opacity:1;transform:scale(1.22)}}
+.bossart .bz{transform-box:fill-box;transform-origin:50% 100%;animation:bzb var(--bzd,3.4s) ease-in-out infinite}
+@keyframes bzb{0%,100%{transform:scale(1,1)}50%{transform:scale(var(--bzx,1.012),var(--bzy,1.03))}}
+.bossart .bt{transform-box:fill-box;transform-origin:50% 100%;animation:bzt var(--btd,6.3s) linear infinite}
+@keyframes bzt{0%,84%,100%{transform:translate(0,0) rotate(0)}85%{transform:translate(-2.5px,1px) rotate(-1.3deg)}86.5%{transform:translate(2.5px,-1px) rotate(1.2deg)}88%{transform:translate(-1.5px,0) rotate(-.7deg)}90%{transform:translate(0,0) rotate(0)}}
+.bossart .bl{transform-box:fill-box;transform-origin:60% 100%;animation:bzl var(--bld,8.5s) ease-in-out infinite}
+@keyframes bzl{0%,68%,100%{transform:translate(0,0) scale(1) rotate(0)}73%,78%{transform:translate(-8px,2px) scale(1.075) rotate(-2.4deg)}86%{transform:translate(0,0) scale(1) rotate(0)}}
+/* angrier phases move faster and heavier */
+#bface.ph2{--bad:1.8s;--egd:1.7s;--bzd:2.6s;--bzx:1.018;--bzy:1.045;--btd:4.4s;--bld:6s}
+#bface.rage,#bossFace.rage{--bad:.9s;--egd:.8s;--bzd:1.25s;--bzx:1.028;--bzy:1.065;--btd:2.4s;--bld:3.6s}
+.bpc .bossart .bz,.bpc .bossart .bt,.bpc .bossart .bl,.bface .bossart .bz,.bface .bossart .bt,.bface .bossart .bl{animation:none}

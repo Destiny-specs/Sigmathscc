@@ -1,0 +1,75 @@
+/* ===== v29 BATTLEFIELD: scenery, moving hazards, phase lighting, lightning, hit flashes (see js/boss-scene.js) ===== */
+.th-swamp{--bsd:#06150c;--bsr:#2a8048;--bsg:#d4ff3a;--bsf:#b6ff9a;--bfog:rgba(120,255,150,.26)}
+.th-grave{--bsd:#0a0716;--bsr:#4a3d90;--bsg:#b6ff3b;--bsf:#e8e0ff;--bfog:rgba(190,170,255,.24)}
+.th-tech{--bsd:#050b18;--bsr:#175b86;--bsg:#22d3ee;--bsf:#bff6ff;--bfog:rgba(140,210,255,.2)}
+.th-cosmos{--bsd:#0a0420;--bsr:#6a35c8;--bsg:#d29bff;--bsf:#efd9ff;--bfog:rgba(192,132,252,.26)}
+.th-volcano{--bsd:#140305;--bsr:#9a3010;--bsg:#ffa23c;--bsf:#ffd0a0;--bfog:rgba(255,120,60,.22)}
+
+.bs-back,.bs-front,.bs-light,.bs-bolt{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.bs-front{z-index:3}
+.bs-light{z-index:1}
+.bs-bolt{z-index:5}
+.bs-svg{position:absolute;left:0;bottom:0;width:100%;height:100%;overflow:hidden}
+.bs-flash{position:absolute;inset:0;background:var(--bsf,#fff);opacity:0;z-index:5;pointer-events:none}
+
+/* phase lighting: calm -> angry (warm, flickering) -> enraged (red, pulsing) */
+.bs-light{opacity:0;transition:opacity .8s}
+.bsp1 .bs-light{opacity:1;background:radial-gradient(ellipse at 70% 100%,transparent 35%,rgba(0,0,0,.3))}
+.bsp2 .bs-light{opacity:1;background:radial-gradient(ellipse at 72% 60%,rgba(255,150,40,.24),transparent 58%),linear-gradient(rgba(70,12,0,.3),rgba(30,0,0,.08));animation:bsflick 1.5s steps(1) infinite}
+.bsp3 .bs-light{opacity:1;background:radial-gradient(ellipse at 72% 58%,rgba(255,40,70,.45),transparent 62%),radial-gradient(ellipse at 50% 125%,rgba(255,0,40,.38),transparent 55%),rgba(45,0,12,.38);animation:bsrage 1.1s ease-in-out infinite}
+.bsp2 .sky{filter:brightness(.8) saturate(1.25)}
+.bsp3 .sky{filter:brightness(.5) saturate(1.5) hue-rotate(-14deg)}
+.bsp3{--gl:#ff2e63}
+@keyframes bsflick{0%{opacity:1}22%{opacity:.8}24%{opacity:1}61%{opacity:.88}63%{opacity:1}}
+@keyframes bsrage{0%,100%{opacity:.82}50%{opacity:1}}
+
+/* drifting particles (embers, ash, bubbles, fireflies, wisps, sparks, motes, steam) */
+.bsp{position:absolute;display:block;width:var(--sz,4px);height:var(--sz,4px);border-radius:50%;opacity:0;pointer-events:none;animation-duration:var(--t,6s);animation-delay:var(--dl,0s);animation-iteration-count:infinite;animation-timing-function:linear}
+.bsp.em{background:radial-gradient(circle,#fff,#ffb347 45%,transparent 72%);box-shadow:0 0 7px #ff7a1f;animation-name:bsrise}
+.bsp.ash{background:#b9b0a8;border-radius:40%;animation-name:bsfall}
+.bsp.bub{background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.7),rgba(160,255,190,.22) 55%,transparent 70%);border:1px solid rgba(190,255,210,.5);animation-name:bsrise}
+.bsp.fly{background:radial-gradient(circle,#fff,var(--bsg) 40%,transparent 70%);box-shadow:0 0 10px var(--bsg);animation-name:bsfly;animation-timing-function:ease-in-out}
+.bsp.wsp{width:var(--sz,14px);height:calc(var(--sz,14px)*1.8);border-radius:50% 50% 40% 40%;background:radial-gradient(ellipse at 50% 35%,rgba(210,255,200,.6),rgba(150,255,170,.2) 60%,transparent 72%);animation-name:bswisp}
+.bsp.spk{background:#fff;box-shadow:0 0 8px var(--bsg),0 0 16px var(--bsg);animation-name:bsspark}
+.bsp.mote{background:radial-gradient(circle,#fff,var(--bsg) 45%,transparent 72%);animation-name:bsrise}
+.bsp.stm{background:radial-gradient(circle,rgba(225,235,255,.5),transparent 70%);animation-name:bsrise}
+@keyframes bsrise{0%{transform:translate(0,0) scale(1);opacity:0}8%{opacity:1}100%{transform:translate(var(--dx,20px),calc(var(--h,360px)*-1)) scale(.4);opacity:0}}
+@keyframes bsfall{0%{transform:translate(0,0) rotate(0);opacity:0}8%{opacity:.8}100%{transform:translate(var(--dx,-40px),var(--h,360px)) rotate(240deg);opacity:0}}
+@keyframes bsfly{0%,100%{transform:translate(0,0);opacity:.2}25%{transform:translate(var(--dx,24px),-18px);opacity:1}50%{transform:translate(calc(var(--dx,24px)*-.4),-34px);opacity:.3}75%{transform:translate(calc(var(--dx,24px)*.8),-12px);opacity:1}}
+@keyframes bswisp{0%{transform:translate(0,0) scaleX(1);opacity:0}15%{opacity:.85}50%{transform:translate(var(--dx,20px),calc(var(--h,360px)*-.5)) scaleX(1.3)}100%{transform:translate(calc(var(--dx,20px)*-.6),calc(var(--h,360px)*-.85)) scaleX(.8);opacity:0}}
+@keyframes bsspark{0%,86%{opacity:0;transform:translate(0,0)}88%{opacity:1}100%{opacity:0;transform:translate(var(--dx,10px),38px) scale(.2)}}
+
+/* fog banks */
+.bsfog{position:absolute;left:-45%;width:100%;height:var(--fh,110px);bottom:var(--fy,20px);background:radial-gradient(ellipse at 50% 60%,var(--bfog),transparent 68%);animation:bsfog var(--t,24s) ease-in-out var(--dl,0s) infinite alternate}
+@keyframes bsfog{from{transform:translateX(0)}to{transform:translateX(60%)}}
+
+/* ground lava (volcano) */
+.bslava{position:absolute;left:0;right:0;bottom:0;height:44px;opacity:.9;mix-blend-mode:screen;background:linear-gradient(transparent,rgba(255,90,10,.5)),repeating-linear-gradient(100deg,transparent 0 40px,rgba(255,200,80,.85) 40px 43px,transparent 43px 120px),repeating-linear-gradient(80deg,transparent 0 70px,rgba(255,120,20,.7) 70px 73px,transparent 73px 190px);background-size:100% 100%,240px 100%,380px 100%;animation:bslava 7s linear infinite}
+@keyframes bslava{to{background-position:0 0,240px 0,-380px 0}}
+
+/* tech: sweeping red searchlights + blinking lamps */
+.bsbeam{position:absolute;bottom:30px;width:170px;height:340px;background:linear-gradient(0deg,rgba(255,60,60,0),rgba(255,80,80,.34));clip-path:polygon(46% 100%,54% 100%,100% 0,0 0);transform-origin:50% 100%;mix-blend-mode:screen;animation:bssweep var(--t,6s) ease-in-out var(--dl,0s) infinite alternate}
+@keyframes bssweep{from{transform:rotate(-40deg)}to{transform:rotate(40deg)}}
+.bslamp{position:absolute;width:9px;height:9px;border-radius:50%;background:#ff3030;box-shadow:0 0 12px #ff3030,0 0 26px #ff3030;animation:bslamp 1.1s steps(1) var(--dl,0s) infinite}
+@keyframes bslamp{0%{opacity:1}50%{opacity:.12}}
+
+/* svg scenery life */
+.bswin{animation:bswin 3.7s steps(1) infinite}.bswin.w2{animation-delay:-1.3s;animation-duration:5.1s}
+@keyframes bswin{0%{opacity:1}30%{opacity:.35}34%{opacity:1}72%{opacity:.6}76%{opacity:1}}
+.bseye{animation:bsblink 5.5s steps(1) infinite}
+@keyframes bsblink{0%,92%{opacity:1}94%{opacity:0}97%{opacity:1}}
+.bssway{transform-box:fill-box;transform-origin:50% 0;animation:bssway 5s ease-in-out infinite alternate}
+@keyframes bssway{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+.bsshard{transform-box:fill-box;transform-origin:center;animation:bsfloat var(--t,7s) ease-in-out var(--dl,0s) infinite alternate}
+@keyframes bsfloat{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-16px) rotate(3deg)}}
+.bsrune{transform-box:fill-box;transform-origin:center;animation:bsrune 14s linear infinite}
+@keyframes bsrune{to{transform:rotate(360deg)}}
+.bsgear{transform-box:fill-box;transform-origin:center;animation:bsrune 40s linear infinite}
+.bsplume{transform-box:fill-box;transform-origin:50% 100%;animation:bsplume 7s ease-in-out infinite alternate}
+@keyframes bsplume{from{transform:scale(.9,.85) translateX(-4px)}to{transform:scale(1.12,1.1) translateX(8px)}}
+.bscrow{position:absolute;left:-8%;top:var(--cy,14%);width:26px;height:12px;animation:bscrow var(--t,16s) linear var(--dl,0s) infinite}
+@keyframes bscrow{0%{transform:translate(0,0)}25%{transform:translate(30vw,14px)}50%{transform:translate(60vw,-6px)}75%{transform:translate(90vw,12px)}100%{transform:translate(122vw,0)}}
+
+/* low-effects mode: keep the static scenery, drop everything that moves */
+body.lowfx .bsp,body.lowfx .bsfog,body.lowfx .bsbeam,body.lowfx .bscrow{display:none}
+body.lowfx .bs-back *,body.lowfx .bs-front *,body.lowfx .bs-light,body.lowfx .bslava,body.lowfx .bslamp{animation:none!important}

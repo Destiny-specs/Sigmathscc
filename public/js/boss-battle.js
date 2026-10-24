@@ -49,7 +49,7 @@ function mk(cls,css){const e=document.createElement('div');e.className=cls+' bb-
 function drop(e,ms){setTimeout(()=>{try{e.remove()}catch(x){}},ms)}
 function spark(x,y,c,dx,dy,ms,size){const e=mk('bb-spark',{left:x+'px',top:y+'px',width:size+'px',height:size+'px',background:c,boxShadow:'0 0 8px '+c});e.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+dx+'px,'+dy+'px) scale(.2)',opacity:0}],{duration:ms,easing:'ease-out',fill:'forwards'});drop(e,ms+50)}
 function ring(x,y,c,size,sec,delay){const e=mk('bb-ring',{left:x+'px',top:y+'px',width:'20px',height:'20px',borderColor:c});e.animate([{transform:'translate(-50%,-50%) scale(.3)',opacity:1},{transform:'translate(-50%,-50%) scale('+size/20+')',opacity:0}],{duration:sec*1000,delay:(delay||0)*1000,easing:'ease-out',fill:'both'});drop(e,(sec+(delay||0))*1000+80)}
-function impact(x,y,c,big){ring(x,y,c,big?170:90,.5);if(big)ring(x,y,'#ffffff',250,.7,.08);const n=lowfx()?4:big?20:9;for(let i=0;i<n;i++){const a=rnd(0,6.28),r=rnd(40,big?180:100);spark(x,y,c,Math.cos(a)*r,Math.sin(a)*r-10,rnd(400,850),rnd(4,big?11:7))}}
+function impact(x,y,c,big){if(big&&window.BossScene&&C&&C.arena)BossScene.hit(C.arena,2.2,c);ring(x,y,c,big?170:90,.5);if(big)ring(x,y,'#ffffff',250,.7,.08);const n=lowfx()?4:big?20:9;for(let i=0;i<n;i++){const a=rnd(0,6.28),r=rnd(40,big?180:100);spark(x,y,c,Math.cos(a)*r,Math.sin(a)*r-10,rnd(400,850),rnd(4,big?11:7))}}
 function dmgText(x,y,txt,crit,size){const e=mk('bb-dmg'+(crit?' crit':''),{left:x+'px',top:y+'px',fontSize:(size||30)+'px'});e.textContent=txt;e.animate([{transform:'translate(-50%,0) scale(.4)',opacity:0},{transform:'translate(-50%,-26px) scale(1.25)',opacity:1,offset:.2},{transform:'translate(-50%,-80px) scale(1)',opacity:0}],{duration:1100,easing:'ease-out',fill:'forwards'});drop(e,1150);return e}
 function flash(op,col){const e=mk('bb-flash',{background:col||'#fff'});e.animate([{opacity:op},{opacity:0}],{duration:420,fill:'forwards'});drop(e,460)}
 const raf=f=>(window.requestAnimationFrame||(g=>setTimeout(g,16)))(f)
@@ -185,15 +185,15 @@ H.hud(b);LiveFX.music.phase(b.phase)
 if(b.more&&!lowfx()&&!b.special)fx.banner(ban,'+'+b.more+' more attacks!')
 if(b.phaseUp){await Z(600);const bc=ctr(face);fx.banner(ban,b.phaseUp===3?'FINAL PHASE! The boss is enraged!':'PHASE 2! The boss is angry!');sfx('phase');sfx('roar');cam.classList.add('quake');flash(.55,'#ff2e63')
 face.animate([{transform:'scale(1)',filter:'brightness(1)'},{transform:'scale(1.4)',filter:'brightness(2)'},{transform:'scale(1)',filter:'brightness(1)'}],{duration:900,easing:'ease-out'})
-impact(bc.x,bc.y,color,true);ring(bc.x,bc.y,'#ff2e63',360,.9,.2);ring(bc.x,bc.y,'#ffffff',460,1,.4);await Z(950);cam.classList.remove('quake')}
+impact(bc.x,bc.y,color,true);if(window.BossScene)BossScene.hit(C.arena,5,'#ff2e63');ring(bc.x,bc.y,'#ff2e63',360,.9,.2);ring(bc.x,bc.y,'#ffffff',460,1,.4);await Z(950);cam.classList.remove('quake')}
 if(b.struck){await Z(300);fx.banner(ban,'The boss strikes!');face.classList.add('windup');fx.windup(face,color);sfx('charge');await Z(650);face.classList.remove('windup')
 face.animate([{transform:'translateX(0) scale(1)'},{transform:'translateX(-34px) scale(1.14)'},{transform:'translateX(0) scale(1)'}],{duration:420});sfx('roar')
-const pt=await fx.bossAttack(b.id,face,crew);sfx('hit');setTimeout(()=>sfx('shatter'),120);fx.impact(pt.x,pt.y,color,'-1 heart',false);fx.shake(12)
+const pt=await fx.bossAttack(b.id,face,crew);sfx('hit');setTimeout(()=>sfx('shatter'),120);fx.impact(pt.x,pt.y,color,'-1 heart',false);fx.shake(12);if(window.BossScene)BossScene.hit(C.arena,4,color)
 crew.animate([{transform:'translateX(0)'},{transform:'translateX(-46px) rotate(-3deg)'},{transform:'translateX(0)'}],{duration:520});flash(.45,'#ff2e63')
 const fl=$('bossFlash');if(fl&&!lowfx())fl.animate([{opacity:.4},{opacity:0}],{duration:500})}
 $('bhearts').innerHTML=BossFX.hearts(b.hearts)
 if(b.result)LiveFX.music.stop()
-if(b.result==='win'){await Z(250);fx.banner(ban,'BOSS DEFEATED!');sfx('bossdeath');face.classList.add('dying');await Z(900);face.classList.remove('dying');sfx('megaboom');LiveFX.confetti(220,.6,.4);fx.shake(14);await fx.explode(face)}
+if(b.result==='win'){await Z(250);fx.banner(ban,'BOSS DEFEATED!');sfx('bossdeath');face.classList.add('dying');await Z(900);face.classList.remove('dying');sfx('megaboom');LiveFX.confetti(220,.6,.4);fx.shake(14);if(window.BossScene)BossScene.hit(C.arena,5,'#ffffff');await fx.explode(face)}
 }
 function cleanup(){BEAMIV.forEach(clearInterval);BEAMIV.length=0;if(!C)return;try{C.cam.querySelectorAll('.bb-tmp').forEach(e=>e.remove())}catch(e){}
 C.cam.classList.remove('quake');C.cam.style.transform='';C.cam.style.transition='';C.face.classList.remove('brace','hurt');SLOW=1}

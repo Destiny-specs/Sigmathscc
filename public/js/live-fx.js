@@ -305,6 +305,7 @@ entrance:()=>{const T=now();riser(T,.6,.08);osc('sawtooth',45,T,1.8,.1,{atk:.5,l
 phase:()=>{const T=now();impact(T,.38);crash(T,.08);[0,6,12].forEach(s=>osc('sawtooth',110*Math.pow(2,s/12),T,1.2,.05,{lp:900,lpEnd:300,atk:.03,send:.5}))},
 lose:()=>{const T=now();[[392,0],[349,.5],[311,1],[262,1.5]].forEach(([f,t],i)=>{const d=i===3?2.2:.55;osc('sawtooth',f/2,T+t,d,.08,{lp:700,lpEnd:260,atk:.03,send:.5});osc('sawtooth',f/2,T+t,d,.06,{lp:700,lpEnd:260,atk:.03,det:12,send:.5})});osc('sine',55,T+1.5,2.2,.14,{slide:40,atk:.2});impact(T+1.5,.3)},
 crack:()=>{const T=now();nz(T,.1,6000,1500,.1,'highpass');osc('square',900,T,.08,.05,{slide:200})},
+thunder:()=>{const T=now();nz(T,.1,7000,2000,.1,'highpass');nz(T+.05,1.8,700,70,.14,'lowpass',{send:.4});if(!lite())osc('sine',70,T+.08,1.3,.1,{slide:30,atk:.03,send:.3})},
 good:()=>{const T=now();[523,659,784,1047].forEach((f,i)=>osc('triangle',f,T+i*.07,.22,.11,{send:.3}));bell(T+.2,2093,.5,.05)},
 bad:()=>{const T=now();osc('sawtooth',190,T,.34,.09,{slide:80,lp:800});osc('sawtooth',201,T,.34,.07,{slide:85,lp:800});osc('sine',70,T,.3,.15,{slide:40})},
 streak:()=>{const T=now();[784,988,1175,1568].forEach((f,i)=>{osc('square',f,T+i*.06,.18,.05,{echo:.3});bell(T+i*.06,f*2,.3,.03)})},
@@ -369,10 +370,51 @@ const M={t:null,id:null,want:null,ph:1,pend:0,sw:false,step:0,next:0}
 const mon=()=>localStorage.getItem('musicOn')!=='0'
 const fz=(r,s)=>r*Math.pow(2,s/12)
 function lead(sc,T,fr,d,v){const t=sc.ld;if(t==='bell')bell(T,fr,Math.max(d,.5),v*1.3);else if(t==='pluck')osc(sc.lt,fr,T,Math.max(d,.12),v,{atk:.004,lp:fr*7,lpEnd:fr*1.4,q:2,echo:.25});else if(t==='brass')brass(T,fr,Math.max(d,.15),v);else osc(sc.lt||'square',fr,T,Math.max(d,.08),v,{atk:.006,lp:fr*4,lpEnd:fr*2.5,echo:.2})}
+// ===== v29 EPIC LAYER: choir, string ensemble, war drums, growling bass. Builds with every boss phase. =====
+const VW={a:[800,1150,2900],o:[450,800,2830],u:[325,700,2700],e:[400,1700,2600]},VWB={slime:'o',zombie:'u',robot:'e',alien:'a',dragon:'a'}
+let LFO=null;const vib=c=>LFO||(LFO=(()=>{const o=c.createOscillator();o.frequency.value=5.3;o.start(0);return o})())
+// choir: detuned saws -> vowel formants (+ a little dry body so the level stays steady), slow swell, vibrato
+function choir(T,fr,d,v,vw,o){const c=ac();if(!c)return;o=o||{};const f=VW[vw]||VW.a,vv=v*K,at=Math.max(.03,Math.min(d*(o.at||.4),1.8)),g=c.createGain()
+g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(vv,T+at);g.gain.setValueAtTime(vv,T+Math.max(at,d*.7));g.gain.exponentialRampToValueAtTime(.0001,T+d)
+const mix=c.createGain(),lg=c.createGain();lg.gain.value=fr*.011;vib(c).connect(lg)
+;(lite()?[0]:[-9,10]).forEach(dt=>{const os=c.createOscillator();os.type='sawtooth';os.frequency.setValueAtTime(fr,T);os.detune.value=dt;lg.connect(os.frequency);os.connect(mix);os.start(T);os.stop(T+d+.1)})
+const dry=c.createBiquadFilter();dry.type='lowpass';dry.frequency.value=1500;const dg=c.createGain();dg.gain.value=.4;mix.connect(dry);dry.connect(dg);dg.connect(g)
+;(lite()?[0]:[0,1,2]).forEach(j=>{const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f[j];bp.Q.value=[3,4,5][j];const gg=c.createGain();gg.gain.value=[1,.55,.22][j];mix.connect(bp);bp.connect(gg);gg.connect(g)})
+route(g,{send:.7,echo:.1})}
+// bowed string section (slow swell, opening filter)
+function strings(T,fr,d,v){const o={atk:Math.min(d*.5,.4),lp:Math.max(fr*2.4,520),lpEnd:Math.min(Math.max(fr*5,900),5200),q:.7,send:.5};osc('sawtooth',fr,T,d,v,Object.assign({det:-12},o));if(!lite())osc('sawtooth',fr,T,d,v,Object.assign({det:13},o))}
+// growling, distorted bass
+function gbass(T,fr,d,v){const c=ac();if(!c)return;const vv=v*K,g=c.createGain();g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(vv,T+.012);g.gain.exponentialRampToValueAtTime(.0001,T+d)
+if(!DC){DC=new Float32Array(256);for(let i=0;i<256;i++)DC[i]=Math.tanh((i/128-1)*4)}
+const ws=c.createWaveShaper();ws.curve=DC;const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(1000,T);lp.frequency.exponentialRampToValueAtTime(200,T+d);lp.Q.value=3
+;[0,7].forEach(dt=>{const o=c.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(fr,T);o.detune.value=dt;o.connect(ws);o.start(T);o.stop(T+d+.05)})
+ws.connect(lp);lp.connect(g);route(g,{send:.08})}
+function epic(sc,ph,s,i,bar,T,sd,R,tn,lt){const bd=sd*16,vw=VWB[M.id]||'a'
+// phase 1 - dread: low choir drone, cello drone, heartbeat taiko
+if(i===0&&bar%2===0){choir(T,fz(R,tn[0]+12),bd*2,.05,'o');if(!lt)choir(T,fz(R,tn[2]+12),bd*2,.034,'u')}
+if(i===0)strings(T,fz(R,tn[0]-12),bd,.034)
+if(!sc.dk&&(i===0||i===3))taiko(T,i?60:72,i?.2:.34)
+// phase 2 - war: string ostinato, open-vowel choir, brass power hits, war drums, growling bass
+if(ph>=2){
+ if(i===0&&bar%2===0&&!lt){choir(T,fz(R,tn[1]+12),bd*2,.04,'a');choir(T,fz(R,tn[0]+24),bd*2,.034,'a')}
+ if(!lt&&i%(ph>=3?1:2)===0){const f=fz(R,tn[(i>>1)%3]+12);osc('sawtooth',f,T,sd*1.7,ph>=3?.02:.017,{atk:.004,lp:f*3.5,lpEnd:f*1.4,det:(i%4)?7:-7,send:.2})}
+ if(i===0&&(bar===0||bar===2))brass(T,fz(R,tn[0]),sd*5,.032)
+ if(i===6||i===14)taiko(T,i===6?84:66,.34)
+ if(i===10&&bar%2===1)taiko(T,100,.28)
+ const bc=sc.bass[i];if(bc!=='.'&&!lt)gbass(T,fz(R,BM[bc])/2,sd*(sc.bl||1.6)*.9,ph>=3?.06:.04)}
+// phase 3 - all-out: choir stabs, high strings, tom rolls, double-time hats, crashes, risers
+if(ph>=3){
+ if(!lt&&(i===0||i===6||i===10)){const dd=sd*(i===0?4:2.2);choir(T,fz(R,tn[0]+(i===10?19:12)),dd,.06,vw,{at:.03});choir(T,fz(R,tn[2]+12),dd,.05,vw,{at:.03})}
+ if(i===0)strings(T,fz(R,tn[0]+24),bd,.026)
+ if(i>=12&&i%2===0&&bar%2===1)tom(T,170-(i-12)*8,.22)
+ if(!lt&&i%2===1)hat(T,.035)
+ if(i===0&&bar%2===0)crash(T,.05)
+ if(bar===3&&i===0&&M.id!=='dragon'&&M.id!=='alien')riser(T,bd,.05)}
+}
 function mStep(s,T,sd){const sc=SC[M.id],ph=M.ph,lt=lite(),ix=ph-1,bar=Math.floor(s/16)%4,i=s%16,ch=sc.prog[bar],R=fz(sc.root,ch[0]),tn=CH[ch[1]]
 K=VOL.music
 try{
-if(i===0){if(M.sw){crash(T,.1);impact(T,.3);M.sw=false}else if(bar===0&&ph>=2)crash(T,.06)}
+if(i===0){if(M.sw){crash(T,.1);impact(T,.3);if(!lt){choir(T,fz(R,tn[0]+12),sd*10,.07,'a',{at:.05});choir(T,fz(R,tn[2]+12),sd*10,.06,'a',{at:.05});brass(T,fz(R,tn[0]),sd*8,.05);taiko(T,58,.6)}M.sw=false}else if(bar===0&&ph>=2)crash(T,.06)}
 // drums
 if(sc.k[ix][i]==='x'){if(sc.dk==='taiko')taiko(T,i%8===0?70:92,.55);else kick(T,.5)}
 if(sc.s[ix][i]==='x')snare(T,.3)
@@ -388,6 +430,7 @@ if(ph>=2&&sc.st[ph-2][i]==='x')tn.forEach(x=>{const f=fz(R,x+12);osc(sc.stt,f,T,
 if(sc.arp&&ph>=sc.ap&&!lt){const a=sc.arp[i];if(a!=='.'){const x=+a===3?12:tn[+a],f=fz(R,x+12);osc(sc.at,f,T,sd*1.5,ph>=3?.036:.027,{atk:.004,lp:f*5,lpEnd:f*1.5,echo:.3})}}
 // melody (the boss's theme tune), doubled an octave up in the final phase
 const ms=s%64,ml=sc.mel;for(let j=0;j<ml.length;j++){const n=ml[j];if(n[0]===ms){const fr=fz(sc.root,n[1]+(sc.lo==null?12:sc.lo)),v=(sc.lv||.05)*(ph===1?.6:1);lead(sc,T,fr,sd*n[2]*.92,v);if(ph>=3&&!lt)lead(sc,T,fr*2,sd*n[2]*.8,v*.4)}}
+epic(sc,ph,s,i,bar,T,sd,R,tn,lt)
 // each boss's own flavour
 switch(M.id){
 case'slime':if(i===6||i===14)nz(T,.3,2500,7000,.06,'bandpass',{q:.8,send:.2});if(ph>=3&&i%4===2)bell(T,fz(R,24),.2,.03);break
@@ -403,7 +446,7 @@ if(ph>=3&&bar===3&&i===0)riser(T,sd*16,.05);break}
 }finally{K=1}}
 function mTick(){const c=ac();if(!c||!M.id)return;const sc=SC[M.id];if(!on()||!mon()){M.next=c.currentTime+.05;return}
 while(M.next<c.currentTime+.3){if(M.step%16===0&&M.pend){M.ph=M.pend;M.pend=0;M.sw=true}
-const sd=15/(sc.bpm*(1+.07*(M.ph-1)));try{mStep(M.step,M.next,sd)}catch(e){}M.next+=sd;M.step++}}
+const sd=15/(sc.bpm*(1+.10*(M.ph-1)));try{mStep(M.step,M.next,sd)}catch(e){}M.next+=sd;M.step++}}
 L.music={start(id){M.want=id;if(!SC[id])return;clearInterval(M.t);M.id=id;M.ph=1;M.pend=0;M.sw=false;M.step=0;const c=ac();if(!c)return;M.next=c.currentTime+.05;M.t=setInterval(mTick,50)},stop(){clearInterval(M.t);M.t=null;M.id=null;M.want=null},phase(n){if(M.id&&n!==M.ph)M.pend=n>M.ph?n:0;if(M.id&&n<M.ph){M.ph=n;M.pend=0}},playing:()=>!!M.id}
 const mb=document.createElement('button');mb.className='snd alt';mb.style.right='118px';mb.style.fontSize='11px';mb.title='Boss music on/off'
 const mpaint=()=>{mb.textContent='Music';mb.classList.toggle('off',!mon())}
