@@ -10,9 +10,9 @@
 .hud .bn{flex:1;min-width:200px}.hp{height:16px;background:rgba(128,128,160,.3);border-radius:99px;overflow:hidden;margin-top:4px}
 .hp i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ef4444,#f97316);transition:width .6s;border-radius:99px}
 .heart{width:30px;height:30px;fill:#ff4d6d;stroke:#fff;stroke-width:1;filter:drop-shadow(0 0 5px #ff4d6d);margin-right:2px}.heart.lost{fill:none;stroke:#888;filter:none;opacity:.6}
-#arena{position:relative;height:270px;margin:12px 0;border-radius:18px;border:1px solid var(--accent);background:rgba(10,10,30,.45);overflow:hidden;box-shadow:0 0 var(--g) var(--glow)}
+#arena{position:relative;width:min(96vw,calc(70vh*1.714));margin:12px auto;aspect-ratio:12/7;border-radius:18px;border:1px solid var(--accent);background:rgba(10,10,30,.45);overflow:hidden;box-shadow:0 0 var(--g) var(--glow)}
 #arena::after{content:'';position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(transparent,rgba(124,58,237,.35))}
-#hero{position:absolute;left:5%;bottom:20px;z-index:2}#boss{position:absolute;right:5%;bottom:16px;z-index:2}
+#hero{position:absolute;left:0;right:0;margin:0 auto;width:max-content;bottom:3%;z-index:2}#boss{position:absolute;left:31.5%;width:37%;top:.5%;z-index:2}#boss #bossFace,#boss .bossart{width:100%;height:auto}#arena::before{content:'';position:absolute;inset:0;z-index:6;pointer-events:none;background:radial-gradient(ellipse at 50% 34%,transparent 46%,rgba(0,0,0,.55))}
 #bossFace{animation:bfloat 3s ease-in-out infinite}#bossFace.rage{animation-duration:1.2s}.rage svg{filter:drop-shadow(0 0 14px #ff2e63) saturate(1.5)}
 #heroFace{animation:bfloat 2.4s ease-in-out infinite reverse}
 @keyframes bfloat{50%{transform:translateY(-10px)}}
@@ -20,7 +20,7 @@
 .spark{position:absolute;width:7px;height:7px;border-radius:50%;pointer-events:none;z-index:4}
 .ring{position:absolute;border:4px solid;border-radius:50%;pointer-events:none;z-index:4;transform:translate(-50%,-50%)}
 .dmg{position:absolute;font-size:34px;font-weight:900;color:#fff;text-shadow:0 0 10px #ff2e63,0 0 4px #000;pointer-events:none;z-index:6}
-#banner{position:absolute;left:0;right:0;top:12px;text-align:center;font-size:22px;font-weight:900;color:var(--c2);text-shadow:0 0 12px var(--c2);pointer-events:none;z-index:7}
+#banner{position:absolute;left:0;right:0;top:56%;text-align:center;font-size:22px;font-weight:900;color:var(--c2);text-shadow:0 0 12px var(--c2);pointer-events:none;z-index:7}
 #combo{min-height:26px;font-weight:800;text-align:center}
 #flash{position:fixed;inset:0;background:#ff2e63;opacity:0;pointer-events:none;z-index:90}
 #qtext{font-size:clamp(18px,3vw,26px);font-weight:800;margin:8px 0}
@@ -40,7 +40,7 @@
 <div class="rstep" id="qn" style="font-size:12px;opacity:.7"></div><div id="qtext"></div><div class="opts" id="opts"></div><div id="fb"></div></div>
 <div id="end" class="hide card" style="text-align:center"></div>
 </div><div id="flash"></div>
-<script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script><script src="/js/boss-scene.js"></script><script src="/js/attack-fx.js"></script><script src="/js/question-gen.js"></script><script src="/js/progress.js"></script><script src="/js/avatar-sync.js"></script>
+<script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script><script src="/js/boss-stages.js"></script><script src="/js/boss-scene.js"></script><script src="/js/attack-fx.js"></script><script src="/js/question-gen.js"></script><script src="/js/progress.js"></script><script src="/js/avatar-sync.js"></script>
 <script>
 const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms)),esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
 const user=JSON.parse(localStorage.getItem('SigMath_user')||'null');if(!user)location.href='/'
@@ -56,7 +56,7 @@ const B=Progress.get('boss')
 $('bosses').innerHTML=BOSSES.map((b,i)=>{const p=B[b.id];return '<div class="card boss"><div class="bface">'+BossArt.svg(b.id,90)+'</div><div class="binfo"><b>'+b.name+'</b><br><small>'+b.tag+' \u00b7 '+b.hp+' HP \u00b7 '+b.t+'s per question</small><br>'+(p&&p.wins?'<span class="good">Defeated \u00b7 '+'\u2605'.repeat(p.best)+'</span>':'<small>Not defeated yet</small>')+'</div><button onclick="fight('+i+')">Fight!</button></div>'}).join('')}
 $('topics').onclick=e=>{const b=e.target.closest('.chip');if(b){topic=b.dataset.t;localStorage.setItem('sm_boss_topic',topic);setup()}}
 function fight(i){const b=BOSSES[i];S={b,hp:b.hp,hearts:3,streak:0,missed:[],asked:0,correct:0,busy:false,last:'',tm:0}
-$('heroFace').innerHTML=LiveFX.face(AV,small()?84:110);$('bossFace').innerHTML=BossArt.svg(b.id,small()?130:180);$('bossFace').classList.remove('rage');$('hero').getAnimations().forEach(a=>a.cancel());$('boss').getAnimations().forEach(a=>a.cancel());$('hero').style.opacity=1;$('boss').style.opacity=1;$('arena').className='th-'+BossArt.info[b.id].theme;BossScene.mount($('arena'),b.id,BossArt.info[b.id].theme);$('bossFace').style.setProperty('--bc',BossArt.info[b.id].color)
+$('heroFace').innerHTML=LiveFX.face(AV,small()?96:124);$('bossFace').innerHTML=BossArt.svg(b.id,420);$('bossFace').classList.remove('rage');$('hero').getAnimations().forEach(a=>a.cancel());$('boss').getAnimations().forEach(a=>a.cancel());$('hero').style.opacity=1;$('boss').style.opacity=1;$('arena').className='th-'+BossArt.info[b.id].theme;BossScene.mount($('arena'),b.id,BossArt.info[b.id].theme);$('bossFace').style.setProperty('--bc',BossArt.info[b.id].color)
 show('battle');LiveFX.sfx('roar');LiveFX.music.start(b.id);hud();next()}
 function hud(){const b=S.b;$('bname').textContent=b.name;$('bhp').textContent=S.hp+' / '+b.hp+' HP';$('hpfill').style.width=(100*S.hp/b.hp)+'%';$('bossFace').classList.toggle('rage',S.hp<=b.hp*.3&&S.hp>0);BossScene.phase($('arena'),S.hp<=b.hp*.33?3:S.hp<=b.hp*.66?2:1)
 $('hearts').innerHTML=[0,1,2].map(i=>'<svg class="heart'+(i<S.hearts?'':' lost')+'" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 5.5-8 11-8 11z"/></svg>').join('')
@@ -84,19 +84,19 @@ const t=document.createElement('div');t.className='dmg';t.textContent=txt;t.styl
 const a=AR().getBoundingClientRect();LiveFX.confetti(big?60:22,(a.left+x)/innerWidth,(a.top+y)/innerHeight)}
 function banner(t){const b=$('banner');b.textContent=t;b.animate([{transform:'scale(.5)',opacity:0},{transform:'scale(1.15)',opacity:1,offset:.3},{transform:'scale(1)',opacity:1,offset:.8},{opacity:0}],{duration:1100})}
 async function attack(mega,dmg){const hero=$('hero'),boss=$('boss');banner(mega?'MEGA FIREBALL x'+S.streak+'!':'Fireball!');LiveFX.sfx('fire')
-hero.animate([{transform:'translateX(0)'},{transform:'translateX(30px) scale(1.08)'},{transform:'translateX(0)'}],{duration:380})
+hero.animate([{transform:'translateY(0)'},{transform:'translateY(-30px) scale(1.08)'},{transform:'translateY(0)'}],{duration:380})
 const AXs=window.AttackFX&&AttackFX.mk($('arena'),{low:()=>LiveFX.low,sfx:n=>LiveFX.sfx(n)});let pt
 if(AXs){const a=AR().getBoundingClientRect(),f=hero.getBoundingClientRect(),t=boss.getBoundingClientRect(),fr={x:f.left+f.width/2-a.left,y:f.top+f.height/2-a.top};pt={x:t.left+t.width/2-a.left,y:t.top+t.height/2-a.top}
 await AXs.attack('comet',fr,pt,{c:mega?'#7df9ff':'#ff9a1f',c2:mega?'#e6fbff':'#ffd23f',crit:mega,art:BossFX.fire(mega),w:mega?150:100,h:mega?80:56,ms:mega?720:560})}
 else pt=await proj(hero,boss,BossFX.fire(mega),mega?680:520,mega?'#7df9ff':'#ff9a1f',mega?130:90)
 LiveFX.sfx(mega?'megaboom':'boom');impact(pt.x,pt.y,mega?'#7df9ff':'#ff7a1f','-'+dmg,mega,!!AXs);if(mega)BossScene.hit($('arena'),3,'#7df9ff');S.hp=Math.max(0,S.hp-dmg);LiveFX.music.phase(S.hp<=S.b.hp*.33?3:S.hp<=S.b.hp*.66?2:1);hud()
-boss.animate([{filter:'brightness(3)',transform:'translateX(0)'},{filter:'brightness(1.8)',transform:'translateX(14px)'},{filter:'brightness(1)',transform:'translateX(-10px)'},{filter:'none',transform:'translateX(0)'}],{duration:480})
+boss.animate([{filter:'brightness(3)',transform:'translateY(0)'},{filter:'brightness(1.8)',transform:'translateY(-16px)'},{filter:'brightness(1)',transform:'translateY(6px)'},{filter:'none',transform:'translateY(0)'}],{duration:480})
 if(mega){LiveFX.shake();LiveFX.vibrate([60,30,60])}else LiveFX.vibrate(30);await sleep(520)}
 async function bossAttack(){const hero=$('hero'),boss=$('boss');banner('The boss strikes!');LiveFX.sfx('whoosh')
-boss.animate([{transform:'translateX(0)'},{transform:'translateX(-34px) scale(1.08)'},{transform:'translateX(0)'}],{duration:380})
+boss.animate([{transform:'translateY(0)'},{transform:'translateY(48px) scale(1.08)'},{transform:'translateY(0)'}],{duration:380})
 const pt=await _fx.bossAttack(S.b.id,boss,hero)
 LiveFX.sfx('hit');S.hearts--;impact(pt.x,pt.y,BossArt.info[S.b.id].color,'-1 HP',false);BossScene.hit($('arena'),4,BossArt.info[S.b.id].color);hud()
-hero.animate([{transform:'translateX(0)'},{transform:'translateX(-14px)'},{transform:'translateX(12px)'},{transform:'translateX(-8px)'},{transform:'translateX(0)'}],{duration:450})
+hero.animate([{transform:'translateY(0)'},{transform:'translateY(14px)'},{transform:'translateY(-8px)'},{transform:'translateY(6px)'},{transform:'translateY(0)'}],{duration:450})
 $('flash').animate([{opacity:.45},{opacity:0}],{duration:500});LiveFX.shake();LiveFX.vibrate(220);await sleep(560)}
 async function end(win){clearTimeout(S.tm);LiveFX.music.stop();const b=S.b,stars=win?Math.max(1,S.hearts):0
 if(win){LiveFX.sfx('boom');$('boss').animate([{transform:'scale(1)',opacity:1},{transform:'scale(1.4) rotate(8deg)',opacity:.9,offset:.4},{transform:'scale(2) rotate(-12deg)',opacity:0}],{duration:950,fill:'forwards'});LiveFX.confetti(220,.7,.5);LiveFX.shake();BossScene.hit($('arena'),5,'#ffffff');await sleep(1100);LiveFX.sfx('fanfare');LiveFX.confetti(200,.5,.3)}

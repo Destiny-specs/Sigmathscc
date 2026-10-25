@@ -55,4 +55,4 @@ socket.on('reveal',d=>{clearInterval(tick);window.LiveFX&&LiveFX.confetti(35,.5,
 socket.on('reveal',d=>{if(d.boss)bossReveal(d)})
 socket.on('final',(lb,aw,boss)=>{BossBattle.cancel();BossBattle.phoneCancel();LiveFX.music.stop();clearInterval(tick);window.LiveFX&&LiveFX.confetti(220,.5,.3);if(!boss||boss.result==='win')LiveFX.sfx('fanfare');$('podium').innerHTML=(boss?bossEnd(boss):'')+LiveFX.podium(lb,esc)+((aw||[]).length?'<h2>Awards</h2>'+LiveFX.awards(aw,esc):'');show('final')})}
 loadLessons()
-</script><script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script><script src="/js/boss-scene.js"></script><script src="/js/attack-fx.js"></script><script src="/js/boss-battle.js"></script></body></html>
+</script><script src="/js/dark-mode.js"></script><script src="/js/live-fx.js"></script><script src="/js/boss-art.js"></script><script src="/js/boss-fx.js"></script><script src="/js/boss-stages.js"></script><script src="/js/boss-scene.js"></script><script src="/js/attack-fx.js"></script><script src="/js/boss-battle.js"></script></body></html>

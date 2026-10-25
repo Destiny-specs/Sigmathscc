@@ -127,3 +127,13 @@
 #bface.ph2{--bad:1.8s;--egd:1.7s;--bzd:2.6s;--bzx:1.018;--bzy:1.045;--btd:4.4s;--bld:6s}
 #bface.rage,#bossFace.rage{--bad:.9s;--egd:.8s;--bzd:1.25s;--bzx:1.028;--bzy:1.065;--btd:2.4s;--bld:3.6s}
 .bpc .bossart .bz,.bpc .bossart .bt,.bpc .bossart .bl,.bface .bossart .bz,.bface .bossart .bt,.bface .bossart .bl{animation:none}
+
+/* ===== v31 STAGE LAYOUT: the boss big at the top centre on its platform, the class in a row on the floor below ===== */
+#bossPanel{width:min(96vw,calc(70vh*1.714));margin-left:calc((100% - min(96vw,calc(70vh*1.714)))/2)}
+#barena{height:auto;aspect-ratio:12/7;margin:6px 0 10px;border-radius:20px}
+#barena::before{background:radial-gradient(ellipse at 50% 34%,transparent 46%,rgba(0,0,0,.55))}
+#bcam{transform-origin:50% 30%}
+#bface{left:31.5%;right:auto;width:37%;top:.5%;bottom:auto}
+#bface .bossart{width:100%;height:auto}
+#crew{left:6%;right:6%;bottom:2%;gap:6px;justify-content:center}
+#bbanner{top:56%}
