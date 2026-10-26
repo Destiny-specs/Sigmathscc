@@ -3,6 +3,8 @@ const crypto = require('crypto')
 const games = new Map()
 const newPin = () => { let p; do { p = String(100000 + Math.floor(Math.random() * 900000)) } while (games.has(p)); return p }
 const board = g => [...g.players.values()].sort((a, b) => b.score - a.score).map((p, i) => ({ name: p.name, score: p.score, rank: i + 1, streak: p.streak, av: p.av }))
+// compact leaderboard for the side panel on student screens (top 30 only)
+const lbOut = lb => lb.slice(0, 30).map(e => ({ name: e.name, score: e.score, rank: e.rank, streak: e.streak, av: e.av }))
 const awards = g => {
   const ps = [...g.players.values()], n = g.questions.length, out = [], used = new Set()
   const pick = (key, title, icon, score, min, detail) => {
@@ -90,6 +92,8 @@ module.exports = function attachLive(server, verifyTeacher) {
       e.delta = p.rank ? p.rank - e.rank : 0
       p.delta = e.delta; p.rank = e.rank; p.worst = Math.max(p.worst || 0, e.rank)
     }
+    g.lastLb = lbOut(lb)
+    io.to(room(g)).emit('lb', g.lastLb)
     const callouts = []
     if (lb.length > 1 && g.leader && lb[0].name !== g.leader) callouts.push(lb[0].name + ' takes the lead!')
     g.leader = lb[0] ? lb[0].name : null
@@ -132,6 +136,7 @@ module.exports = function attachLive(server, verifyTeacher) {
 
   function ask(g) {
     g.state = 'ready'
+    if (!g.lastLb) { g.lastLb = lbOut(board(g)); io.to(room(g)).emit('lb', g.lastLb) }
     g.readyAt = Date.now()
     io.to(room(g)).emit('ready', readyPayload(g))
     g.timer = setTimeout(() => startQ(g), 3000)
@@ -262,6 +267,7 @@ module.exports = function attachLive(server, verifyTeacher) {
       p.sid = socket.id; game = g; me = p.pid
       socket.join(room(g))
       ack({ ok: true, name: p.name, bossPick: bossPick(g) })
+      if (g.lastLb) socket.emit('lb', g.lastLb)
       if (g.state === 'lobby') io.to(g.host).emit('lobby', names(g), avs(g))
       if (g.state === 'question') socket.emit('question', qpayload(g, p))
       else if (g.state === 'reveal' && p.last) socket.emit('result', p.last)
